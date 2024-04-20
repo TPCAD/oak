@@ -55,7 +55,7 @@ error:
 	jmp $
 .msg:
 	db "Loading error...", 13, 10, 0
-
+	
 pre_protected_mode:
 
 	; disable interruption
@@ -89,10 +89,87 @@ protect_mode:
 	mov ss, ax
 
 	mov esp, 0x10000
+	
+	mov edi, 0x10000
+	mov ecx, 10
+	mov bl, 200
 
-	mov byte [0xb8000], 'P'
+	call read_disk
 
-jmp $
+	jmp dword code_selector:0x10000
+
+	uld
+	
+read_disk:
+	mov dx, 0x1f2
+	mov al, bl
+	out dx, al
+
+	inc dx,
+	mov al, cl
+	out dx, al
+
+	; 0x1f4
+	inc dx
+	shr ecx, 8
+	mov al, cl
+	out dx, al
+	
+	; 0x1f5
+	inc dx
+	shr ecx, 8
+	mov al, cl
+	out dx, al
+
+	inc dx
+	shr ecx, 8
+	and cl, 0b1111
+
+	mov al, 0b1110_0000
+	or al, cl
+	out dx, al
+
+	; 0x1f7
+	inc dx
+	mov al, 0x20
+	out dx, al
+
+	xor ecx, ecx
+	mov cl, bl
+
+.read_sector:
+	push cx
+	call .wait
+	call .read
+	pop cx
+	loop .read_sector
+
+	ret
+
+.wait:
+	mov dx, 0x1f7
+	.check:
+		in al, dx
+		jmp $+2
+		jmp $+2
+		jmp $+2
+		and al, 0b1000_1000
+		cmp al, 0b0000_1000
+		jnz .check
+	ret
+
+.read:
+	mov dx, 0x1f0
+	mov cx, 256
+	.read_word:
+		in ax, dx
+		jmp $+2
+		jmp $+2
+		jmp $+2
+		mov [edi], ax
+		add edi, 2
+		loop .read_word
+	ret
 
 loading:
 	db "Loading Oak...", 10 ,13, 0
