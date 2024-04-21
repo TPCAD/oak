@@ -67,3 +67,11 @@ bochs: $(BUILD)/master.img
 .PHONY: bochs-dbg
 bochs-dbg: $(BUILD)/master.img
 	bochs-gdb -q -f ../debug/bochsrc.gdb
+
+.PHONY: qemu
+qemu: $(BUILD)/master.img
+	qemu-system-i386 -m 32M -boot c -hda $<
+
+.PHONY: qemu-dbg
+qemu-dbg: $(BUILD)/master.img
+	qemu-system-i386 -s -S -m 32M -boot c -hda $<
