@@ -3,4 +3,5 @@
 *.ini
 
 build
+src/.cache
 tests/*.out
