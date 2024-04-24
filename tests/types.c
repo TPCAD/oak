@@ -1,7 +1,12 @@
-#include <oak/types.h>
-#include <stdio.h>
+int add(int x, int y)
+{
+  int z = x + y;
+  return z;
+}
 
-int main(int argc, char *argv[]) {
-  printf("size of u32 %d\n", sizeof(u8));
+int main() {
+  int a = 5;
+  int b = 3;
+  int c = add(a,b);
   return 0;
 }
