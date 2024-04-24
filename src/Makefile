@@ -29,13 +29,14 @@ $(BUILD_BOOT)/%.bin: $(SRC)/boot/%.asm | $(BUILD_BOOT)
 
 # kernel
 $(BUILD_KERNEL)/%.o: $(SRC)/kernel/%.asm | $(BUILD_KERNEL)
-	nasm -f elf32 $< -o $@
+	nasm -gdwarf -f elf32 $< -o $@
 
 $(BUILD_KERNEL)/%.o: $(SRC)/kernel/%.c | $(BUILD_KERNEL)
 	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
-	$(BUILD_KERNEL)/main.o | $(BUILD_KERNEL)
+	$(BUILD_KERNEL)/main.o \
+	$(BUILD_KERNEL)/io.o | $(BUILD_KERNEL)
 	i686-elf-ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
