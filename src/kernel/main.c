@@ -1,10 +1,17 @@
+#include <oak/io.h>
 #include <oak/oak.h>
+#include <oak/types.h>
 
-char *message = "Hello Oak!";
+#define CRT_ADDR_REG 0x3d4
+#define CRT_DATA_REG 0x3d5
+
+#define CRT_CURSOR_H 0xe
+#define CRT_CURSOR_L 0xf
 
 void kernel_init() {
-  char *video = (char *)0xb8000;
-  for (int i = 0; i < sizeof(message); i++) {
-    video[i * 2] = message[i];
-  }
+  outb(CRT_ADDR_REG, CRT_CURSOR_H);
+  u16 pos = inb(CRT_DATA_REG) << 8;
+  outb(CRT_ADDR_REG, CRT_CURSOR_L);
+  pos |= inb(CRT_DATA_REG);
+  return;
 }
