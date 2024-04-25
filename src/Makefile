@@ -2,6 +2,7 @@ SRC:=.
 BUILD:=../build
 BUILD_BOOT:=$(BUILD)/boot
 BUILD_KERNEL:=$(BUILD)/kernel
+BUILD_LIB:=$(BUILD)/lib
 
 ENTRYPOINT:=0x10000
 
@@ -22,21 +23,30 @@ $(BUILD_BOOT):
 	@mkdir -p $(BUILD)/boot
 $(BUILD_KERNEL):
 	@mkdir -p $(BUILD)/kernel
+$(BUILD_LIB):
+	@mkdir -p $(BUILD)/lib
 
 # bootloader
 $(BUILD_BOOT)/%.bin: $(SRC)/boot/%.asm | $(BUILD_BOOT)
 	nasm -f bin $< -o $@
 
 # kernel
+# src/kernel/*.asm
 $(BUILD_KERNEL)/%.o: $(SRC)/kernel/%.asm | $(BUILD_KERNEL)
 	nasm -gdwarf -f elf32 $< -o $@
 
+# src/kernel/*.c
 $(BUILD_KERNEL)/%.o: $(SRC)/kernel/%.c | $(BUILD_KERNEL)
+	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+
+# src/lib/*.c
+$(BUILD_LIB)/%.o: $(SRC)/lib/%.c | $(BUILD_LIB)
 	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/main.o \
-	$(BUILD_KERNEL)/io.o | $(BUILD_KERNEL)
+	$(BUILD_KERNEL)/io.o \
+	$(BUILD_LIB)/string.o | $(BUILD_KERNEL)
 	i686-elf-ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
@@ -55,7 +65,8 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	dd if=$(BUILD_BOOT)/loader.bin of=$@ bs=512 count=4 seek=2 conv=notrunc
 	dd if=$(BUILD_KERNEL)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc
 
-test: $(BUILD)/master.img
+.PHONY: image
+image: $(BUILD)/master.img
 
 .PHONY: clean
 clean:
