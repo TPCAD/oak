@@ -3,5 +3,6 @@
 *.ini
 
 build
+learning
 src/.cache
 tests/*.out
