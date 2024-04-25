@@ -1,8 +1,9 @@
 #ifndef OAK_TYPES_H
 #define OAK_TYPES_H
 
-#define EOF -1 // End Of File
-#define NULL 0 // empty pointer
+#define EOF -1           // End Of File
+#define NULL ((void *)0) // empty pointer
+#define EOS '\0'         // End Of String
 #define bool _Bool
 #define true 1
 #define false 0
