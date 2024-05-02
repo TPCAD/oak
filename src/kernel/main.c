@@ -1,17 +1,14 @@
+#include <oak/console.h>
 #include <oak/io.h>
 #include <oak/oak.h>
 #include <oak/types.h>
 
-#define CRT_ADDR_REG 0x3d4
-#define CRT_DATA_REG 0x3d5
-
-#define CRT_CURSOR_H 0xe
-#define CRT_CURSOR_L 0xf
+char message[] = "hello world!\n";
 
 void kernel_init() {
-    outb(CRT_ADDR_REG, CRT_CURSOR_H);
-    u16 pos = inb(CRT_DATA_REG) << 8;
-    outb(CRT_ADDR_REG, CRT_CURSOR_L);
-    pos |= inb(CRT_DATA_REG);
+    console_init();
+    while (true) {
+        consoel_write(message, sizeof(message) - 1);
+    }
     return;
 }
