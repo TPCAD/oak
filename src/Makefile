@@ -47,7 +47,9 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/main.o \
 	$(BUILD_KERNEL)/io.o \
 	$(BUILD_LIB)/string.o \
-	$(BUILD_KERNEL)/console.o | $(BUILD_KERNEL)
+	$(BUILD_KERNEL)/console.o \
+	$(BUILD_LIB)/vsprintf.o \
+	$(BUILD_KERNEL)/printk.o | $(BUILD_KERNEL)
 	i686-elf-ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
