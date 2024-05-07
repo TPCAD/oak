@@ -3,8 +3,8 @@
 #include <oak/string.h>
 
 #define ZEROPAD 1  // 0x00000001 padding with 0
-#define SIGN 2     // 0x00000010 display ???
-#define PLUS 4     // 0x00000100 force display sign
+#define SIGN 2     // 0x00000010 display sign
+#define PLUS 4     // 0x00000100 force display plus sign
 #define SPACE 8    // 0x00010000 padding space
 #define LEFT 16    // 0x00100000 left alignment
 #define SPECIAL 32 // 0x01000000 display 0x
@@ -24,12 +24,15 @@ static int skip_atoi(const char **s) {
 // str: the output string
 // num: variadic parameters in printk
 // base: base number
-// size: length of string
+// size: width
 // precision: precision
-// flags:
+// flags: flags
 static char *number(char *str, unsigned long num, int base, int size,
                     int precision, int flags) {
-    char c, sign, tmp[36];
+    // padding: ` ` or `0` for padding
+    // sign: `-` or `+` for signed number
+    // tmp: temporary buffer
+    char padding, sign, tmp[36];
     const char *digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     int i;
     int index;
@@ -39,6 +42,7 @@ static char *number(char *str, unsigned long num, int base, int size,
         digits = "0123456789abcdefghijklmnopqrstuvwxyz";
     }
 
+    // can't pad number with 0 if left alignment
     if (flags & LEFT) {
         flags &= ~ZEROPAD;
     }
@@ -47,13 +51,13 @@ static char *number(char *str, unsigned long num, int base, int size,
         return 0;
     }
 
-    c = (flags & ZEROPAD) ? '0' : ' ';
+    padding = (flags & ZEROPAD) ? '0' : ' ';
 
     if (flags & SIGN && num < 0) {
         sign = '-';
         num = -num;
     } else {
-        sign = (flags & PLUS) ? '+' : ((flags & SPACE) ? ' ' : '0');
+        sign = (flags & PLUS) ? '+' : ((flags & SPACE) ? ' ' : 0);
     }
 
     if (sign) {
@@ -68,11 +72,13 @@ static char *number(char *str, unsigned long num, int base, int size,
         }
     }
 
-    // conversion
+    // i: the length of string after conversion
     i = 0;
     if (num == 0) {
         tmp[i++] = '0';
     } else {
+        // the conversion result is reversed
+        // i.e. 33 is 0x21 in hexadecimal, the result is 12
         while (num != 0) {
             index = num % base;
             num /= base;
@@ -80,21 +86,26 @@ static char *number(char *str, unsigned long num, int base, int size,
         }
     }
 
+    // for integers, precision specifies its minimum number of digits to appear
     if (i > precision) {
         precision = i;
     }
-    sign -= precision;
+    // substract precision, remaining size is to be padding
+    size -= precision;
 
+    // non 0 padding, non left alignment, pad with space
     if (!(flags & (ZEROPAD + LEFT))) {
         while (size-- > 0) {
             *str++ = ' ';
         }
     }
 
+    // write sign
     if (sign) {
         *str++ = sign;
     }
 
+    // write special sign of base
     if (flags & SPECIAL) {
         if (base == 8) {
             *str++ = '0';
@@ -104,20 +115,24 @@ static char *number(char *str, unsigned long num, int base, int size,
         }
     }
 
+    // non left alignment
     if (!(flags & LEFT)) {
         while (size-- > 0) {
-            *str++ = c;
+            *str++ = padding;
         }
     }
 
+    // precision padding
     while (i < precision--) {
         *str++ = '0';
     }
 
+    // write  strings after conversion reversely
     while (i-- > 0) {
         *str++ = tmp[i];
     }
 
+    // left alignment, pad with space
     while ((size-- > 0)) {
         *str++ = ' ';
     }
@@ -244,24 +259,28 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
             s = va_arg(args, char *);
             len = strlen(s);
 
+            // ignore substract sign
             if (precision < 0) {
                 precision = len;
+                // for string, precision specifies the maximum number to appear
             } else if (len > precision) {
                 len = precision;
             }
 
+            // right alignment, pad space
             if (!(flags & LEFT)) {
                 while (len < field_width--) {
                     *str++ = ' ';
                 }
             }
 
+            // write string to output string
             for (int i = 0; i < len; i++) {
                 *str++ = *s++;
             }
 
             // left alignment
-            while (--field_width > 0) {
+            while (--field_width > len) {
                 *str++ = ' ';
             }
             break;
@@ -279,7 +298,7 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
             str = number(str, (unsigned long)va_arg(args, void *), 16,
                          field_width, precision, flags);
             break;
-            // hexadeciaml
+            // hexadecimal
         case 'x':
             flags |= SMALL;
         case 'X':
