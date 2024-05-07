@@ -50,7 +50,8 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/console.o \
 	$(BUILD_LIB)/vsprintf.o \
 	$(BUILD_KERNEL)/printk.o \
-	$(BUILD_KERNEL)/assert.o | $(BUILD_KERNEL)
+	$(BUILD_KERNEL)/assert.o \
+	$(BUILD_KERNEL)/debug.o | $(BUILD_KERNEL)
 	i686-elf-ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)

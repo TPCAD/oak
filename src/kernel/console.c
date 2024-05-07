@@ -175,7 +175,6 @@ void consoel_write(char *buf, u32 count) {
             *((char *)pos) = attr;
             pos++;
 
-            pos += 2;
             x++;
             break;
         }
