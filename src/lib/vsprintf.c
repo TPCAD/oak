@@ -1,3 +1,4 @@
+#include <oak/assert.h>
 #include <oak/stdarg.h>
 #include <oak/stdio.h>
 #include <oak/string.h>
@@ -331,5 +332,7 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
     }
     *str = '\0';
 
-    return str - buf;
+    int tmp = str - buf;
+    assert(tmp < 1024);
+    return tmp;
 }
