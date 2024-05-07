@@ -1,5 +1,5 @@
-#include "oak/printk.h"
 #include <oak/console.h>
+#include <oak/printk.h>
 #include <oak/stdarg.h>
 #include <oak/stdio.h>
 
