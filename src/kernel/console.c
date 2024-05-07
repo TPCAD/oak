@@ -87,7 +87,7 @@ void console_clear() {
 
     u16 *ptr = (u16 *)MEM_BASE;
 
-    while (ptr < MEM_END) {
+    while (ptr < (u16 *)MEM_END) {
         *ptr++ = space;
     }
 }
@@ -134,7 +134,6 @@ static void command_lf() {
 
 void consoel_write(char *buf, u32 count) {
     char ch;
-    char *ptr = (char *)pos;
     while (count--) {
         ch = *buf++;
         switch (ch) {
@@ -170,10 +169,11 @@ void consoel_write(char *buf, u32 count) {
                 pos -= ROW_SIZE;
                 command_lf();
             }
-            *ptr = ch;
-            ptr++;
-            *ptr = attr;
-            ptr++;
+
+            *((char *)pos) = ch;
+            pos++;
+            *((char *)pos) = attr;
+            pos++;
 
             pos += 2;
             x++;
