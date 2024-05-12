@@ -16,6 +16,8 @@ typedef struct gate_t {
     u16 offset_high; // offset 16 ~ 31 bits
 } _packed gate_t;
 
+typedef void *handler_t;
+
 void interrupt_init();
 
 #endif // !OAK_INTERRUPT_H
