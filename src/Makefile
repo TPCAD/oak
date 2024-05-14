@@ -52,7 +52,11 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/printk.o \
 	$(BUILD_KERNEL)/assert.o \
 	$(BUILD_KERNEL)/debug.o \
-	$(BUILD_KERNEL)/global.o | $(BUILD_KERNEL)
+	$(BUILD_KERNEL)/global.o \
+	$(BUILD_KERNEL)/interrupt.o \
+	$(BUILD_KERNEL)/handler.o \
+	$(BUILD_LIB)/stdlib.o \
+	$(BUILD_KERNEL)/clock.o | $(BUILD_KERNEL)
 	i686-elf-ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
@@ -88,8 +92,8 @@ bochs-dbg: $(BUILD)/master.img
 
 .PHONY: qemu
 qemu: $(BUILD)/master.img
-	qemu-system-i386 -m 32M -boot c -hda $<
+	qemu-system-i386 -m 32M -boot c -hda $< -audiodev pa,id=hda -machine pcspk-audiodev=hda
 
 .PHONY: qemu-dbg
 qemu-dbg: $(BUILD)/master.img
-	qemu-system-i386 -s -S -m 32M -boot c -hda $<
+	qemu-system-i386 -s -S -m 32M -boot c -hda $< -audiodev pa,id=hda -machine pcspk-audiodev=hda
