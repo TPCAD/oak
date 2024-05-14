@@ -38,6 +38,8 @@ static u32 x, y;
 static u8 attr = 7;
 static u16 space = 0x0720;
 
+extern void start_beep();
+
 static void get_screen() {
     outb(CRT_ADDR_REG, CRT_START_ADDR_H);
     screen = inb(CRT_DATA_REG) << 8;
@@ -142,6 +144,7 @@ void consoel_write(char *buf, u32 count) {
         case ASCII_ENQ:
             break;
         case ASCII_BEL:
+            start_beep();
             break;
         case ASCII_BS:
             command_bs();
