@@ -1,10 +1,20 @@
+#include "oak/io.h"
+#include "oak/stdlib.h"
+#include <oak/assert.h>
 #include <oak/debug.h>
 #include <oak/global.h>
 #include <oak/interrupt.h>
 #include <oak/printk.h>
 #include <oak/types.h>
 
-#define ENTRY_SIZE 0x20
+#define ENTRY_SIZE 0x30
+#define EXCEPTION_SIZE 0x20
+
+#define PIC_M_CTRL 0x20 // master control port
+#define PIC_M_DATA 0x21 // master data port
+#define PIC_S_CTRL 0xa0 // slave control port
+#define PIC_S_DATA 0xa1 // slave data port
+#define PIC_EOI 0x20    // end of interrupt
 
 gate_t idt[IDT_SIZE];
 pointer_t idt_ptr;
@@ -37,6 +47,47 @@ static char *messages[] = {
     "#CP Control Protection Exception\0",
 };
 
+void send_eoi(int vector) {
+    if (vector >= 0x20 && vector < 0x28) {
+        outb(PIC_M_CTRL, PIC_EOI);
+    }
+    if (vector >= 0x28 && vector < 0x30) {
+        outb(PIC_M_CTRL, PIC_EOI);
+        outb(PIC_S_CTRL, PIC_EOI);
+    }
+}
+
+void set_interrupt_handler(u32 irq, handler_t handler) {
+    assert(irq >= 0 && irq < 16);
+    handler_table[IRQ_MASTER_NR + irq] = handler;
+}
+
+void set_interrupt_mask(u32 irq, bool enable) {
+    assert(irq >= 0 && irq < 16);
+    u16 port;
+
+    if (irq < 8) {
+        port = PIC_M_DATA;
+    } else {
+        port = PIC_S_DATA;
+        irq -= 8;
+    }
+
+    if (enable) {
+        outb(port, inb(port) & ~(1 << irq));
+
+    } else {
+        outb(port, inb(port) | (1 << irq));
+    }
+}
+
+u32 counter = 0;
+
+void default_handler(int vector) {
+    send_eoi(vector);
+    DEBUGK("[%d] default interrupt called %d...\n", vector, counter++);
+}
+
 void exception_handler(int vector) {
     char *message = NULL;
     if (vector < 22) {
@@ -47,11 +98,25 @@ void exception_handler(int vector) {
     }
     printk("Exception : [0x%02X] %s \n", vector, messages[vector]);
 
-    while (true)
-        ;
+    hang();
 }
 
-void interrupt_init() {
+void pic_init() {
+    outb(PIC_M_CTRL, 0b00010001); // ICW1: edge trigger,  cascade, need ICW4
+    outb(PIC_M_DATA, 0x20);       // ICW2: start interrupt vector
+    outb(PIC_M_DATA, 0b00000100); // ICW3: IR2 for slave
+    outb(PIC_M_DATA, 0b00000001); // ICW4: non-auto EOI, 8086 mode
+
+    outb(PIC_S_CTRL, 0b00010001); // ICW1: edge trigger,  cascade, need ICW4
+    outb(PIC_S_DATA, 0x28);       // ICW2: start interrupt vector
+    outb(PIC_S_DATA, 0b00000010); // ICW3: IR2 for slave
+    outb(PIC_S_DATA, 0b00000001); // ICW4: non-auto EOI, 8086 mode
+
+    outb(PIC_M_DATA, 0b11111111); // mask all interrupt in master
+    outb(PIC_S_DATA, 0b11111111); // mask all interrupt in slave
+}
+
+void idt_init() {
     for (size_t i = 0; i < ENTRY_SIZE; i++) {
         gate_t *gate = &idt[i];
         handler_t handler = handler_entry_table[i];
@@ -66,11 +131,19 @@ void interrupt_init() {
         gate->present = 1;
     }
 
-    for (size_t i = 0; i < 0x20; i++) {
+    for (size_t i = 0; i < EXCEPTION_SIZE; i++) {
         handler_table[i] = exception_handler;
+    }
+    for (size_t i = EXCEPTION_SIZE; i < ENTRY_SIZE; i++) {
+        handler_table[i] = default_handler;
     }
     idt_ptr.base = (u32)idt;
     idt_ptr.limit = sizeof(idt) - 1;
 
     asm volatile("lidt idt_ptr");
+}
+
+void interrupt_init() {
+    pic_init();
+    idt_init();
 }
