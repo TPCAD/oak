@@ -31,7 +31,7 @@ void cmos_write(u8 addr, u8 value) {
 
 static u32 volatile counter = 0;
 
-// 设置 secs 秒后发生实时时钟中断
+// trigger RTC interrupt after `secs` seconds
 void set_alarm(u32 secs) {
     tm time;
     time_read(&time);
@@ -66,13 +66,11 @@ void set_alarm(u32 secs) {
 
 // RTC interrupt handler function
 void rtc_handler(int vector) {
-    // 实时时钟中断向量号
     assert(vector == 0x28);
 
-    // 向中断控制器发送中断处理完成的信号
     send_eoi(vector);
 
-    // 读 CMOS 寄存器 C，允许 CMOS 继续产生中断
+    // read CMOS register C to allow CMOS produce interrupt
     cmos_read(CMOS_C);
 
     set_alarm(1);
@@ -83,13 +81,13 @@ void rtc_handler(int vector) {
 void rtc_init() {
     u8 prev;
 
-    // cmos_write(CMOS_B, 0b01000010); // 打开周期中断
-    cmos_write(CMOS_B, 0b00100010); // 打开闹钟中断
-    cmos_read(CMOS_C);              // 读 C 寄存器，以允许 CMOS 中断
+    // cmos_write(CMOS_B, 0b01000010); // turn on periodical interrupt
+    cmos_write(CMOS_B, 0b00100010); // turn on alarm interrupt
+    cmos_read(CMOS_C); // read CMOS register C to allow CMOS produce interrupt
 
     set_alarm(2);
 
-    // 设置中断频率
+    // set interrupt frequency
     outb(CMOS_A, (inb(CMOS_A) & 0xf) | 0b1110);
 
     set_interrupt_handler(IRQ_RTC, rtc_handler);
