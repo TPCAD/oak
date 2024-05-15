@@ -39,21 +39,20 @@ void clock_handler(int vector) {
     assert(vector == 0x20);
     send_eoi(vector);
 
-    if (jiffies % 200 == 0) {
-        start_beep();
-    }
-
     jiffies++;
     DEBUGK("clock jiffies %d ...\n", jiffies);
 
+    // stop pc speaker after five clock
     stop_beep();
 }
 
 void pit_init() {
+    // init PIT
     outb(PIT_CTRL_REG, 0b00110100);
     outb(PIT_CHAN0_REG, CLOCK_COUNTER & 0xff);
     outb(PIT_CHAN0_REG, (CLOCK_COUNTER >> 8) & 0xff);
 
+    // init pc speaker
     outb(PIT_CTRL_REG, 0b10110110);
     outb(PIT_CHAN2_REG, (u8)BEEP_COUNTER);
     outb(PIT_CHAN2_REG, (u8)(BEEP_COUNTER >> 8));
