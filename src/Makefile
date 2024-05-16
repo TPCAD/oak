@@ -58,7 +58,8 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_LIB)/stdlib.o \
 	$(BUILD_KERNEL)/clock.o \
 	$(BUILD_KERNEL)/time.o \
-	$(BUILD_KERNEL)/rtc.o | $(BUILD_KERNEL)
+	$(BUILD_KERNEL)/rtc.o \
+	$(BUILD_KERNEL)/memory.o | $(BUILD_KERNEL)
 	i686-elf-ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
@@ -72,9 +73,15 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	$(BUILD_BOOT)/loader.bin \
 	$(BUILD_KERNEL)/system.bin \
 	$(BUILD_KERNEL)/system.map
+	# create a 16M disk image
 	yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
+	# write boot.bin to image
 	dd if=$(BUILD_BOOT)/boot.bin of=$@ bs=512 count=1 conv=notrunc
+	# write loader.bin to image
 	dd if=$(BUILD_BOOT)/loader.bin of=$@ bs=512 count=4 seek=2 conv=notrunc
+	# test if system.bin is less than 100k
+	test -n "$$(find $(BUILD_KERNEL)/system.bin -size -100k)"
+	# write system.bin to image
 	dd if=$(BUILD_KERNEL)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc
 
 .PHONY: image
