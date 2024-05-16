@@ -10,6 +10,10 @@
 
 #define _packed __attribute__((packed))
 
+#define _ofp __attribute__((optimize("omit-frame-pointer")))
+
+#define _inline __attribute__((always_inline)) inline
+
 typedef unsigned int size_t;
 typedef char int8;
 typedef short int16;
