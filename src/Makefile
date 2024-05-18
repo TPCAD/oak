@@ -59,7 +59,8 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/clock.o \
 	$(BUILD_KERNEL)/time.o \
 	$(BUILD_KERNEL)/rtc.o \
-	$(BUILD_KERNEL)/memory.o | $(BUILD_KERNEL)
+	$(BUILD_KERNEL)/memory.o \
+	$(BUILD_LIB)/bitmap.o | $(BUILD_KERNEL)
 	i686-elf-ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
