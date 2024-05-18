@@ -1,20 +1,43 @@
-#include "oak/debug.h"
 #include <oak/assert.h>
 #include <oak/bitmap.h>
+#include <oak/debug.h>
 #include <oak/string.h>
 #include <oak/types.h>
 
-void bitmap_make(bitmap_t *map, u8 *bits, u32 length) {
+/* Make bitmap
+ *
+ * @param map Bitmap struct
+ * @param bits Arrage
+ * @param length Length of arragy in bytes
+ * @param offset Start location in bits
+ */
+void bitmap_make(bitmap_t *map, u8 *bits, u32 length, u32 offset) {
     map->bits = bits;
     map->length = length;
+    map->offset = offset;
 }
 
-void bitmap_init(bitmap_t *map, u8 *bits, u32 length) {
+/* Initialize bitmap
+ *
+ * @param map Bitmap struct
+ * @param bits Arrage
+ * @param length Length of arragy in bytes
+ * @param offset Start location in bits
+ */
+void bitmap_init(bitmap_t *map, u8 *bits, u32 length, u32 offset) {
     memset(bits, 0, length);
-    bitmap_make(map, bits, length);
+    bitmap_make(map, bits, length, offset);
 }
 
-bool bitmap_if_set(bitmap_t *map, u32 index) {
+/* Check whether certain bit is set or not
+ *
+ * @param map Bitmap struct
+ * @param index Index in bytes
+ *
+ * @return Boolean;
+ */
+bool bitmap_is_set(bitmap_t *map, u32 index) {
+    assert(index >= map->offset);
     u32 bytes = index / 8;
     u8 bits = index % 8;
 
@@ -23,7 +46,14 @@ bool bitmap_if_set(bitmap_t *map, u32 index) {
     return (map->bits[bytes] & (1 << bits));
 }
 
+/* Set certain bit
+ *
+ * @param map Bitmap struct
+ * @param index Index in bytes
+ * @param value Value to set
+ */
 void bitmap_set(bitmap_t *map, u32 index, bool value) {
+    assert(index >= map->offset);
     assert(value == 0 || value == 1);
 
     u32 bytes = index / 8;
@@ -36,18 +66,25 @@ void bitmap_set(bitmap_t *map, u32 index, bool value) {
         map->bits[bytes] |= (1 << bits);
     } else {
         // set 0
-        map->bits[bytes] &= (1 << bits);
+        map->bits[bytes] &= ~(1 << bits);
     }
 }
 
-int bitmap_scan(bitmap_t *map, u32 count) {
+/* Get continuous bits
+ *
+ * @param map Bitmap struct
+ * @param count Amount of bits
+ *
+ * @return Start location of continuous bits
+ */
+u32 bitmap_scan(bitmap_t *map, u32 count) {
     int start = EOF;
-    u32 bits_left = map->length * 8;
-    u32 next_bit = 0;
+    u32 bits_left = map->length * 8 - map->offset;
+    u32 next_bit = map->offset;
     u32 counter = 0;
 
     while (bits_left-- > 0) {
-        if (!bitmap_if_set(map, next_bit)) {
+        if (!bitmap_is_set(map, next_bit)) {
             counter++;
         } else {
             counter = 0;
@@ -77,11 +114,12 @@ int bitmap_scan(bitmap_t *map, u32 count) {
 
 void bitmap_test() {
     int LEN = 2;
+    int OFFSET = 3;
     u8 bits[LEN];
     bitmap_t map;
     int count = 10;
 
-    bitmap_init(&map, bits, LEN);
+    bitmap_init(&map, bits, LEN, OFFSET);
 
     if (bitmap_scan(&map, count) != EOF) {
         DEBUGK("Get %d bits", count);
