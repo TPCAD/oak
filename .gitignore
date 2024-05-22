@@ -6,3 +6,5 @@ build
 learning
 src/.cache
 tests/*.out
+
+*.vim
