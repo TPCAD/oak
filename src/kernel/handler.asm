@@ -14,9 +14,23 @@ interrupt_handler_%1: ; expand to interrupt_handler_0x01 for example
 %endmacro
 
 interrupt_entry:
-	xchg bx, bx
-	mov eax, [esp] ; move first parameter of macro to eax
+	push ds
+	push es
+	push fs
+	push gs
+	pusha
+	
+	mov eax, [esp + 12 * 4] ; move first parameter of macro to eax
+
+	push eax
 	call [handler_table + eax * 4]
+	add esp, 4
+
+	popa
+	pop gs
+	pop fs
+	pop es
+	pop ds
 
 	add esp, 8
 	iret

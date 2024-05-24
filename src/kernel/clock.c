@@ -16,6 +16,8 @@
 #define BEEP_HZ 440
 #define BEEP_COUNTER (OSCILLATOR / BEEP_HZ)
 
+extern void schedule();
+
 u32 volatile jiffies = 0;
 u32 jiffy = JIFFY;
 
@@ -44,6 +46,7 @@ void clock_handler(int vector) {
 
     // stop pc speaker after five clock
     stop_beep();
+    schedule();
 }
 
 void pit_init() {
