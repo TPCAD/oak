@@ -63,7 +63,8 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_LIB)/bitmap.o \
 	$(BUILD_KERNEL)/task.o \
 	$(BUILD_KERNEL)/schedule.o \
-	$(BUILD_KERNEL)/gate.o | $(BUILD_KERNEL)
+	$(BUILD_KERNEL)/gate.o \
+	$(BUILD_LIB)/syscall.o | $(BUILD_KERNEL)
 	i686-elf-ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
