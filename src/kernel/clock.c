@@ -19,6 +19,7 @@
 #define BEEP_COUNTER (OSCILLATOR / BEEP_HZ)
 
 extern void schedule();
+extern void task_wakeup();
 
 u32 volatile jiffies = 0;
 u32 jiffy = JIFFY;
@@ -43,10 +44,12 @@ void clock_handler(int vector) {
     assert(vector == 0x20);
     send_eoi(vector);
 
-    jiffies++;
-
     // stop pc speaker after five clock
     stop_beep();
+
+    task_wakeup();
+
+    jiffies++;
 
     task_t *task = running_task();
     assert(task->magic == OAK_MAGIC);

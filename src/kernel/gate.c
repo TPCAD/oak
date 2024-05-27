@@ -6,8 +6,6 @@
 
 #define SYSCALL_SIZE 64
 
-extern void task_yield();
-
 handler_t syscall_table[SYSCALL_SIZE];
 
 task_t *task = NULL;
@@ -36,5 +34,6 @@ void syscall_init() {
         syscall_table[i] = sys_default;
     }
     syscall_table[SYS_NR_TEST] = sys_test;
+    syscall_table[SYS_NR_SLEEP] = task_sleep;
     syscall_table[SYS_NR_YIELD] = task_yield;
 }

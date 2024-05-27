@@ -3,7 +3,6 @@
 #include "oak/interrupt.h"
 #include "oak/list.h"
 #include "oak/oak.h"
-#include "oak/syscall.h"
 #include "oak/types.h"
 #include <oak/debug.h>
 #include <oak/memory.h>
@@ -13,13 +12,17 @@
 
 #define NR_TASKS 64
 
+extern u32 volatile jiffies;
+extern u32 jiffy; // ms per jiffiy
 extern bitmap_t kernel_map;
 extern void task_switch(task_t *next);
 extern void idle_thread();
 extern void init_thread();
+extern void test_thread();
 
 static task_t *task_table[NR_TASKS];
 static list_t block_list;
+static list_t sleep_list;
 static task_t *idle_task;
 
 static task_t *get_free_task() {
@@ -89,6 +92,55 @@ void task_unblock(task_t *task) {
     assert(task->node.prev == NULL);
 
     task->state = TASK_READY;
+}
+
+void task_sleep(u32 ms) {
+    assert(!get_interrupt_state());
+
+    u32 ticks = ms / jiffy;
+    ticks = ticks > 0 ? ticks : 1;
+
+    task_t *current = running_task();
+    current->ticks = jiffies + ticks;
+
+    list_t *list = &sleep_list;
+    list_node_t *anchor = &list->tail;
+
+    for (list_node_t *ptr = list->head.next; ptr != &list->tail;
+         ptr = ptr->next) {
+        task_t *task = element_entry(task_t, node, ptr);
+
+        if (task->ticks > current->ticks) {
+            anchor = ptr;
+            break;
+        }
+    }
+
+    assert(current->node.next == NULL);
+    assert(current->node.prev == NULL);
+
+    list_insert_before(anchor, &current->node);
+
+    current->state = TASK_SLEEPING;
+
+    schedule();
+}
+
+void task_wakeup() {
+    assert(!get_interrupt_state());
+
+    list_t *list = &sleep_list;
+    for (list_node_t *ptr = list->head.next; ptr != &list->tail;) {
+        task_t *task = element_entry(task_t, node, ptr);
+        if (task->ticks > jiffies) {
+            break;
+        }
+
+        ptr = ptr->next;
+
+        task->ticks = 0;
+        task_unblock(task);
+    }
 }
 
 task_t *running_task() {
@@ -161,8 +213,10 @@ static void task_setup() {
 
 void task_init() {
     list_init(&block_list);
+    list_init(&sleep_list);
     task_setup();
 
-    idle_task = task_create((target_t *)idle_thread, "idle", 1, KERNEL_USER);
-    task_create((target_t *)init_thread, "init", 5, NORMAL_USER);
+    idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
+    task_create(init_thread, "init", 5, NORMAL_USER);
+    task_create(test_thread, "test", 5, NORMAL_USER);
 }
