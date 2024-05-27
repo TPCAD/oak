@@ -44,7 +44,6 @@ void clock_handler(int vector) {
     send_eoi(vector);
 
     jiffies++;
-    DEBUGK("clock jiffies %d ...\n", jiffies);
 
     // stop pc speaker after five clock
     stop_beep();
