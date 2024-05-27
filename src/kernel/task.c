@@ -11,13 +11,16 @@
 #include <oak/string.h>
 #include <oak/task.h>
 
-extern bitmap_t kernel_map;
-
-extern void task_switch(task_t *next);
-
 #define NR_TASKS 64
+
+extern bitmap_t kernel_map;
+extern void task_switch(task_t *next);
+extern void idle_thread();
+extern void init_thread();
+
 static task_t *task_table[NR_TASKS];
 static list_t block_list;
+static task_t *idle_task;
 
 static task_t *get_free_task() {
     for (size_t i = 0; i < NR_TASKS; i++) {
@@ -49,6 +52,9 @@ static task_t *task_search(task_state_t state) {
             ptr->jiffies < task->jiffies) {
             task = ptr;
         }
+    }
+    if (task == NULL && state == TASK_READY) {
+        task = idle_task;
     }
     return task;
 }
@@ -114,30 +120,6 @@ void schedule() {
     task_switch(next);
 }
 
-u32 _ofp thread_a() {
-    set_interrupt_state(true);
-    while (true) {
-        printk("A");
-        test();
-    }
-}
-
-u32 _ofp thread_b() {
-    set_interrupt_state(true);
-    while (true) {
-        printk("B");
-        test();
-    }
-}
-
-u32 _ofp thread_c() {
-    set_interrupt_state(true);
-    while (true) {
-        printk("C");
-        test();
-    }
-}
-
 static task_t *task_create(target_t target, const char *name, u32 priority,
                            u32 uid) {
 
@@ -181,7 +163,6 @@ void task_init() {
     list_init(&block_list);
     task_setup();
 
-    task_create(thread_a, "a", 5, KERNEL_USER);
-    task_create(thread_b, "b", 5, KERNEL_USER);
-    // task_create(thread_c, "c", 5, KERNEL_USER);
+    idle_task = task_create((target_t *)idle_thread, "idle", 1, KERNEL_USER);
+    task_create((target_t *)init_thread, "init", 5, NORMAL_USER);
 }
