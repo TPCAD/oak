@@ -180,7 +180,7 @@ syscall_handler:
 
 	push eax
 	push ecx
-	push ecx
+	push edx
 
 	call [syscall_table + eax * 4]
 	
