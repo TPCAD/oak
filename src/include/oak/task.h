@@ -1,6 +1,7 @@
 #ifndef OAK_TASK_H
 #define OAK_TASK_H
 
+#include <oak/list.h>
 #include <oak/types.h>
 
 #define KERNEL_USER 0
@@ -21,7 +22,8 @@ typedef enum task_state_t {
 } task_state_t;
 
 typedef struct task_t {
-    u32 *stack;               // kernel stack
+    u32 *stack; // kernel stack
+    list_node_t node;         // task blocked node
     task_state_t state;       // task status
     u32 priority;             // priority
     u32 ticks;                // left jiffies
@@ -45,5 +47,7 @@ typedef struct task_frame_t {
 task_t *running_task();
 void schedule();
 void task_yield();
+void task_block(task_t *task, list_t *blist, task_state_t state);
+void task_unblock(task_t *task);
 
 #endif // !OAK_TASK_H

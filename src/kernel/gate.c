@@ -1,5 +1,4 @@
 #include "oak/assert.h"
-#include "oak/debug.h"
 #include "oak/interrupt.h"
 #include "oak/syscall.h"
 #include "oak/task.h"
@@ -11,6 +10,8 @@ extern void task_yield();
 
 handler_t syscall_table[SYSCALL_SIZE];
 
+task_t *task = NULL;
+
 void syscall_check(u32 nr) {
     if (nr >= SYSCALL_SIZE) {
         panic("syscall nr error!");
@@ -20,7 +21,13 @@ void syscall_check(u32 nr) {
 static void sys_default() { panic("syscall not implemented!"); }
 
 static u32 sys_test() {
-    DEBUGK("syscall test\n");
+    if (!task) {
+        task = running_task();
+        task_block(task, NULL, TASK_BLOCKED);
+    } else {
+        task_unblock(task);
+        task = NULL;
+    }
     return 255;
 }
 
