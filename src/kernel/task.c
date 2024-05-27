@@ -67,6 +67,10 @@ void schedule() {
         current->state = TASK_READY;
     }
 
+    if (!current->ticks) {
+        current->ticks = current->priority;
+    }
+
     next->state = TASK_RUNNING;
     if (next == current) {
         return;
