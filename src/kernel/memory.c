@@ -16,8 +16,6 @@
 #define PAGE(idx) ((u32)idx << 12)
 #define ASSERT_PAGE(addr) assert((addr & 0xfff) == 0)
 
-#define KERNEL_PAGE_DIR 0x1000
-
 static u32 KERNEL_PAGE_TABLE[] = {0x2000, 0x3000};
 
 #define KERNEL_MEMORY_SIZE (0x100000 * sizeof(KERNEL_PAGE_TABLE))

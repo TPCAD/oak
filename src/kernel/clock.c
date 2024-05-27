@@ -1,5 +1,7 @@
 #include "oak/debug.h"
 #include "oak/io.h"
+#include "oak/oak.h"
+#include "oak/task.h"
 #include "oak/types.h"
 #include <oak/assert.h>
 #include <oak/interrupt.h>
@@ -46,7 +48,16 @@ void clock_handler(int vector) {
 
     // stop pc speaker after five clock
     stop_beep();
-    schedule();
+
+    task_t *task = running_task();
+    assert(task->magic == OAK_MAGIC);
+
+    task->jiffies = jiffies;
+    task->ticks--;
+    if (!task->ticks) {
+        task->ticks = task->priority;
+        schedule();
+    }
 }
 
 void pit_init() {

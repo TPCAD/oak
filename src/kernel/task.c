@@ -1,14 +1,54 @@
+#include "oak/assert.h"
+#include "oak/bitmap.h"
+#include "oak/interrupt.h"
+#include "oak/oak.h"
 #include "oak/types.h"
 #include <oak/debug.h>
+#include <oak/memory.h>
 #include <oak/printk.h>
+#include <oak/string.h>
 #include <oak/task.h>
 
-#define PAGE_SIZE 0x1000
-
-task_t *a = (task_t *)0x1000;
-task_t *b = (task_t *)0x2000;
+extern bitmap_t kernel_map;
 
 extern void task_switch(task_t *next);
+
+#define NR_TASKS 64
+static task_t *task_table[NR_TASKS];
+
+static task_t *get_free_task() {
+    for (size_t i = 0; i < NR_TASKS; i++) {
+        if (task_table[i] == NULL) {
+            task_table[i] = (task_t *)alloc_kpage(1);
+            return task_table[i];
+        }
+    }
+    panic("No more tasks");
+}
+
+static task_t *task_search(task_state_t state) {
+    assert(!get_interrupt_state());
+    task_t *task = NULL;
+    task_t *current = running_task();
+
+    for (size_t i = 0; i < NR_TASKS; i++) {
+        task_t *ptr = task_table[i];
+        if (ptr == NULL) {
+            continue;
+        }
+        if (ptr->state != state) {
+            continue;
+        }
+        if (current == ptr) {
+            continue;
+        }
+        if (task == NULL || task->ticks < ptr->ticks ||
+            ptr->jiffies < task->jiffies) {
+            task = ptr;
+        }
+    }
+    return task;
+}
 
 task_t *running_task() {
     asm volatile("movl %esp, %eax\n"
@@ -18,27 +58,50 @@ task_t *running_task() {
 void schedule() {
     // DEBUGK("schedule");
     task_t *current = running_task();
-    task_t *next = current == a ? b : a;
+    task_t *next = task_search(TASK_READY);
+
+    assert(next != NULL);
+    assert(next->magic == OAK_MAGIC);
+
+    if (current->state == TASK_RUNNING) {
+        current->state = TASK_READY;
+    }
+
+    next->state = TASK_RUNNING;
+    if (next == current) {
+        return;
+    }
+
     task_switch(next);
 }
 
 u32 _ofp thread_a() {
-    // asm volatile("sti");
+    set_interrupt_state(true);
     while (true) {
         printk("A");
-        schedule();
     }
 }
 
 u32 _ofp thread_b() {
-    // asm volatile("sti");
+    set_interrupt_state(true);
     while (true) {
         printk("B");
-        schedule();
     }
 }
 
-static void task_create(task_t *task, target_t target) {
+u32 _ofp thread_c() {
+    set_interrupt_state(true);
+    while (true) {
+        printk("C");
+    }
+}
+
+static task_t *task_create(target_t target, const char *name, u32 priority,
+                           u32 uid) {
+
+    task_t *task = get_free_task();
+    memset(task, 0, PAGE_SIZE);
+
     u32 stack = (u32)task + PAGE_SIZE;
 
     stack -= sizeof(task_frame_t);
@@ -49,11 +112,33 @@ static void task_create(task_t *task, target_t target) {
     frame->ebp = 0x44444444;
     frame->eip = (void *)target;
 
+    strcpy((char *)task->name, name);
+
     task->stack = (u32 *)stack;
+    task->priority = priority;
+    task->ticks = task->priority;
+    task->jiffies = 0;
+    task->state = TASK_READY;
+    task->uid = uid;
+    task->vmap = &kernel_map;
+    task->pde = KERNEL_PAGE_DIR;
+    task->magic = OAK_MAGIC;
+
+    return task;
+}
+
+static void task_setup() {
+    task_t *task = running_task();
+    task->magic = OAK_MAGIC;
+    task->ticks = 1;
+
+    memset(task_table, 0, sizeof(task_table));
 }
 
 void task_init() {
-    task_create(a, thread_a);
-    task_create(b, thread_b);
-    schedule();
+    task_setup();
+
+    task_create(thread_a, "a", 5, KERNEL_USER);
+    task_create(thread_b, "b", 5, KERNEL_USER);
+    task_create(thread_c, "c", 5, KERNEL_USER);
 }
