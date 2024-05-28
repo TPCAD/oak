@@ -3,7 +3,7 @@
 #include <oak/mutex.h>
 #include <oak/syscall.h>
 
-mutex_t mutex;
+lock_t lock;
 
 void idle_thread() {
     set_interrupt_state(true);
@@ -18,14 +18,14 @@ void idle_thread() {
 }
 
 void init_thread() {
-    mutex_init(&mutex);
+    lock_init(&lock);
     set_interrupt_state(true);
     u32 counter = 0;
 
     while (true) {
-        mutex_lock(&mutex);
+        lock_acquire(&lock);
         DEBUGK("init task...%d\n", counter++);
-        mutex_unlock(&mutex);
+        lock_release(&lock);
     }
 }
 
@@ -34,8 +34,8 @@ void test_thread() {
     u32 counter = 0;
 
     while (true) {
-        mutex_lock(&mutex);
+        lock_acquire(&lock);
         DEBUGK("test task...%d\n", counter++);
-        mutex_unlock(&mutex);
+        lock_release(&lock);
     }
 }

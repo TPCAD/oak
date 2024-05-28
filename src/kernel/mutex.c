@@ -50,3 +50,38 @@ void mutex_unlock(mutex_t *mutex) {
 
     set_interrupt_state(intr);
 }
+
+void lock_init(lock_t *lock) {
+    lock->holder = NULL;
+    lock->repeat = 0;
+    mutex_init(&lock->mutex);
+}
+
+void lock_acquire(lock_t *lock) {
+    task_t *current = running_task();
+
+    if (lock->holder != current) {
+        mutex_lock(&lock->mutex);
+        lock->holder = current;
+        assert(lock->repeat == 0);
+        lock->repeat = 1;
+    } else {
+        lock->repeat++;
+    }
+}
+
+void lock_release(lock_t *lock) {
+    task_t *current = running_task();
+    assert(lock->holder == current);
+
+    if (lock->repeat > 1) {
+        lock->repeat--;
+        return;
+    }
+
+    assert(lock->repeat == 1);
+
+    lock->holder = NULL;
+    lock->repeat = 0;
+    mutex_unlock(&lock->mutex);
+}
