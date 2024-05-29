@@ -99,7 +99,7 @@ protect_mode:
 	mov eax, 0x20240419
 	mov ebx, ards_count
 
-	jmp dword code_selector:0x10000
+	jmp dword code_selector:0x10040
 
 	uld
 	
