@@ -2,6 +2,7 @@
 #include <oak/bitmap.h>
 #include <oak/debug.h>
 #include <oak/memory.h>
+#include <oak/multiboot2.h>
 #include <oak/oak.h>
 #include <oak/stdlib.h>
 #include <oak/string.h>
@@ -50,12 +51,11 @@ static u32 free_pages = 0;
  * @param addr Address of ards_count
  */
 void memory_init(u32 magic, u32 addr) {
-    u32 count;
-    ards_t *ptr;
+    u32 count = 0;
 
     if (magic == OAK_MAGIC) {
         count = *(u32 *)addr;
-        ptr = (ards_t *)(addr + 4); // points to ards_buffer
+        ards_t *ptr = (ards_t *)(addr + 4); // points to ards_buffer
 
         // find out the largest memory block
         for (size_t i = 0; i < count; i++, ptr++) {
@@ -63,6 +63,31 @@ void memory_init(u32 magic, u32 addr) {
                 memory_base = (u32)ptr->base;
                 memory_size = (u32)ptr->size;
             }
+        }
+    } else if (magic == MULTIBOOT2_MAGIC) {
+        u32 size = *(unsigned int *)addr;
+        multi_tag_t *tag = (multi_tag_t *)(addr + 8);
+
+        DEBUGK("Announced mbi size 0x%x\n", size);
+
+        while (tag->type != MULTIBOOT_TAG_TYPE_END) {
+            if (tag->type == MULTIBOOT_TAG_TYPE_MMAP) {
+                break;
+            }
+            tag = (multi_tag_t *)((u32)tag + ((tag->size + 7) & ~7));
+        }
+
+        multi_tag_mmap_t *mtag = (multi_tag_mmap_t *)tag;
+        multi_mmap_entry_t *entry = mtag->entries;
+        while ((u32)entry < (u32)tag + tag->size) {
+            DEBUGK("Memory base 0x%p size 0x%p type %d\n", (u32)entry->addr,
+                   (u32)entry->len, (u32)entry->type);
+            count++;
+            if (entry->type == ZONE_VALID && entry->len > memory_size) {
+                memory_base = (u32)entry->addr;
+                memory_size = (u32)entry->len;
+            }
+            entry = (multi_mmap_entry_t *)((u32)entry + mtag->entry_size);
         }
     } else {
         panic("Memory init magic unknown 0x%p\n", magic);
