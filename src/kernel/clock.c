@@ -1,5 +1,7 @@
 #include "oak/debug.h"
 #include "oak/io.h"
+#include "oak/oak.h"
+#include "oak/task.h"
 #include "oak/types.h"
 #include <oak/assert.h>
 #include <oak/interrupt.h>
@@ -15,6 +17,9 @@
 #define SPEAKER_REG 0x61
 #define BEEP_HZ 440
 #define BEEP_COUNTER (OSCILLATOR / BEEP_HZ)
+
+extern void schedule();
+extern void task_wakeup();
 
 u32 volatile jiffies = 0;
 u32 jiffy = JIFFY;
@@ -39,11 +44,21 @@ void clock_handler(int vector) {
     assert(vector == 0x20);
     send_eoi(vector);
 
-    jiffies++;
-    DEBUGK("clock jiffies %d ...\n", jiffies);
-
     // stop pc speaker after five clock
     stop_beep();
+
+    task_wakeup();
+
+    jiffies++;
+
+    task_t *task = running_task();
+    assert(task->magic == OAK_MAGIC);
+
+    task->jiffies = jiffies;
+    task->ticks--;
+    if (!task->ticks) {
+        schedule();
+    }
 }
 
 void pit_init() {

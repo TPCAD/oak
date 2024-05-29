@@ -14,9 +14,26 @@ interrupt_handler_%1: ; expand to interrupt_handler_0x01 for example
 %endmacro
 
 interrupt_entry:
-	xchg bx, bx
-	mov eax, [esp] ; move first parameter of macro to eax
+	push ds
+	push es
+	push fs
+	push gs
+	pusha
+	
+	mov eax, [esp + 12 * 4] ; move first parameter of macro to eax
+
+	push eax
 	call [handler_table + eax * 4]
+
+global interrupt_exit
+interrupt_exit:
+	add esp, 4
+
+	popa
+	pop gs
+	pop fs
+	pop es
+	pop ds
 
 	add esp, 8
 	iret
@@ -134,3 +151,42 @@ handler_entry_table:
 	dd interrupt_handler_0x2d
 	dd interrupt_handler_0x2e
 	dd interrupt_handler_0x2f
+
+section .text
+
+extern syscall_check
+extern syscall_table
+global syscall_handler
+
+syscall_handler:
+	xchg bx, bx
+
+	push eax
+	call syscall_check
+	add esp, 4
+
+	push 0x20240419
+
+	push 0x80
+
+	push ds
+	push es
+	push fs
+	push gs
+	pusha
+
+	push 0x80
+	xchg bx, bx
+
+	push eax
+	push ecx
+	push edx
+
+	call [syscall_table + eax * 4]
+	
+	xchg bx, bx
+	add esp, 12
+
+	mov dword [esp + 8 * 4], eax
+
+	jmp interrupt_exit

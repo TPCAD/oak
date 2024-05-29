@@ -6,6 +6,8 @@
 #define PAGE_SIZE 0x1000     // 4K per page
 #define MEMORY_BASE 0x100000 // 1M, start address of free memory
 
+#define KERNEL_PAGE_DIR 0x1000 // page directory address
+
 typedef struct page_entry_t {
     u8 present : 1;
     u8 write : 1;

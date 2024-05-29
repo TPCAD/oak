@@ -21,6 +21,7 @@ pointer_t idt_ptr;
 
 handler_t handler_table[IDT_SIZE];
 extern handler_t handler_entry_table[ENTRY_SIZE];
+extern void syscall_handler();
 
 static char *messages[] = {
     "#DE Divide Error\0",
@@ -108,7 +109,10 @@ void default_handler(int vector) {
     DEBUGK("[%d] default interrupt called...\n", vector);
 }
 
-void exception_handler(int vector) {
+void exception_handler(int vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
+                       u32 edx, u32 ecx, u32 eax, u32 gs, u32 fs, u32 es,
+                       u32 ds, u32 vector0, u32 error, u32 eip, u32 cs,
+                       u32 eflags) {
     char *message = NULL;
     if (vector < 22) {
         message = messages[vector];
@@ -116,7 +120,13 @@ void exception_handler(int vector) {
     } else {
         message = messages[15];
     }
-    printk("Exception : [0x%02X] %s \n", vector, messages[vector]);
+    printk("\nEXCEPTION : %s \n", messages[vector]);
+    printk("   VECTOR : 0x%02X\n", vector);
+    printk("    ERROR : 0x%08X\n", error);
+    printk("   EFLAGS : 0x%08X\n", eflags);
+    printk("       CS : 0x%02X\n", cs);
+    printk("      EIP : 0x%08X\n", eip);
+    printk("      ESP : 0x%08X\n", esp);
 
     hang();
 }
@@ -157,6 +167,18 @@ void idt_init() {
     for (size_t i = EXCEPTION_SIZE; i < ENTRY_SIZE; i++) {
         handler_table[i] = default_handler;
     }
+
+    // init system call
+    gate_t *gate = &idt[0x80];
+    gate->offset_low = (u32)syscall_handler & 0xffff;
+    gate->offset_high = ((u32)syscall_handler >> 16) & 0xffff;
+    gate->selector = 1 << 3;
+    gate->reserved = 0;
+    gate->type = 0b1110;
+    gate->segment = 0;
+    gate->DPL = 3;
+    gate->present = 1;
+
     idt_ptr.base = (u32)idt;
     idt_ptr.limit = sizeof(idt) - 1;
 
