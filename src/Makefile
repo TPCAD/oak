@@ -4,7 +4,8 @@ BUILD_BOOT:=$(BUILD)/boot
 BUILD_KERNEL:=$(BUILD)/kernel
 BUILD_LIB:=$(BUILD)/lib
 
-ENTRYPOINT:=0x10000
+MULTIBOOT2:=0x10000
+ENTRYPOINT:=0x10040
 
 CFLAGS:= -m32 # 32 bits program
 CFLAGS+= -fno-builtin # no gcc builtin function
@@ -14,6 +15,13 @@ CFLAGS+= -fno-pie # no position independent executable file
 CFLAGS+= -nostdlib # no stdlib
 CFLAGS+= -fno-stack-protector
 CFLAGS:=$(strip ${CFLAGS})
+
+LDFLAGS:= -m elf_i386 \
+	  -static \
+	  -Ttext $(ENTRYPOINT) \
+	  --section-start=.multiboot2=$(MULTIBOOT2)
+
+LDFLAGS:=$(strip $(LDFLAGS))
 
 DEBUG:= -g
 
@@ -68,7 +76,7 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_LIB)/list.o \
 	$(BUILD_KERNEL)/thread.o \
 	$(BUILD_KERNEL)/mutex.o | $(BUILD_KERNEL)
-	i686-elf-ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
+	i686-elf-ld $(LDFLAGS) $^ -o $@
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
 	objcopy -O binary $< $@
@@ -91,6 +99,14 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	test -n "$$(find $(BUILD_KERNEL)/system.bin -size -100k)"
 	# write system.bin to image
 	dd if=$(BUILD_KERNEL)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc
+
+# iso
+$(BUILD)/kernel.iso: $(BUILD_KERNEL)/kernel.bin $(SRC)/utils/grub.cfg
+	grub-file --is-x86-multiboot2 $<
+	mkdir -p $(BUILD)/iso/boot/grub
+	cp $< $(BUILD)/iso/boot
+	cp $(SRC)/utils/grub.cfg $(BUILD)/iso/boot/grub
+	grub-mkrescue -o $@ $(BUILD)/iso
 
 .PHONY: image
 image: $(BUILD)/master.img
@@ -132,6 +148,10 @@ QEMU_DEBUG:= -s -S
 .PHONY: qemu
 qemu: $(BUILD)/master.img
 	$(QEMU) $(QEMU_DISK)
+	
+.PHONY: qemu-grub
+qemu-grub: $(BUILD)/kernel.iso
+	$(QEMU) $(QEMU_CDROM)
 
 .PHONY: qemu-dbg
 qemu-dbg: $(BUILD)/master.img
