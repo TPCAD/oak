@@ -99,18 +99,40 @@ image: $(BUILD)/master.img
 clean:
 	rm -rf $(BUILD)
 
+# bochs
+
 .PHONY: bochs
 bochs: $(BUILD)/master.img
-	bochs -q -f ../debug/bochsrc
+	bochs -q -f ../debug/bochsrc -unlock
+
+.PHONY: bochs-grub
+bochs-grub: $(BUILD)/kernel.iso
+	bochs -q -f ../debug/bochsrc.grub -unlock
 
 .PHONY: bochs-dbg
 bochs-dbg: $(BUILD)/master.img
-	bochs-gdb -q -f ../debug/bochsrc.gdb
+	bochs-gdb -q -f ../debug/bochsrc.gdb -unlock
+
+# qemu
+
+QEMU:= qemu-system-i386 \
+       -m 32M \
+       -audiodev pa,id=hda \
+       -machine pcspk-audiodev=hda \
+       -rtc base=localtime \
+
+QEMU_DISK:=-boot c \
+	   -drive file=$(BUILD)/master.img,if=ide,index=0,media=disk,format=raw\
+
+QEMU_CDROM:=-boot d \
+	   -drive file=$(BUILD)/kernel.iso,media=cdrom \
+
+QEMU_DEBUG:= -s -S
 
 .PHONY: qemu
 qemu: $(BUILD)/master.img
-	qemu-system-i386 -m 32M -boot c -hda $< -audiodev pa,id=hda -machine pcspk-audiodev=hda
+	$(QEMU) $(QEMU_DISK)
 
 .PHONY: qemu-dbg
 qemu-dbg: $(BUILD)/master.img
-	qemu-system-i386 -s -S -m 32M -boot c -hda $< -audiodev pa,id=hda -machine pcspk-audiodev=hda
+	$(QEMU) $(QEMU_DISK) $(QEMU_DEBUG)
