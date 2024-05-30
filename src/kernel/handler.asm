@@ -79,7 +79,7 @@ INTERRUPT_HANDLER 0x1e, 0 ;
 INTERRUPT_HANDLER 0x1f, 0 ;
 
 INTERRUPT_HANDLER 0x20, 0 ; clock interrupt
-INTERRUPT_HANDLER 0x21, 1 ;
+INTERRUPT_HANDLER 0x21, 0 ; keyboard interrupt
 INTERRUPT_HANDLER 0x22, 0 ;
 INTERRUPT_HANDLER 0x23, 0 ;
 
@@ -159,8 +159,6 @@ extern syscall_table
 global syscall_handler
 
 syscall_handler:
-	xchg bx, bx
-
 	push eax
 	call syscall_check
 	add esp, 4
@@ -176,7 +174,6 @@ syscall_handler:
 	pusha
 
 	push 0x80
-	xchg bx, bx
 
 	push eax
 	push ecx
@@ -184,7 +181,6 @@ syscall_handler:
 
 	call [syscall_table + eax * 4]
 	
-	xchg bx, bx
 	add esp, 12
 
 	mov dword [esp + 8 * 4], eax
