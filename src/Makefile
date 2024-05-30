@@ -75,7 +75,8 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_LIB)/syscall.o \
 	$(BUILD_LIB)/list.o \
 	$(BUILD_KERNEL)/thread.o \
-	$(BUILD_KERNEL)/mutex.o | $(BUILD_KERNEL)
+	$(BUILD_KERNEL)/mutex.o \
+	$(BUILD_KERNEL)/keyboard.o | $(BUILD_KERNEL)
 	i686-elf-ld $(LDFLAGS) $^ -o $@
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
