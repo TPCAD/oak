@@ -1,4 +1,5 @@
 #include <oak/console.h>
+#include <oak/interrupt.h>
 #include <oak/io.h>
 #include <oak/string.h>
 #include <oak/types.h>
@@ -135,6 +136,7 @@ static void command_lf() {
 }
 
 void consoel_write(char *buf, u32 count) {
+    bool intr = interrupt_diable();
     char ch;
     while (count--) {
         ch = *buf++;
@@ -183,6 +185,7 @@ void consoel_write(char *buf, u32 count) {
         }
     }
     set_cursor();
+    set_interrupt_state(intr);
 }
 void console_init() {
     console_clear();
