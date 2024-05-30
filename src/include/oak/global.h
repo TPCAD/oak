@@ -5,6 +5,12 @@
 
 #define GDT_SIZE 128
 
+#define KERNEL_CODE_IDX 1
+#define KERNEL_DATA_IDX 2
+
+#define KERNEL_CODE_SELECTOR (KERNEL_CODE_IDX << 3)
+#define KERNEL_DATA_SELECTOR (KERNEL_DATA_IDX << 3)
+
 typedef struct descriptor_t {
     u16 limit_low;      // limit 0 ~ 15 bits
     u32 base_low : 24;  // base 0 ~ 23 bits
@@ -12,7 +18,7 @@ typedef struct descriptor_t {
     u8 segment : 1;     // 0 for systemt segment, 1 for code or data segment
     u8 DPL : 2;         // descriptor privilege level
     u8 present : 1;     // 0 in disk, 1 in memory
-    u8 limit_hight : 4; // limit 16 ~ 19
+    u8 limit_high : 4;  // limit 16 ~ 19
     u8 available : 1;   // anything is ok
     u8 long_mode : 1;   // for x64 arch
     u8 big : 1;         // 0 for 16 bits, 1 for 32 bits

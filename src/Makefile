@@ -4,7 +4,8 @@ BUILD_BOOT:=$(BUILD)/boot
 BUILD_KERNEL:=$(BUILD)/kernel
 BUILD_LIB:=$(BUILD)/lib
 
-ENTRYPOINT:=0x10000
+MULTIBOOT2:=0x10000
+ENTRYPOINT:=0x10040
 
 CFLAGS:= -m32 # 32 bits program
 CFLAGS+= -fno-builtin # no gcc builtin function
@@ -14,6 +15,13 @@ CFLAGS+= -fno-pie # no position independent executable file
 CFLAGS+= -nostdlib # no stdlib
 CFLAGS+= -fno-stack-protector
 CFLAGS:=$(strip ${CFLAGS})
+
+LDFLAGS:= -m elf_i386 \
+	  -static \
+	  -Ttext $(ENTRYPOINT) \
+	  --section-start=.multiboot2=$(MULTIBOOT2)
+
+LDFLAGS:=$(strip $(LDFLAGS))
 
 DEBUG:= -g
 
@@ -68,7 +76,7 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_LIB)/list.o \
 	$(BUILD_KERNEL)/thread.o \
 	$(BUILD_KERNEL)/mutex.o | $(BUILD_KERNEL)
-	i686-elf-ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
+	i686-elf-ld $(LDFLAGS) $^ -o $@
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
 	objcopy -O binary $< $@
@@ -92,6 +100,14 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	# write system.bin to image
 	dd if=$(BUILD_KERNEL)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc
 
+# iso
+$(BUILD)/kernel.iso: $(BUILD_KERNEL)/kernel.bin $(SRC)/utils/grub.cfg
+	grub-file --is-x86-multiboot2 $<
+	mkdir -p $(BUILD)/iso/boot/grub
+	cp $< $(BUILD)/iso/boot
+	cp $(SRC)/utils/grub.cfg $(BUILD)/iso/boot/grub
+	grub-mkrescue -o $@ $(BUILD)/iso
+
 .PHONY: image
 image: $(BUILD)/master.img
 
@@ -99,18 +115,44 @@ image: $(BUILD)/master.img
 clean:
 	rm -rf $(BUILD)
 
+# bochs
+
 .PHONY: bochs
 bochs: $(BUILD)/master.img
-	bochs -q -f ../debug/bochsrc
+	bochs -q -f ../debug/bochsrc -unlock
+
+.PHONY: bochs-grub
+bochs-grub: $(BUILD)/kernel.iso
+	bochs -q -f ../debug/bochsrc.grub -unlock
 
 .PHONY: bochs-dbg
 bochs-dbg: $(BUILD)/master.img
-	bochs-gdb -q -f ../debug/bochsrc.gdb
+	bochs-gdb -q -f ../debug/bochsrc.gdb -unlock
+
+# qemu
+
+QEMU:= qemu-system-i386 \
+       -m 32M \
+       -audiodev pa,id=hda \
+       -machine pcspk-audiodev=hda \
+       -rtc base=localtime \
+
+QEMU_DISK:=-boot c \
+	   -drive file=$(BUILD)/master.img,if=ide,index=0,media=disk,format=raw\
+
+QEMU_CDROM:=-boot d \
+	   -drive file=$(BUILD)/kernel.iso,media=cdrom \
+
+QEMU_DEBUG:= -s -S
 
 .PHONY: qemu
 qemu: $(BUILD)/master.img
-	qemu-system-i386 -m 32M -boot c -hda $< -audiodev pa,id=hda -machine pcspk-audiodev=hda
+	$(QEMU) $(QEMU_DISK)
+	
+.PHONY: qemu-grub
+qemu-grub: $(BUILD)/kernel.iso
+	$(QEMU) $(QEMU_CDROM)
 
 .PHONY: qemu-dbg
 qemu-dbg: $(BUILD)/master.img
-	qemu-system-i386 -s -S -m 32M -boot c -hda $< -audiodev pa,id=hda -machine pcspk-audiodev=hda
+	$(QEMU) $(QEMU_DISK) $(QEMU_DEBUG)
