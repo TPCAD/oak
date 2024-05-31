@@ -1,3 +1,6 @@
+#include "oak/fifo.h"
+#include "oak/mutex.h"
+#include "oak/task.h"
 #include "oak/types.h"
 #include <oak/assert.h>
 #include <oak/debug.h>
@@ -219,6 +222,13 @@ static char keymap[][4] = {
     /* 0x5F */ {INV, INV, false, false}, // PrintScreen
 };
 
+static lock_t lock;
+static task_t *waiter;
+
+#define BUFFER_SIZE 64
+static char buf[BUFFER_SIZE];
+static fifo_t fifo;
+
 static bool capslock_state;
 static bool scrlock_state;
 static bool numlock_state;
@@ -337,7 +347,28 @@ void keyboard_handler(int vector) {
         return;
     }
 
-    DEBUGK("keyboard input %c\n", ch);
+    // DEBUGK("keyboard input %c\n", ch);
+
+    fifo_put(&fifo, ch);
+
+    if (waiter != NULL) {
+        task_unblock(waiter);
+        waiter = NULL;
+    }
+}
+
+u32 keyboard_read(char *buf, u32 count) {
+    lock_acquire(&lock);
+    int nr = 0;
+    while (nr < count) {
+        while (fifo_empty(&fifo)) {
+            waiter = running_task();
+            task_block(waiter, NULL, TASK_WAITING);
+        }
+        buf[nr++] = fifo_get(&fifo);
+    }
+    lock_release(&lock);
+    return count;
 }
 
 void keyboard_init() {
@@ -345,7 +376,12 @@ void keyboard_init() {
     capslock_state = false;
     scrlock_state = false;
     extcode_state = false;
+
+    fifo_init(&fifo, buf, BUFFER_SIZE);
+    lock_init(&lock);
+    waiter = NULL;
     set_leds();
+
     set_interrupt_handler(IRQ_KEYBOARD, keyboard_handler);
     set_interrupt_mask(IRQ_KEYBOARD, true);
 }
