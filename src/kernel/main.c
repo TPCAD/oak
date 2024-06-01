@@ -11,11 +11,13 @@ extern void set_interrupt_state(bool state);
 extern void syscall_init();
 extern void keyboard_init();
 extern void tss_init();
+extern void arena_init();
 
 void kernel_init() {
     tss_init();
     memory_map_init();
     mapping_init();
+    arena_init();
 
     interrupt_init();
     clock_init();

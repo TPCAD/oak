@@ -1,5 +1,6 @@
 #include "oak/printk.h"
 #include "oak/task.h"
+#include <oak/arena.h>
 #include <oak/debug.h>
 #include <oak/interrupt.h>
 #include <oak/stdio.h>
@@ -25,7 +26,7 @@ void static user_init_thread() {
 
     while (true) {
         BMB;
-        printf("user mode %d\n", counter++);
+        // printf("user mode %d\n", counter++);
         sleep(100);
         // DEBUGK("hello\n");
     }
@@ -53,7 +54,20 @@ void test_thread() {
     u32 counter = 0;
 
     while (true) {
-        DEBUGK("test task...%d\n", counter++);
-        sleep(709);
+        void *ptr = kmalloc(1200);
+        DEBUGK("kmalloc 0x%p....\n", ptr);
+        kfree(ptr);
+
+        ptr = kmalloc(1024);
+        DEBUGK("kmalloc 0x%p....\n", ptr);
+        kfree(ptr);
+
+        ptr = kmalloc(54);
+        DEBUGK("kmalloc 0x%p....\n", ptr);
+        kfree(ptr);
+
+        sleep(5000);
+        // DEBUGK("test task...%d\n", counter++);
+        // sleep(709);
     }
 }
