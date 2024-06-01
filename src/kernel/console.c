@@ -135,10 +135,11 @@ static void command_lf() {
     scroll_up();
 }
 
-void consoel_write(char *buf, u32 count) {
+int32 console_write(char *buf, u32 count) {
     bool intr = interrupt_diable();
     char ch;
-    while (count--) {
+    int32 nr = 0;
+    while (nr++ < count) {
         ch = *buf++;
         switch (ch) {
         case ASCII_NUL:
@@ -186,6 +187,7 @@ void consoel_write(char *buf, u32 count) {
     }
     set_cursor();
     set_interrupt_state(intr);
+    return nr;
 }
 void console_init() {
     console_clear();
