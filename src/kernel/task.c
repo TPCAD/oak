@@ -5,6 +5,7 @@
 #include "oak/oak.h"
 #include "oak/types.h"
 #include <oak/debug.h>
+#include <oak/global.h>
 #include <oak/memory.h>
 #include <oak/printk.h>
 #include <oak/string.h>
@@ -15,6 +16,8 @@
 extern u32 volatile jiffies;
 extern u32 jiffy; // ms per jiffiy
 extern bitmap_t kernel_map;
+extern tss_t tss;
+
 extern void task_switch(task_t *next);
 extern void idle_thread();
 extern void init_thread();
@@ -143,6 +146,14 @@ void task_wakeup() {
     }
 }
 
+void task_active(task_t *task) {
+    assert(task->magic == OAK_MAGIC);
+
+    if (task->uid != KERNEL_USER) {
+        tss.esp0 = (u32)task + PAGE_SIZE;
+    }
+}
+
 task_t *running_task() {
     asm volatile("movl %esp, %eax\n"
                  "andl $0xfffff000, %eax\n");
@@ -169,6 +180,7 @@ void schedule() {
         return;
     }
 
+    task_active(next);
     task_switch(next);
 }
 
@@ -201,6 +213,44 @@ static task_t *task_create(target_t target, const char *name, u32 priority,
     task->magic = OAK_MAGIC;
 
     return task;
+}
+
+void task_to_user_mode(target_t *target) {
+    task_t *task = running_task();
+    u32 addr = (u32)task + PAGE_SIZE;
+
+    // push intr_frame into stack
+    addr -= sizeof(intr_frame_t);
+
+    intr_frame_t *iframe = (intr_frame_t *)addr;
+
+    iframe->vector = 0x20;
+    iframe->edi = 1;
+    iframe->esi = 2;
+    iframe->ebp = 3;
+    iframe->esp_dummy = 4;
+    iframe->ebx = 5;
+    iframe->edx = 6;
+    iframe->ecx = 7;
+    iframe->eax = 8;
+
+    iframe->gs = 0;
+    iframe->ds = USER_DATA_SELECTOR;
+    iframe->es = USER_DATA_SELECTOR;
+    iframe->fs = USER_DATA_SELECTOR;
+    iframe->ss = USER_DATA_SELECTOR;
+    iframe->cs = USER_CODE_SELECTOR;
+
+    iframe->error = OAK_MAGIC;
+
+    u32 stack3 = alloc_kpage(1); // todo: replace to user stack
+
+    iframe->eip = (u32)target;
+    iframe->eflags = (0 << 12 | 0b10 | 1 << 9);
+    iframe->esp = stack3 + PAGE_SIZE;
+
+    asm volatile("movl %0, %%esp\n"
+                 "jmp interrupt_exit\n" ::"m"(iframe));
 }
 
 static void task_setup() {
