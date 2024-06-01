@@ -15,6 +15,6 @@ int printk(const char *fmt, ...) {
 
     va_end(args);
 
-    consoel_write(buf, i);
+    console_write(buf, i);
     return i;
 }
