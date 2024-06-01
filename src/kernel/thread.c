@@ -2,6 +2,7 @@
 #include "oak/task.h"
 #include <oak/debug.h>
 #include <oak/interrupt.h>
+#include <oak/stdio.h>
 #include <oak/syscall.h>
 
 extern u32 keyboard_read(char *buf, u32 count);
@@ -24,6 +25,7 @@ void static user_init_thread() {
 
     while (true) {
         BMB;
+        printf("user mode %d\n", counter++);
         sleep(100);
         // DEBUGK("hello\n");
     }
