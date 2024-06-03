@@ -21,14 +21,10 @@ void idle_thread() {
 }
 
 void static user_init_thread() {
-    u32 counter = 0;
-    char ch;
-
     while (true) {
-        BMB;
-        // printf("user mode %d\n", counter++);
-        sleep(100);
-        // DEBUGK("hello\n");
+
+        test();
+        sleep(1000);
     }
 }
 
@@ -54,19 +50,8 @@ void test_thread() {
     u32 counter = 0;
 
     while (true) {
-        void *ptr = kmalloc(1200);
-        DEBUGK("kmalloc 0x%p....\n", ptr);
-        kfree(ptr);
 
-        ptr = kmalloc(1024);
-        DEBUGK("kmalloc 0x%p....\n", ptr);
-        kfree(ptr);
-
-        ptr = kmalloc(54);
-        DEBUGK("kmalloc 0x%p....\n", ptr);
-        kfree(ptr);
-
-        sleep(5000);
+        sleep(2000);
         // DEBUGK("test task...%d\n", counter++);
         // sleep(709);
     }

@@ -6,6 +6,7 @@
 #include <oak/oak.h>
 #include <oak/stdlib.h>
 #include <oak/string.h>
+#include <oak/task.h>
 #include <oak/types.h>
 
 #define ZONE_VALID 1    // valid area of ards
@@ -17,11 +18,11 @@
 #define PAGE(idx) ((u32)idx << 12)
 #define ASSERT_PAGE(addr) assert((addr & 0xfff) == 0)
 
-static u32 KERNEL_PAGE_TABLE[] = {0x2000, 0x3000};
-
-#define KERNEL_MEMORY_SIZE (0x100000 * sizeof(KERNEL_PAGE_TABLE))
-
 #define KERNEL_MAP_BITS 0x4000
+
+#define PDE_MASK 0xffc00000
+
+static u32 KERNEL_PAGE_TABLE[] = {0x2000, 0x3000};
 
 /* A struct to hold ards
  *
@@ -145,8 +146,8 @@ static u32 alloc_page() {
         if (!memory_map[i]) {
             memory_map[i] = 1;
             free_pages--;
-            u32 page = ((u32)i) << 12;
-            // DEBUGK("Allocate page 0x%p\n", page);
+            u32 page = PAGE(i);
+            DEBUGK("Allocate page 0x%p\n", page);
             return page;
         }
     }
@@ -268,12 +269,31 @@ static page_entry_t *get_pde() { return (page_entry_t *)(0xfffff000); }
 
 /* Get page table entry
  *
- * @param vaddr Address of page?
+ * @param vaddr Address of page table?
  *
  * @return Address of page table
  */
-static page_entry_t *get_pte(u32 vaddr) {
-    return (page_entry_t *)(0xffc00000 | (DIDX(vaddr) << 12));
+static page_entry_t *get_pte(u32 vaddr, bool create) {
+    // return (page_entry_t *)(0xffc00000 | (DIDX(vaddr) << 12));
+
+    page_entry_t *pde = get_pde();
+    u32 idx = DIDX(vaddr);
+    page_entry_t *entry = &pde[idx];
+
+    assert(create || (!create && entry->present));
+
+    page_entry_t *table = (page_entry_t *)(PDE_MASK | (idx << 12));
+
+    BMB;
+    if (!entry->present) {
+        DEBUGK("Get and create page table entry for 0x%p\n", vaddr);
+        u32 page = alloc_page();
+        entry_init(entry, IDX(page));
+        memset(table, 0, PAGE_SIZE);
+    }
+    BMB;
+
+    return table;
 }
 
 /* Flush table
@@ -347,6 +367,63 @@ void free_kpage(u32 vaddr, u32 count) {
     assert(count > 0);
     reset_page(&kernel_map, vaddr, count);
     DEBUGK("free kernel page 0x%p count %d\n", vaddr, count);
+}
+
+void link_page(u32 vaddr) {
+    ASSERT_PAGE(vaddr);
+
+    page_entry_t *pte = get_pte(vaddr, true);
+    page_entry_t *entry = &pte[TIDX(vaddr)];
+
+    task_t *task = running_task();
+    bitmap_t *map = task->vmap;
+    u32 index = IDX(vaddr);
+
+    // if page exist
+    if (entry->present) {
+        assert(bitmap_is_set(map, index));
+        return;
+    }
+
+    assert(!bitmap_is_set(map, index));
+    bitmap_set(map, index, true);
+
+    u32 paddr = alloc_page();
+    entry_init(entry, IDX(paddr));
+    flush_tlb(vaddr);
+
+    DEBUGK("link from 0x%p to 0x%p\n", vaddr, paddr);
+}
+
+void unlink_page(u32 vaddr) {
+    ASSERT_PAGE(vaddr);
+
+    page_entry_t *pte = get_pte(vaddr, true);
+    page_entry_t *entry = &pte[TIDX(vaddr)];
+
+    task_t *task = running_task();
+    bitmap_t *map = task->vmap;
+    u32 index = IDX(vaddr);
+
+    // if page not exist
+    if (!entry->present) {
+        assert(!bitmap_is_set(map, index));
+        return;
+    }
+
+    assert(entry->present && bitmap_is_set(map, index));
+
+    entry->present = false;
+    bitmap_set(map, index, false);
+
+    u32 paddr = PAGE(entry->index);
+
+    DEBUGK("unlink page from 0x%p to 0x%p\n", vaddr, paddr);
+
+    if (memory_map[entry->index] == 1) {
+        free_page(paddr);
+    }
+    flush_tlb(vaddr);
 }
 
 void memory_test() {

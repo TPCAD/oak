@@ -1,6 +1,8 @@
 #include "oak/assert.h"
 #include "oak/console.h"
+#include "oak/debug.h"
 #include "oak/interrupt.h"
+#include "oak/memory.h"
 #include "oak/syscall.h"
 #include "oak/task.h"
 #include "oak/types.h"
@@ -20,13 +22,19 @@ void syscall_check(u32 nr) {
 static void sys_default() { panic("syscall not implemented!"); }
 
 static u32 sys_test() {
-    if (!task) {
-        task = running_task();
-        task_block(task, NULL, TASK_BLOCKED);
-    } else {
-        task_unblock(task);
-        task = NULL;
-    }
+    char *ptr;
+
+    BMB;
+
+    link_page(0x1600000);
+    BMB;
+
+    ptr = (char *)0x1600000;
+    ptr[3] = 'T';
+    BMB;
+
+    unlink_page(0x1600000);
+    BMB;
     return 255;
 }
 

@@ -4,6 +4,7 @@
 #include "oak/list.h"
 #include "oak/oak.h"
 #include "oak/types.h"
+#include <oak/arena.h>
 #include <oak/debug.h>
 #include <oak/global.h>
 #include <oak/memory.h>
@@ -217,6 +218,11 @@ static task_t *task_create(target_t target, const char *name, u32 priority,
 
 void task_to_user_mode(target_t *target) {
     task_t *task = running_task();
+
+    task->vmap = kmalloc(sizeof(bitmap_t));
+    void *buf = (void *)alloc_kpage(1);
+    bitmap_init(task->vmap, buf, PAGE_SIZE, KERNEL_MEMORY_SIZE / PAGE_SIZE);
+
     u32 addr = (u32)task + PAGE_SIZE;
 
     // push intr_frame into stack
