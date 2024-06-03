@@ -105,6 +105,10 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	# write system.bin to image
 	dd if=$(BUILD_KERNEL)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc
 
+# slave.img
+$(BUILD)/slave.img:
+	yes | bximage -q -hd=32 -func=create -sectsize=512 -imgmode=flat $@
+
 # iso
 $(BUILD)/kernel.iso: $(BUILD_KERNEL)/kernel.bin $(SRC)/utils/grub.cfg
 	grub-file --is-x86-multiboot2 $<
@@ -113,8 +117,10 @@ $(BUILD)/kernel.iso: $(BUILD_KERNEL)/kernel.bin $(SRC)/utils/grub.cfg
 	cp $(SRC)/utils/grub.cfg $(BUILD)/iso/boot/grub
 	grub-mkrescue -o $@ $(BUILD)/iso
 
+IMAGES:=$(BUILD)/master.img $(BUILD)/slave.img
+
 .PHONY: image
-image: $(BUILD)/master.img
+image: $(IMAGES)
 
 .PHONY: clean
 clean:
@@ -123,7 +129,7 @@ clean:
 # bochs
 
 .PHONY: bochs
-bochs: $(BUILD)/master.img
+bochs: $(IMAGES)
 	bochs -q -f ../debug/bochsrc -unlock
 
 .PHONY: bochs-grub
@@ -131,27 +137,30 @@ bochs-grub: $(BUILD)/kernel.iso
 	bochs -q -f ../debug/bochsrc.grub -unlock
 
 .PHONY: bochs-dbg
-bochs-dbg: $(BUILD)/master.img
+bochs-dbg: $(IMAGES)
 	bochs-gdb -q -f ../debug/bochsrc.gdb -unlock
 
 # qemu
 
-QEMU:= qemu-system-i386 \
-       -m 32M \
-       -audiodev pa,id=hda \
-       -machine pcspk-audiodev=hda \
-       -rtc base=localtime \
+QEMU:= qemu-system-i386 # virtual machine
+QEMU+= -m 32M # memory
+QEMU+= -audiodev pa,id=hda # audio device
+QEMU+= -machine pcspk-audiodev=hda # pc speaker
+QEMU+= -rtc base=localtime # local time
+# master disk
+QEMU+= -drive file=$(BUILD)/master.img,if=ide,index=0,media=disk,format=raw
+# slave disk
+QEMU+= -drive file=$(BUILD)/slave.img,if=ide,index=1,media=disk,format=raw
 
-QEMU_DISK:=-boot c \
-	   -drive file=$(BUILD)/master.img,if=ide,index=0,media=disk,format=raw\
+QEMU_DISK:=-boot c
 
 QEMU_CDROM:=-boot d \
-	   -drive file=$(BUILD)/kernel.iso,media=cdrom \
+	    -drive file=$(BUILD)/kernel.iso,media=cdrom
 
 QEMU_DEBUG:= -s -S
 
 .PHONY: qemu
-qemu: $(BUILD)/master.img
+qemu: $(IMAGES)
 	$(QEMU) $(QEMU_DISK)
 	
 .PHONY: qemu-grub
@@ -159,5 +168,5 @@ qemu-grub: $(BUILD)/kernel.iso
 	$(QEMU) $(QEMU_CDROM)
 
 .PHONY: qemu-dbg
-qemu-dbg: $(BUILD)/master.img
+qemu-dbg: $(IMAGES)
 	$(QEMU) $(QEMU_DISK) $(QEMU_DEBUG)
