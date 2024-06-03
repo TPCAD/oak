@@ -9,6 +9,8 @@
 #define KERNEL_MEMORY_SIZE 0x800000 // memory occupied by kernel
 
 #define USER_STACK_TOP 0x8000000 // user stack top address
+#define USER_STACK_SIZE 0x200000
+#define USER_STACK_BOTTOM (USER_STACK_TOP - USER_STACK_SIZE)
 
 #define KERNEL_PAGE_DIR 0x1000 // page directory address
 
@@ -26,6 +28,7 @@ typedef struct page_entry_t {
     u32 index : 20;
 } _packed page_entry_t;
 
+u32 get_cr2();
 u32 get_cr3();
 void set_cr3(u32 pde);
 
@@ -35,4 +38,5 @@ void free_kpage(u32 vaddr, u32 count);
 void link_page(u32 vaddr);
 void unlink_page(u32 vaddr);
 
+page_entry_t *copy_pde();
 #endif // !OAK_MEMORY_H

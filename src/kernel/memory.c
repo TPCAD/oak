@@ -180,6 +180,13 @@ static void free_page(u32 addr) {
     // DEBUGK("Free page 0x%p\n", addr);
 }
 
+/* Get the value of cr2
+ */
+u32 get_cr2() {
+    // return value in eax
+    asm volatile("movl %cr2, %eax\n");
+}
+
 /* Get the value of cr3
  */
 u32 get_cr3() {
@@ -420,10 +427,52 @@ void unlink_page(u32 vaddr) {
 
     DEBUGK("unlink page from 0x%p to 0x%p\n", vaddr, paddr);
 
-    if (memory_map[entry->index] == 1) {
-        free_page(paddr);
-    }
+    free_page(paddr);
     flush_tlb(vaddr);
+}
+
+page_entry_t *copy_pde() {
+    task_t *task = running_task();
+    page_entry_t *pde = (page_entry_t *)alloc_kpage(1); // todo: free
+    memcpy(pde, (void *)task->pde, PAGE_SIZE);
+
+    page_entry_t *entry = &pde[1023];
+    entry_init(entry, IDX(pde));
+
+    return pde;
+}
+
+typedef struct page_error_code_t {
+    u8 present : 1;
+    u8 write : 1;
+    u8 user : 1;
+    u8 reserved0 : 1;
+    u8 fetch : 1;
+    u8 protection : 1;
+    u8 shadow : 1;
+    u16 reserved1 : 8;
+    u8 sgx : 1;
+    u16 reserved2;
+} _packed page_error_code_t;
+
+void page_fault(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
+                u32 edx, u32 ecx, u32 eax, u32 gs, u32 fs, u32 es, u32 ds,
+                u32 vector0, u32 error, u32 eip, u32 cs, u32 eflags) {
+    assert(vector == 0xe);
+    u32 vaddr = get_cr2();
+    DEBUGK("fault address 0x%p\n", vaddr);
+
+    page_error_code_t *code = (page_error_code_t *)&error;
+    task_t *task = running_task();
+
+    assert(KERNEL_MEMORY_SIZE <= vaddr && vaddr < USER_STACK_TOP);
+
+    if (!code->present && (vaddr > USER_STACK_BOTTOM)) {
+        u32 page = PAGE(IDX(vaddr));
+        link_page(page);
+        return;
+    }
+    panic("page fault");
 }
 
 void memory_test() {
