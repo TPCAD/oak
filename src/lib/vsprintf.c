@@ -336,3 +336,11 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
     assert(tmp < 1024);
     return tmp;
 }
+
+int sprintf(char *buf, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    int i = vsprintf(buf, fmt, args);
+    va_end(args);
+    return i;
+}
