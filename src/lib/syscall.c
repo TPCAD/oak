@@ -43,3 +43,6 @@ pid_t get_pid() { return _syscall0(SYS_NR_GETPID); }
 pid_t get_ppid() { return _syscall0(SYS_NR_GETPPID); }
 pid_t fork() { return _syscall0(SYS_NR_FORK); }
 void exit(int status) { _syscall1(SYS_NR_EXIT, (u32)status); }
+pid_t waitpid(pid_t pid, int32 *status) {
+    return _syscall2(SYS_NR_WAITPID, pid, (u32)status);
+}
