@@ -6,8 +6,9 @@
 #include "oak/syscall.h"
 #include "oak/task.h"
 #include "oak/types.h"
+#include <oak/memory.h>
 
-#define SYSCALL_SIZE 64
+#define SYSCALL_SIZE 256
 
 handler_t syscall_table[SYSCALL_SIZE];
 
@@ -21,22 +22,7 @@ void syscall_check(u32 nr) {
 
 static void sys_default() { panic("syscall not implemented!"); }
 
-static u32 sys_test() {
-    char *ptr;
-
-    BMB;
-
-    link_page(0x1600000);
-    BMB;
-
-    ptr = (char *)0x1600000;
-    ptr[3] = 'T';
-    BMB;
-
-    unlink_page(0x1600000);
-    BMB;
-    return 255;
-}
+static u32 sys_test() { return 255; }
 
 int32 sys_write(fd_t fd, char *buf, u32 len) {
     if (fd == stdout || fd == stderr) {
@@ -55,6 +41,7 @@ void syscall_init() {
     syscall_table[SYS_NR_TEST] = sys_test;
     syscall_table[SYS_NR_SLEEP] = task_sleep;
     syscall_table[SYS_NR_YIELD] = task_yield;
+    syscall_table[SYS_NR_BRK] = sys_brk;
 
     syscall_table[SYS_NR_WRITE] = sys_write;
 }

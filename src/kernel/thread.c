@@ -20,19 +20,21 @@ void idle_thread() {
     }
 }
 
-void test_recursion() {
-    char tmp[400];
-    test_recursion();
-}
-
 void static user_init_thread() {
     u32 counter = 0;
     while (true) {
 
-        printf("task is in user mode %d\n", counter++);
-        test_recursion();
         BMB;
-        sleep(1000);
+        char *ptr = (char *)0x900000;
+        brk(ptr);
+
+        BMB;
+        ptr -= 0x1000;
+        ptr[3] = 0xff;
+        BMB;
+        brk((char *)0x800000);
+        BMB;
+        sleep(10000);
     }
 }
 
@@ -60,8 +62,8 @@ void test_thread() {
     while (true) {
 
         sleep(2000);
-        DEBUGK("test task...%d\n", counter++);
-        BMB;
+        // DEBUGK("test task...%d\n", counter++);
+        // BMB;
         // sleep(709);
     }
 }

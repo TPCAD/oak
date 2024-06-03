@@ -36,3 +36,5 @@ void sleep(u32 ms) { _syscall1(SYS_NR_SLEEP, ms); }
 int32 write(fd_t fd, char *buf, u32 len) {
     return _syscall3(SYS_NR_WRITE, fd, (u32)buf, len);
 }
+
+int32 brk(void *addr) { return _syscall1(SYS_NR_BRK, (u32)addr); }

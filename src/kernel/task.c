@@ -214,6 +214,7 @@ static task_t *task_create(target_t target, const char *name, u32 priority,
     task->uid = uid;
     task->vmap = &kernel_map;
     task->pde = KERNEL_PAGE_DIR;
+    task->brk = KERNEL_MEMORY_SIZE;
     task->magic = OAK_MAGIC;
 
     return task;

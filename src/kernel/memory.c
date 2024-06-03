@@ -442,6 +442,29 @@ page_entry_t *copy_pde() {
     return pde;
 }
 
+int32 sys_brk(void *addr) {
+    DEBUGK("task brk 0x%p\n", addr);
+    u32 brk = (u32)addr;
+    ASSERT_PAGE(brk);
+
+    task_t *task = running_task();
+    assert(task->uid != KERNEL_USER);
+
+    assert(KERNEL_MEMORY_SIZE <= brk && brk < USER_STACK_BOTTOM);
+
+    u32 old_brk = task->brk;
+
+    if (old_brk > brk) {
+        for (; brk < old_brk; brk += PAGE_SIZE) {
+            unlink_page(brk);
+        }
+    } else if (IDX((brk - old_brk)) > free_pages) {
+        return -1;
+    }
+    task->brk = brk;
+    return 0;
+}
+
 typedef struct page_error_code_t {
     u8 present : 1;
     u8 write : 1;
@@ -467,7 +490,7 @@ void page_fault(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
 
     assert(KERNEL_MEMORY_SIZE <= vaddr && vaddr < USER_STACK_TOP);
 
-    if (!code->present && (vaddr > USER_STACK_BOTTOM)) {
+    if (!code->present && (vaddr < task->brk || vaddr >= USER_STACK_BOTTOM)) {
         u32 page = PAGE(IDX(vaddr));
         link_page(page);
         return;

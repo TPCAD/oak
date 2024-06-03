@@ -32,6 +32,7 @@ typedef struct task_t {
     u32 uid;                  // user id
     u32 pde;                  // pde
     struct bitmap_t *vmap;    // virtual memory map
+    u32 brk;                  // the highest address of heap memory
     u32 magic;                // magic number
 } task_t;
 
