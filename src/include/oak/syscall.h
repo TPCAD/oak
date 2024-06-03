@@ -5,6 +5,7 @@
 
 typedef enum syscall_t {
     SYS_NR_TEST,
+    SYS_NR_FORK = 2,
     SYS_NR_WRITE = 4,
     SYS_NR_GETPID = 20,
     SYS_NR_BRK = 45,
@@ -14,6 +15,7 @@ typedef enum syscall_t {
 } syscall_t;
 
 u32 test();
+pid_t fork();
 void yield();
 void sleep(u32 ms);
 pid_t get_pid();

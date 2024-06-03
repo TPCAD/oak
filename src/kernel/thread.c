@@ -1,5 +1,7 @@
 #include "oak/printk.h"
+#include "oak/stdlib.h"
 #include "oak/task.h"
+#include "oak/types.h"
 #include <oak/arena.h>
 #include <oak/debug.h>
 #include <oak/interrupt.h>
@@ -24,8 +26,14 @@ void static user_init_thread() {
     u32 counter = 0;
     while (true) {
 
-        printf("init thread %d %d %d\n", get_pid(), get_ppid(), counter++);
-        sleep(1000);
+        pid_t pid = fork();
+        if (pid) {
+            printf("fork after parent %d %d %d\n", pid, get_pid(), get_ppid());
+        } else {
+            printf("fork after child %d %d %d\n", pid, get_pid(), get_ppid());
+        }
+        hang();
+        sleep(100);
     }
 }
 
@@ -51,7 +59,7 @@ void test_thread() {
     u32 counter = 0;
 
     while (true) {
-        printf("test thread %d %d %d\n", get_pid(), get_ppid(), counter++);
+        // printf("test thread %d %d %d\n", get_pid(), get_ppid(), counter++);
 
         sleep(2000);
         // DEBUGK("test task...%d\n", counter++);
