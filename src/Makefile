@@ -79,7 +79,8 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/keyboard.o \
 	$(BUILD_LIB)/fifo.o \
 	$(BUILD_LIB)/printf.o \
-	$(BUILD_KERNEL)/arena.o | $(BUILD_KERNEL)
+	$(BUILD_KERNEL)/arena.o \
+	$(BUILD_KERNEL)/ide.o | $(BUILD_KERNEL)
 	i686-elf-ld $(LDFLAGS) $^ -o $@
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
