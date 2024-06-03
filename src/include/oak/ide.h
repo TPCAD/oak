@@ -15,6 +15,10 @@ typedef struct ide_disk_t {
     struct ide_ctrl_t *ctrl; // controller pointer
     u8 selector;             // disk selector
     bool master;             // is master
+    u32 total_lba;           // available sectors
+    u32 cylinders;
+    u32 heads;
+    u32 sectors;
 } ide_disk_t;
 
 // IDE controller
@@ -24,6 +28,7 @@ typedef struct ide_ctrl_t {
     u16 iobase;                    // IO register base address
     ide_disk_t disks[IDE_DISK_NR]; // disk
     ide_disk_t *active;            // current selected disk
+    u8 control;                    // control byte
     struct task_t *waiter;         // process waitting for controller
 } ide_ctrl_t;
 

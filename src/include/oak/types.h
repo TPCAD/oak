@@ -4,6 +4,11 @@
 #define EOF -1           // End Of File
 #define NULL ((void *)0) // empty pointer
 #define EOS '\0'         // End Of String
+
+#define CONCAT(x, y) x##y
+#define RESERVED_TOKEN(x, y) CONCAT(x, y)
+#define RESERVED RESERVED_TOKEN(reserved, __LINE__)
+
 #define bool _Bool
 #define true 1
 #define false 0
