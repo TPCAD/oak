@@ -328,6 +328,35 @@ pid_t task_fork() {
     return child->pid;
 }
 
+void task_exit(int status) {
+    task_t *task = running_task();
+
+    assert(task->node.next == NULL && task->node.prev == NULL &&
+           task->state == TASK_RUNNING);
+
+    task->state = TASK_DIED;
+    task->status = status;
+
+    free_pde();
+
+    free_kpage((u32)task->vmap->bits, 1);
+    kfree(task->vmap);
+
+    for (size_t i = 0; i < NR_TASKS; i++) {
+        task_t *child = task_table[i];
+        if (!child) {
+            continue;
+        }
+        if (child->ppid != task->pid) {
+            continue;
+        }
+        child->ppid = task->ppid;
+    }
+
+    DEBUGK("task 0x%p exit...\n", task);
+    schedule();
+}
+
 static void task_setup() {
     task_t *task = running_task();
     task->magic = OAK_MAGIC;

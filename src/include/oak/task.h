@@ -35,6 +35,7 @@ typedef struct task_t {
     u32 pde;                  // pde
     struct bitmap_t *vmap;    // virtual memory map
     u32 brk;                  // the highest address of heap memory
+    int status;               // process special status
     u32 magic;                // magic number
 } task_t;
 
@@ -81,6 +82,7 @@ typedef struct intr_frame_t {
 task_t *running_task();
 void schedule();
 pid_t task_fork();
+void task_exit(int status);
 void task_yield();
 void task_block(task_t *task, list_t *blist, task_state_t state);
 void task_unblock(task_t *task);
