@@ -67,6 +67,20 @@
 
 ide_ctrl_t controllers[IDE_CTRL_NR];
 
+void ide_handler(int vector) {
+    send_eoi(vector);
+
+    ide_ctrl_t *ctrl = &controllers[vector - IRQ_HARDDISK - 0x20];
+
+    u8 state = inb(ctrl->iobase + IDE_STATUS);
+    DEBUGK("hard disk interrupt vector %d status 0x%x\n", vector, state);
+
+    if (ctrl->waiter) {
+        task_unblock(ctrl->waiter);
+        ctrl->waiter = NULL;
+    }
+}
+
 static u32 ide_error(ide_ctrl_t *ctrl) {
     u8 error = inb(ctrl->iobase + IDE_ERR);
     if (error & IDE_ER_BBK)
@@ -144,6 +158,7 @@ static void ide_pio_write_sector(ide_disk_t *disk, u16 *buf) {
 
 int ide_pio_read(ide_disk_t *disk, void *buf, u8 count, idx_t lba) {
     assert(count > 0);
+    assert(!get_interrupt_state());
 
     ide_ctrl_t *ctrl = disk->ctrl;
 
@@ -158,6 +173,12 @@ int ide_pio_read(ide_disk_t *disk, void *buf, u8 count, idx_t lba) {
     outb(ctrl->iobase + IDE_COMMAND, IDE_CMD_READ);
 
     for (size_t i = 0; i < count; i++) {
+        task_t *task = running_task();
+        if (task->state == TASK_RUNNING) {
+            ctrl->waiter = task;
+            task_block(task, NULL, TASK_BLOCKED);
+        }
+
         ide_busy_wait(ctrl, IDE_SR_DRQ);
         u32 offset = ((u32)buf + i * SECTOR_SIZE);
         ide_pio_read_sector(disk, (u16 *)offset);
@@ -169,6 +190,7 @@ int ide_pio_read(ide_disk_t *disk, void *buf, u8 count, idx_t lba) {
 
 int ide_pio_write(ide_disk_t *disk, void *buf, u8 count, idx_t lba) {
     assert(count > 0);
+    assert(!get_interrupt_state());
 
     ide_ctrl_t *ctrl = disk->ctrl;
 
@@ -187,6 +209,12 @@ int ide_pio_write(ide_disk_t *disk, void *buf, u8 count, idx_t lba) {
     for (size_t i = 0; i < count; i++) {
         u32 offset = ((u32)buf + i * SECTOR_SIZE);
         ide_pio_write_sector(disk, (u16 *)offset);
+
+        task_t *task = running_task();
+        if (task->state == TASK_RUNNING) {
+            ctrl->waiter = task;
+            task_block(task, NULL, TASK_BLOCKED);
+        }
 
         ide_busy_wait(ctrl, IDE_SR_NULL);
     }
@@ -227,14 +255,9 @@ void ide_init() {
     DEBUGK("ide init...\n");
     ide_ctrl_init();
 
-    void *buf = (void *)alloc_kpage(1);
-    BMB;
-    DEBUGK("read buffer %x\n", buf);
-    ide_pio_read(&controllers[0].disks[0], buf, 1, 0);
-    BMB;
-    memset(buf, 0x5a, SECTOR_SIZE);
-    BMB;
-    ide_pio_write(&controllers[0].disks[0], buf, 1, 1);
-
-    free_kpage((u32)buf, 1);
+    set_interrupt_handler(IRQ_HARDDISK, ide_handler);
+    set_interrupt_handler(IRQ_HARDDISK2, ide_handler);
+    set_interrupt_mask(IRQ_HARDDISK, true);
+    set_interrupt_mask(IRQ_HARDDISK2, true);
+    set_interrupt_mask(IRQ_CASCADE, true);
 }
