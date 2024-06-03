@@ -31,9 +31,10 @@ void static user_init_thread() {
         if (pid) {
             printf("fork after parent %d %d %d\n", pid, get_pid(), get_ppid());
             pid_t child = (waitpid(pid, &status));
+            printf("wait pid %d status %d %d\n", child, status, time());
         } else {
             printf("fork after child %d %d %d\n", pid, get_pid(), get_ppid());
-            sleep(1000);
+            // sleep(1000);
             exit(0);
         }
         // hang();

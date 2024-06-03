@@ -10,6 +10,8 @@
 
 #define SYSCALL_SIZE 256
 
+extern time_t sys_time();
+
 handler_t syscall_table[SYSCALL_SIZE];
 
 task_t *task = NULL;
@@ -52,4 +54,6 @@ void syscall_init() {
     syscall_table[SYS_NR_GETPPID] = sys_getppid;
 
     syscall_table[SYS_NR_WRITE] = sys_write;
+
+    syscall_table[SYS_NR_TIME] = sys_time;
 }

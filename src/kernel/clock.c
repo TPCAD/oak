@@ -20,6 +20,7 @@
 
 extern void schedule();
 extern void task_wakeup();
+extern u32 startup_time;
 
 u32 volatile jiffies = 0;
 u32 jiffy = JIFFY;
@@ -60,6 +61,8 @@ void clock_handler(int vector) {
         schedule();
     }
 }
+
+time_t sys_time() { return startup_time + (jiffies * JIFFY) / 1000; }
 
 void pit_init() {
     // init PIT

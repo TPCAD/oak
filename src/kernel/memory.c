@@ -522,8 +522,8 @@ int32 sys_brk(void *addr) {
     u32 old_brk = task->brk;
 
     if (old_brk > brk) {
-        for (; brk < old_brk; brk += PAGE_SIZE) {
-            unlink_page(brk);
+        for (u32 page = brk; page < old_brk; page += PAGE_SIZE) {
+            unlink_page(page);
         }
     } else if (IDX((brk - old_brk)) > free_pages) {
         return -1;
