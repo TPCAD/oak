@@ -24,17 +24,8 @@ void static user_init_thread() {
     u32 counter = 0;
     while (true) {
 
-        BMB;
-        char *ptr = (char *)0x900000;
-        brk(ptr);
-
-        BMB;
-        ptr -= 0x1000;
-        ptr[3] = 0xff;
-        BMB;
-        brk((char *)0x800000);
-        BMB;
-        sleep(10000);
+        printf("init thread %d %d %d\n", get_pid(), get_ppid(), counter++);
+        sleep(1000);
     }
 }
 
@@ -60,6 +51,7 @@ void test_thread() {
     u32 counter = 0;
 
     while (true) {
+        printf("test thread %d %d %d\n", get_pid(), get_ppid(), counter++);
 
         sleep(2000);
         // DEBUGK("test task...%d\n", counter++);

@@ -30,6 +30,8 @@ typedef struct task_t {
     u32 jiffies;              // jiffies last ran
     char name[TASK_NAME_LEN]; // task name
     u32 uid;                  // user id
+    u32 pid;                  // task id
+    u32 ppid;                 // task father id
     u32 pde;                  // pde
     struct bitmap_t *vmap;    // virtual memory map
     u32 brk;                  // the highest address of heap memory
@@ -84,5 +86,7 @@ void task_unblock(task_t *task);
 void task_sleep(u32 ms);
 void task_wakeup();
 void task_to_user_mode(target_t target);
+pid_t sys_getpid();
+pid_t sys_getppid();
 
 #endif // !OAK_TASK_H

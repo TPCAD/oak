@@ -43,5 +43,8 @@ void syscall_init() {
     syscall_table[SYS_NR_YIELD] = task_yield;
     syscall_table[SYS_NR_BRK] = sys_brk;
 
+    syscall_table[SYS_NR_GETPID] = sys_getpid;
+    syscall_table[SYS_NR_GETPPID] = sys_getppid;
+
     syscall_table[SYS_NR_WRITE] = sys_write;
 }
