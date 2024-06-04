@@ -93,7 +93,8 @@ $(BUILD_KERNEL)/system.map: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
 $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	$(BUILD_BOOT)/loader.bin \
 	$(BUILD_KERNEL)/system.bin \
-	$(BUILD_KERNEL)/system.map
+	$(BUILD_KERNEL)/system.map \
+	$(SRC)/utils/master.sfdisk
 	# create a 16M disk image
 	yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
 	# write boot.bin to image
@@ -104,6 +105,7 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	test -n "$$(find $(BUILD_KERNEL)/system.bin -size -100k)"
 	# write system.bin to image
 	dd if=$(BUILD_KERNEL)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc
+	sfdisk $@ < $(SRC)/utils/master.sfdisk
 
 # slave.img
 $(BUILD)/slave.img:
