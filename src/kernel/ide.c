@@ -1,3 +1,4 @@
+#include "oak/device.h"
 #include "oak/mutex.h"
 #include "oak/syscall.h"
 #include "oak/types.h"
@@ -207,6 +208,18 @@ static void ide_pio_write_sector(ide_disk_t *disk, u16 *buf) {
     }
 }
 
+int ide_pio_ioctl(ide_disk_t *disk, int cmd, void *args, int flags) {
+    switch (cmd) {
+    case DEV_CMD_SECTOR_START:
+        return 0;
+    case DEV_CMD_SECTOR_COUNT:
+        return disk->total_lba;
+    default:
+        panic("device command not defined\n");
+        break;
+    }
+}
+
 int ide_pio_read(ide_disk_t *disk, void *buf, u8 count, idx_t lba) {
     assert(count > 0);
     assert(!get_interrupt_state());
@@ -267,11 +280,25 @@ int ide_pio_write(ide_disk_t *disk, void *buf, u8 count, idx_t lba) {
             task_block(task, NULL, TASK_BLOCKED);
         }
 
+        DEBUGK("write sector wait 1s, pid %d\n", task->pid);
+        task_sleep(100);
         ide_busy_wait(ctrl, IDE_SR_NULL);
     }
 
     lock_release(&ctrl->lock);
     return 0;
+}
+
+int ide_pio_part_ioctl(ide_part_t *part, int cmd, void *args, int flags) {
+    switch (cmd) {
+    case DEV_CMD_SECTOR_START:
+        return part->start;
+    case DEV_CMD_SECTOR_COUNT:
+        return part->count;
+    default:
+        panic("device command not defined\n");
+        break;
+    }
 }
 
 int ide_pio_part_read(ide_part_t *part, void *buf, u8 count, idx_t lba) {
@@ -416,9 +443,33 @@ void ide_ctrl_init() {
     free_kpage((u32)buf, 1);
 }
 
+static void ide_install() {
+    for (size_t cidx = 0; cidx < IDE_CTRL_NR; cidx++) {
+        ide_ctrl_t *ctrl = &controllers[cidx];
+        for (size_t didx = 0; didx < IDE_DISK_NR; didx++) {
+            ide_disk_t *disk = &ctrl->disks[didx];
+            if (!disk->total_lba)
+                continue;
+            dev_t dev =
+                device_install(DEV_BLOCK, DEV_IDE_DISK, disk, disk->name, 0,
+                               ide_pio_ioctl, ide_pio_read, ide_pio_write);
+            for (size_t i = 0; i < IDE_PART_NR; i++) {
+                ide_part_t *part = &disk->parts[i];
+                if (!part->count)
+                    continue;
+                device_install(DEV_BLOCK, DEV_IDE_PART, part, part->name, dev,
+                               ide_pio_part_ioctl, ide_pio_part_read,
+                               ide_pio_part_write);
+            }
+        }
+    }
+}
+
 void ide_init() {
     DEBUGK("ide init...\n");
     ide_ctrl_init();
+
+    ide_install();
 
     set_interrupt_handler(IRQ_HARDDISK, ide_handler);
     set_interrupt_handler(IRQ_HARDDISK2, ide_handler);
