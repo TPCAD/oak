@@ -1,4 +1,5 @@
 #include <oak/console.h>
+#include <oak/device.h>
 #include <oak/interrupt.h>
 #include <oak/io.h>
 #include <oak/string.h>
@@ -135,7 +136,7 @@ static void command_lf() {
     scroll_up();
 }
 
-int32 console_write(char *buf, u32 count) {
+int32 console_write(void *dev, char *buf, u32 count) {
     bool intr = interrupt_diable();
     char ch;
     int32 nr = 0;
@@ -191,5 +192,6 @@ int32 console_write(char *buf, u32 count) {
 }
 void console_init() {
     console_clear();
-    //
+    device_install(DEV_CHAR, DEV_CONSOLE, NULL, "console", 0, NULL, NULL,
+                   console_write);
 }

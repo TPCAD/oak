@@ -17,6 +17,7 @@ header_start:
 	dw 8 ; size
 header_end:
 
+extern device_init
 extern console_init
 extern gdt_init
 extern memory_init
@@ -32,6 +33,7 @@ _start:
 	push ebx
 	push eax
 	
+	call device_init
 	call console_init
 	
 	call gdt_init

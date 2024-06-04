@@ -4,6 +4,7 @@
 #include "oak/types.h"
 #include <oak/assert.h>
 #include <oak/debug.h>
+#include <oak/device.h>
 #include <oak/interrupt.h>
 #include <oak/io.h>
 
@@ -357,7 +358,7 @@ void keyboard_handler(int vector) {
     }
 }
 
-u32 keyboard_read(char *buf, u32 count) {
+u32 keyboard_read(void *dev, char *buf, u32 count) {
     lock_acquire(&lock);
     int nr = 0;
     while (nr < count) {
@@ -384,4 +385,7 @@ void keyboard_init() {
 
     set_interrupt_handler(IRQ_KEYBOARD, keyboard_handler);
     set_interrupt_mask(IRQ_KEYBOARD, true);
+
+    device_install(DEV_CHAR, DEV_KEYBOARD, NULL, "keyboard", 0, NULL,
+                   keyboard_read, NULL);
 }
