@@ -26,7 +26,7 @@ typedef struct task_t {
     list_node_t node;         // task blocked node
     task_state_t state;       // task status
     u32 priority;             // priority
-    u32 ticks;                // left jiffies
+    int ticks;                // left jiffies
     u32 jiffies;              // jiffies last ran
     char name[TASK_NAME_LEN]; // task name
     u32 uid;                  // user id

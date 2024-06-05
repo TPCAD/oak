@@ -27,6 +27,9 @@ enum device_cmd_t {
 #define REQ_READ 0  // block device read
 #define REQ_WRITE 1 // block device write
 
+#define DIRECT_UP 0
+#define DIRECT_DOWN 1
+
 typedef struct request_t {
     dev_t dev;           // device number
     u32 type;            // request type
@@ -46,6 +49,7 @@ typedef struct device_t {
     dev_t parent;        // father device number
     void *ptr;           // device pointer
     list_t request_list; // block device request list
+    bool direct;         // seek direction
     // device control
     int (*ioctl)(void *dev, int cmd, void *args, int flags);
     // read device
