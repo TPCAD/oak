@@ -100,6 +100,7 @@ device_t *device_get(dev_t dev) {
 }
 
 static void do_request(request_t *req) {
+    DEBUGK("dev %d do request idx %d\n", req->dev, req->idx);
     switch (req->type) {
     case REQ_READ:
         device_read(req->dev, req->buf, req->count, req->idx, req->flags);
@@ -111,6 +112,29 @@ static void do_request(request_t *req) {
         panic("req type not defined\n");
         break;
     }
+}
+
+static request_t *request_nextreq(device_t *device, request_t *req) {
+    list_t *list = &device->request_list;
+
+    if (device->direct == DIRECT_UP && req->node.next == &list->tail) {
+        device->direct = DIRECT_DOWN;
+    } else if (device->direct == DIRECT_DOWN && req->node.prev == &list->head) {
+        device->direct = DIRECT_UP;
+    }
+
+    void *next = NULL;
+    if (device->direct == DIRECT_UP) {
+        next = req->node.next;
+    } else {
+        next = req->node.prev;
+    }
+
+    if (next == &list->head || next == &list->tail) {
+        return NULL;
+    }
+
+    return element_entry(request_t, node, next);
 }
 
 void device_request(dev_t dev, void *buf, u8 count, idx_t idx, int flags,
@@ -133,9 +157,13 @@ void device_request(dev_t dev, void *buf, u8 count, idx_t idx, int flags,
     req->type = type;
     req->task = NULL;
 
+    DEBUGK("dev %d request idx %d\n", req->dev, req->idx);
     bool empty = list_empty(&device->request_list);
 
-    list_push(&device->request_list, &req->node);
+    // list_push(&device->request_list, &req->node);
+
+    list_insert_sort(&device->request_list, &req->node,
+                     element_node_offset(request_t, node, idx));
 
     if (!empty) {
         req->task = running_task();
@@ -144,10 +172,12 @@ void device_request(dev_t dev, void *buf, u8 count, idx_t idx, int flags,
 
     do_request(req);
 
+    request_t *nextreq = request_nextreq(device, req);
+
     list_remove(&req->node);
     kfree(req);
 
-    if (!list_empty(&device->request_list)) {
+    if (nextreq) {
         request_t *nextreq =
             element_entry(request_t, node, device->request_list.tail.prev);
         assert(nextreq->task->magic == OAK_MAGIC);

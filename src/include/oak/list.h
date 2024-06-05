@@ -6,7 +6,9 @@
 #define element_offset(type, member) (u32)(&((type *)0)->member)
 #define element_entry(type, member, ptr)                                       \
     (type *)((u32)ptr - element_offset(type, member))
-
+#define element_node_offset(type, node, key)                                   \
+    ((int)(&((type *)0)->key) - (int)(&((type *)0)->node))
+#define element_node_key(node, offset) *(int *)((int)node + offset)
 // list node
 typedef struct list_node_t {
     struct list_node_t *prev;
@@ -51,4 +53,7 @@ bool list_empty(list_t *list);
 
 // size of list
 u32 list_size(list_t *list);
+
+// insert sort
+void list_insert_sort(list_t *list, list_node_t *node, int offset);
 #endif // !OAK_LIST_H
