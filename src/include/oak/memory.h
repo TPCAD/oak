@@ -6,7 +6,13 @@
 #define PAGE_SIZE 0x1000     // 4K per page
 #define MEMORY_BASE 0x100000 // 1M, start address of free memory
 
-#define KERNEL_MEMORY_SIZE 0x800000 // memory occupied by kernel
+#define KERNEL_MEMORY_SIZE 0x1000000 // memory occupied by kernel
+
+#define KERNEL_BUFFER_MEM 0x800000
+#define KERNEL_BUFFER_SIZE 0x40000
+
+#define KERNEL_RAMDISK_MEM (KERNEL_BUFFER_MEM + KERNEL_BUFFER_SIZE);
+#define KERNEL_RAMDISK_SIZE 0x400000
 
 #define USER_STACK_TOP 0x8000000 // user stack top address
 #define USER_STACK_SIZE 0x200000

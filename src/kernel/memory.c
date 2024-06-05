@@ -18,11 +18,11 @@
 #define PAGE(idx) ((u32)idx << 12)
 #define ASSERT_PAGE(addr) assert((addr & 0xfff) == 0)
 
-#define KERNEL_MAP_BITS 0x4000
+#define KERNEL_MAP_BITS 0x6000
 
 #define PDE_MASK 0xffc00000
 
-static u32 KERNEL_PAGE_TABLE[] = {0x2000, 0x3000};
+static u32 KERNEL_PAGE_TABLE[] = {0x2000, 0x3000, 0x4000, 0x5000};
 
 /* A struct to hold ards
  *
@@ -451,7 +451,7 @@ page_entry_t *copy_pde() {
 
     page_entry_t *dentry;
 
-    for (size_t didx = 2; didx < 1023; didx++) {
+    for (size_t didx = (sizeof((KERNEL_PAGE_TABLE)) / 4); didx < 1023; didx++) {
         dentry = &pde[didx];
         if (!dentry->present) {
             continue;
@@ -486,7 +486,7 @@ void free_pde() {
 
     page_entry_t *pde = get_pde();
 
-    for (size_t didx = 2; didx < 1023; didx++) {
+    for (size_t didx = (sizeof((KERNEL_PAGE_TABLE)) / 4); didx < 1023; didx++) {
         page_entry_t *dentry = &pde[didx];
         if (!dentry->present) {
             continue;

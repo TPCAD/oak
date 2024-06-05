@@ -64,12 +64,12 @@ void init_thread() {
 
 void test_thread() {
     set_interrupt_state(true);
-    u32 counter = 0;
 
+    test();
     while (true) {
         // printf("test thread %d %d %d\n", get_pid(), get_ppid(), counter++);
 
-        sleep(2000);
+        sleep(10);
         // DEBUGK("test task...%d\n", counter++);
         // BMB;
         // sleep(709);

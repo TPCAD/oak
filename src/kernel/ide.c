@@ -281,7 +281,6 @@ int ide_pio_write(ide_disk_t *disk, void *buf, u8 count, idx_t lba) {
         }
 
         DEBUGK("write sector wait 1s, pid %d\n", task->pid);
-        task_sleep(100);
         ide_busy_wait(ctrl, IDE_SR_NULL);
     }
 
