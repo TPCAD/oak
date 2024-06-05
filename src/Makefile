@@ -52,46 +52,47 @@ $(BUILD_LIB)/%.o: $(SRC)/lib/%.c | $(BUILD_LIB)
 	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
-	$(BUILD_KERNEL)/main.o \
-	$(BUILD_KERNEL)/io.o \
-	$(BUILD_LIB)/string.o \
-	$(BUILD_KERNEL)/console.o \
-	$(BUILD_LIB)/vsprintf.o \
-	$(BUILD_KERNEL)/printk.o \
-	$(BUILD_KERNEL)/assert.o \
-	$(BUILD_KERNEL)/debug.o \
-	$(BUILD_KERNEL)/global.o \
-	$(BUILD_KERNEL)/interrupt.o \
-	$(BUILD_KERNEL)/handler.o \
-	$(BUILD_LIB)/stdlib.o \
-	$(BUILD_KERNEL)/clock.o \
-	$(BUILD_KERNEL)/time.o \
-	$(BUILD_KERNEL)/rtc.o \
-	$(BUILD_KERNEL)/memory.o \
 	$(BUILD_LIB)/bitmap.o \
-	$(BUILD_KERNEL)/task.o \
-	$(BUILD_KERNEL)/schedule.o \
-	$(BUILD_KERNEL)/gate.o \
-	$(BUILD_LIB)/syscall.o \
-	$(BUILD_LIB)/list.o \
-	$(BUILD_KERNEL)/thread.o \
-	$(BUILD_KERNEL)/mutex.o \
-	$(BUILD_KERNEL)/keyboard.o \
 	$(BUILD_LIB)/fifo.o \
+	$(BUILD_LIB)/list.o \
 	$(BUILD_LIB)/printf.o \
+	$(BUILD_LIB)/stdlib.o \
+	$(BUILD_LIB)/string.o \
+	$(BUILD_LIB)/syscall.o \
+	$(BUILD_LIB)/vsprintf.o \
 	$(BUILD_KERNEL)/arena.o \
-	$(BUILD_KERNEL)/ide.o \
+	$(BUILD_KERNEL)/assert.o \
+	$(BUILD_KERNEL)/buffer.o \
+	$(BUILD_KERNEL)/clock.o \
+	$(BUILD_KERNEL)/console.o \
+	$(BUILD_KERNEL)/debug.o \
 	$(BUILD_KERNEL)/device.o \
-	$(BUILD_KERNEL)/buffer.o | $(BUILD_KERNEL)
+	$(BUILD_KERNEL)/gate.o \
+	$(BUILD_KERNEL)/global.o \
+	$(BUILD_KERNEL)/handler.o \
+	$(BUILD_KERNEL)/ide.o \
+	$(BUILD_KERNEL)/interrupt.o \
+	$(BUILD_KERNEL)/io.o \
+	$(BUILD_KERNEL)/keyboard.o \
+	$(BUILD_KERNEL)/main.o \
+	$(BUILD_KERNEL)/memory.o \
+	$(BUILD_KERNEL)/mutex.o \
+	$(BUILD_KERNEL)/printk.o \
+	$(BUILD_KERNEL)/rtc.o \
+	$(BUILD_KERNEL)/schedule.o \
+	$(BUILD_KERNEL)/task.o \
+	$(BUILD_KERNEL)/thread.o \
+	$(BUILD_KERNEL)/time.o \
+	| $(BUILD_KERNEL)
 	i686-elf-ld $(LDFLAGS) $^ -o $@
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
-	objcopy -O binary $< $@
+	i686-elf-objcopy -O binary $< $@
 
 $(BUILD_KERNEL)/system.map: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
-	nm $< | sort > $@
+	i686-elf-nm $< | sort > $@
 
-# image
+# master.img
 $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	$(BUILD_BOOT)/loader.bin \
 	$(BUILD_KERNEL)/system.bin \
@@ -113,7 +114,7 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 $(BUILD)/slave.img:
 	yes | bximage -q -hd=32 -func=create -sectsize=512 -imgmode=flat $@
 
-# iso
+# kernel.iso
 $(BUILD)/kernel.iso: $(BUILD_KERNEL)/kernel.bin $(SRC)/utils/grub.cfg
 	grub-file --is-x86-multiboot2 $<
 	mkdir -p $(BUILD)/iso/boot/grub
@@ -123,12 +124,8 @@ $(BUILD)/kernel.iso: $(BUILD_KERNEL)/kernel.bin $(SRC)/utils/grub.cfg
 
 IMAGES:=$(BUILD)/master.img $(BUILD)/slave.img
 
-.PHONY: image
-image: $(IMAGES)
 
-.PHONY: clean
-clean:
-	rm -rf $(BUILD)
+# ========== emulator ==========
 
 # bochs
 
@@ -174,3 +171,14 @@ qemu-grub: $(BUILD)/kernel.iso
 .PHONY: qemu-dbg
 qemu-dbg: $(IMAGES)
 	$(QEMU) $(QEMU_DISK) $(QEMU_DEBUG)
+
+# ========== misc ==========
+
+# build .img only
+.PHONY: image
+image: $(IMAGES)
+
+# remove build directory
+.PHONY: clean
+clean:
+	rm -rf $(BUILD)
