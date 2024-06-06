@@ -127,7 +127,7 @@ buffer_t *bread(dev_t dev, idx_t block) {
         return bf;
     }
 
-    device_request(bf->dev, bf->data, BLOCK_SECS, bf->block * BLOCK_SIZE, 0,
+    device_request(bf->dev, bf->data, BLOCK_SECS, bf->block * BLOCK_SECS, 0,
                    REQ_READ);
 
     bf->dirty = false;
