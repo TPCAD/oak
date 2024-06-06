@@ -151,17 +151,21 @@ void brelse(buffer_t *bf) {
     if (!bf) {
         return;
     }
-    bf->count--;
-    assert(bf->count >= 0);
-    if (!bf->count) {
-        if (bf->rnode.next) {
-            list_remove(&bf->rnode);
-        }
-        list_push(&free_list, &bf->rnode);
-    }
+
     if (bf->dirty) {
         bwrite(bf);
     }
+
+    bf->count--;
+    assert(bf->count >= 0);
+    if (bf->count) {
+        return;
+    }
+
+    assert(!bf->rnode.next);
+    assert(!bf->rnode.prev);
+    list_push(&free_list, &bf->rnode);
+
     if (!list_empty(&wait_list)) {
         task_t *task = element_entry(task_t, node, list_popback(&wait_list));
         task_unblock(task);
