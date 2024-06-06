@@ -2,6 +2,7 @@ SRC:=.
 BUILD:=../build
 BUILD_BOOT:=$(BUILD)/boot
 BUILD_KERNEL:=$(BUILD)/kernel
+BUILD_FS:=$(BUILD)/fs
 BUILD_LIB:=$(BUILD)/lib
 
 MULTIBOOT2:=0x10000
@@ -33,6 +34,8 @@ $(BUILD_KERNEL):
 	@mkdir -p $(BUILD)/kernel
 $(BUILD_LIB):
 	@mkdir -p $(BUILD)/lib
+$(BUILD_FS):
+	@mkdir -p $(BUILD)/fs
 
 # bootloader
 $(BUILD_BOOT)/%.bin: $(SRC)/boot/%.asm | $(BUILD_BOOT)
@@ -49,6 +52,10 @@ $(BUILD_KERNEL)/%.o: $(SRC)/kernel/%.c | $(BUILD_KERNEL)
 
 # src/lib/*.c
 $(BUILD_LIB)/%.o: $(SRC)/lib/%.c | $(BUILD_LIB)
+	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+
+# src/fs/*.c
+$(BUILD_FS)/%.o: $(SRC)/fs/%.c | $(BUILD_FS)
 	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
@@ -83,6 +90,7 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/task.o \
 	$(BUILD_KERNEL)/thread.o \
 	$(BUILD_KERNEL)/time.o \
+	$(BUILD_FS)/super.o \
 	| $(BUILD_KERNEL)
 	i686-elf-ld $(LDFLAGS) $^ -o $@
 
@@ -130,7 +138,7 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	sudo losetup -d /dev/loop0
 
 # slave.img
-$(BUILD)/slave.img:
+$(BUILD)/slave.img: $(SRC)/utils/slave.sfdisk
 	yes | bximage -q -hd=32 -func=create -sectsize=512 -imgmode=flat $@
 	# disk partition
 	sfdisk $@ < $(SRC)/utils/slave.sfdisk
