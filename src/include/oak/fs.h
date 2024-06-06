@@ -1,6 +1,8 @@
 #ifndef OAK_FS_H
 #define OAK_FS_H
 
+#include "oak/buffer.h"
+#include "oak/device.h"
 #include <oak/list.h>
 #include <oak/types.h>
 
@@ -23,6 +25,18 @@ typedef struct inode_desc_t {
     u16 zone[9]; // direct (0-6), indirect (7) or double indirect (8)
 } inode_desc_t;
 
+typedef struct inode_t {
+    inode_desc_t *desc;
+    struct buffer_t *buf;
+    dev_t dev;
+    idx_t nr;     // inode number
+    u32 count;    // reference count
+    time_t atime; // access time
+    time_t ctime; // create time
+    list_node_t node;
+    dev_t mount;
+} inode_t;
+
 // super block
 typedef struct super_desc_t {
     u16 inodes;        // inode amount
@@ -35,10 +49,24 @@ typedef struct super_desc_t {
     u16 magic;         // magic
 } super_desc_t;
 
+typedef struct super_block_t {
+    super_desc_t *desc;
+    struct buffer_t *buf;
+    struct buffer_t *imaps[IMAP_NR];
+    struct buffer_t *zmaps[ZMAP_NR];
+    dev_t dev;
+    list_t inode_list;
+    inode_t *iroot;
+    inode_t *imount;
+} super_block_t;
+
 // directory
 typedef struct dentry_t {
     u16 nr;              // inode
     char name[NAME_LEN]; // file name
 } dentry_t;
+
+super_block_t *get_super(dev_t dev);
+super_block_t *read_super(dev_t dev);
 
 #endif // !OAK_FS_H
