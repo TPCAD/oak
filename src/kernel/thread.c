@@ -26,52 +26,20 @@ void static user_init_thread() {
     u32 counter = 0;
     int status;
     while (true) {
-
-        // pid_t pid = fork();
-        // if (pid) {
-        //     printf("fork after parent %d %d %d\n", pid, get_pid(),
-        //     get_ppid()); pid_t child = (waitpid(pid, &status)); printf("wait
-        //     pid %d status %d %d\n", child, status, time());
-        // } else {
-        //     printf("fork after child %d %d %d\n", pid, get_pid(),
-        //     get_ppid());
-        //     // sleep(1000);
-        //     exit(0);
-        // }
-        // hang();
         sleep(1000);
     }
 }
 
 void init_thread() {
-    // set_interrupt_state(true);
-    // u32 counter = 0;
-    //
-    // char ch = 0;
-    // while (true) {
-    //     // DEBUGK("init task...%d\n", counter++);
-    //     bool intr = interrupt_diable();
-    //     keyboard_read(&ch, 1);
-    //     printk("%c", ch);
-    //     set_interrupt_state(intr);
-    //     // sleep(500);
-    // }
     char tmp[100];
-    // set_interrupt_state(true);
-    // test();
     task_to_user_mode(user_init_thread);
 }
 
 void test_thread() {
     set_interrupt_state(true);
 
-    test();
     while (true) {
-        // printf("test thread %d %d %d\n", get_pid(), get_ppid(), counter++);
-
+        test();
         sleep(10);
-        // DEBUGK("test task...%d\n", counter++);
-        // BMB;
-        // sleep(709);
     }
 }
