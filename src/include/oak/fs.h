@@ -16,6 +16,15 @@
 #define ZMAP_NR 8
 
 #define BLOCK_BITS (BLOCK_SIZE * 8) // size of block bitmap (bits)
+#define BLOCK_INODES (BLOCK_SIZE / sizeof(inode_desc_t)) // 块 inode 数量
+#define BLOCK_DENTRIES (BLOCK_SIZE / sizeof(dentry_t))   // 块 dentry 数量
+#define BLOCK_INDEXES (BLOCK_SIZE / sizeof(u16))         // 块索引数量
+
+#define DIRECT_BLOCK (7)              // 直接块数量
+#define INDIRECT1_BLOCK BLOCK_INDEXES // 一级间接块数量
+#define INDIRECT2_BLOCK (INDIRECT1_BLOCK * INDIRECT1_BLOCK) // 二级间接块数量
+#define TOTAL_BLOCK                                                            \
+    (DIRECT_BLOCK + INDIRECT1_BLOCK + INDIRECT2_BLOCK) // 全部块数量
 
 typedef struct inode_desc_t {
     u16 mode;    // file type and attribute (rwx bit)
@@ -76,4 +85,11 @@ void bfree(dev_t dev, idx_t idx); // release a file block
 idx_t ialloc(dev_t dev);          // allocate an inode
 void ifree(dev_t dev, idx_t idx); // release inode
 
-#endif // !OAK_FS_H
+// 获取 inode 第 block 块的索引值
+// 如果不存在 且 create 为 true，则创建
+idx_t bmap(inode_t *inode, idx_t block, bool create);
+
+inode_t *get_root_inode();          // 获取根目录 inode
+inode_t *iget(dev_t dev, idx_t nr); // 获得设备 dev 的 nr inode
+void iput(inode_t *inode);          // 释放 inode
+#endif                              // !OAK_FS_H

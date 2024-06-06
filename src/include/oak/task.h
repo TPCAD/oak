@@ -37,6 +37,8 @@ typedef struct task_t {
     u32 brk;                  // the highest address of heap memory
     int status;               // process special status
     pid_t waitpid;            // wait pid
+    struct inode *ipwd;       //
+    struct inode *iroot;      //
     u32 magic;                // magic number
 } task_t;
 
