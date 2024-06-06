@@ -15,6 +15,8 @@
 #define IMAP_NR 8
 #define ZMAP_NR 8
 
+#define BLOCK_BITS (BLOCK_SIZE * 8) // size of block bitmap (bits)
+
 typedef struct inode_desc_t {
     u16 mode;    // file type and attribute (rwx bit)
     u16 uid;     // user id
@@ -68,5 +70,10 @@ typedef struct dentry_t {
 
 super_block_t *get_super(dev_t dev);
 super_block_t *read_super(dev_t dev);
+
+idx_t balloc(dev_t dev);          // allocate a file block
+void bfree(dev_t dev, idx_t idx); // release a file block
+idx_t ialloc(dev_t dev);          // allocate an inode
+void ifree(dev_t dev, idx_t idx); // release inode
 
 #endif // !OAK_FS_H
