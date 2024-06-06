@@ -76,6 +76,7 @@ void device_init() {
         device->write = NULL;
 
         list_init(&device->request_list);
+        device->direct = DIRECT_UP;
     }
 }
 
@@ -149,7 +150,7 @@ void device_request(dev_t dev, void *buf, u8 count, idx_t idx, int flags,
 
     request_t *req = kmalloc(sizeof(request_t));
 
-    req->dev = dev;
+    req->dev = device->dev;
     req->buf = buf;
     req->count = count;
     req->idx = offset;
@@ -178,8 +179,6 @@ void device_request(dev_t dev, void *buf, u8 count, idx_t idx, int flags,
     kfree(req);
 
     if (nextreq) {
-        request_t *nextreq =
-            element_entry(request_t, node, device->request_list.tail.prev);
         assert(nextreq->task->magic == OAK_MAGIC);
         task_unblock(nextreq->task);
     }
