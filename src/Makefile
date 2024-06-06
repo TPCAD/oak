@@ -108,11 +108,46 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	test -n "$$(find $(BUILD_KERNEL)/system.bin -size -100k)"
 	# write system.bin to image
 	dd if=$(BUILD_KERNEL)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc
+	# disk partition
 	sfdisk $@ < $(SRC)/utils/master.sfdisk
+	# mount device
+	sudo losetup /dev/loop0 --partscan $@
+	# create fs
+	sudo mkfs.minix -1 -n 14 /dev/loop0p1
+	# mount fs
+	sudo mount /dev/loop0p1 /mnt
+	# change owner
+	sudo chown ${USER} /mnt
+	# create dir
+	mkdir -p /mnt/home
+	mkdir -p /mnt/d1/d2/d3/d4
+	# create file
+	echo "hello oak from root directory!" > /mnt/hello.txt
+	echo "hello oak from home directory!" > /mnt/home/hello.txt
+	# unmount fs
+	sudo umount /mnt
+	# unmount device
+	sudo losetup -d /dev/loop0
 
 # slave.img
 $(BUILD)/slave.img:
 	yes | bximage -q -hd=32 -func=create -sectsize=512 -imgmode=flat $@
+	# disk partition
+	sfdisk $@ < $(SRC)/utils/slave.sfdisk
+	# mount device
+	sudo losetup /dev/loop0 --partscan $@
+	# create fs
+	sudo mkfs.minix -1 -n 14 /dev/loop0p1
+	# mount fs
+	sudo mount /dev/loop0p1 /mnt
+	# change owner
+	sudo chown ${USER} /mnt
+	# create file
+	echo "slave root directory file!" > /mnt/hello.txt
+	# unmount fs
+	sudo umount /mnt
+	# unmount device
+	sudo losetup -d /dev/loop0
 
 # kernel.iso
 $(BUILD)/kernel.iso: $(BUILD_KERNEL)/kernel.bin $(SRC)/utils/grub.cfg
@@ -171,6 +206,29 @@ qemu-grub: $(BUILD)/kernel.iso
 .PHONY: qemu-dbg
 qemu-dbg: $(IMAGES)
 	$(QEMU) $(QEMU_DISK) $(QEMU_DEBUG)
+
+# ========== mount ==========
+.PHONY: mount-master
+mount-master: $(BUILD)/master.img
+	sudo losetup /dev/loop0 --partscan $<
+	sudo mount /dev/loop0p1 /mnt
+	sudo chown ${USER} /mnt
+
+.PHONY: umount-master
+umount-master: /dev/loop0
+	-sudo umount /mnt
+	-sudo losetup -d $<
+
+.PHONY: mount-slave
+mount-slave: $(BUILD)/slave.img
+	sudo losetup /dev/loop1 --partscan $<
+	sudo mount /dev/loop1p1 /mnt
+	sudo chown ${USER} /mnt
+
+.PHONY: umount-slave
+umount-slave: /dev/loop1
+	-sudo umount /mnt
+	-sudo losetup -d $<
 
 # ========== misc ==========
 
