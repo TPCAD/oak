@@ -1,7 +1,7 @@
 #ifndef OAK_SYSCALL_H
 #define OAK_SYSCALL_H
 
-#include "oak/types.h"
+#include <oak/types.h>
 
 typedef enum syscall_t {
     SYS_NR_TEST,

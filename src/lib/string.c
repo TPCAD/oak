@@ -1,5 +1,5 @@
-#include "oak/types.h"
 #include <oak/string.h>
+#include <oak/types.h>
 
 char *strcpy(char *dest, const char *src) {
     char *ptr = dest;

@@ -1,15 +1,14 @@
-#include "oak/assert.h"
-#include "oak/buffer.h"
-#include "oak/console.h"
-#include "oak/debug.h"
-#include "oak/interrupt.h"
-#include "oak/memory.h"
-#include "oak/syscall.h"
-#include "oak/task.h"
-#include "oak/types.h"
+#include <oak/assert.h>
+#include <oak/buffer.h>
+#include <oak/console.h>
+#include <oak/debug.h>
 #include <oak/device.h>
+#include <oak/interrupt.h>
 #include <oak/memory.h>
 #include <oak/string.h>
+#include <oak/syscall.h>
+#include <oak/task.h>
+#include <oak/types.h>
 
 #define SYSCALL_SIZE 256
 

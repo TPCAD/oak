@@ -1,9 +1,9 @@
 #ifndef OAK_BUFFER_H
 #define OAK_BUFFER_H
 
-#include "oak/list.h"
-#include "oak/mutex.h"
-#include "oak/types.h"
+#include <oak/list.h>
+#include <oak/mutex.h>
+#include <oak/types.h>
 #define BLOCK_SIZE 1024
 #define SECTOR_SIZE 512
 #define BLOCK_SECS (BLOCK_SIZE / SECTOR_SIZE)

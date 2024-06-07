@@ -1,12 +1,12 @@
-#include "oak/fifo.h"
-#include "oak/mutex.h"
-#include "oak/task.h"
-#include "oak/types.h"
 #include <oak/assert.h>
 #include <oak/debug.h>
 #include <oak/device.h>
+#include <oak/fifo.h>
 #include <oak/interrupt.h>
 #include <oak/io.h>
+#include <oak/mutex.h>
+#include <oak/task.h>
+#include <oak/types.h>
 
 #define KEYBOARD_DATA_PORT 0x60
 #define KEYBOARD_CTRL_PORT 0x64

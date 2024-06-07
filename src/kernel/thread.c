@@ -1,12 +1,12 @@
-#include "oak/printk.h"
-#include "oak/stdlib.h"
-#include "oak/task.h"
-#include "oak/types.h"
 #include <oak/arena.h>
 #include <oak/debug.h>
 #include <oak/interrupt.h>
+#include <oak/printk.h>
 #include <oak/stdio.h>
+#include <oak/stdlib.h>
 #include <oak/syscall.h>
+#include <oak/task.h>
+#include <oak/types.h>
 
 extern u32 keyboard_read(char *buf, u32 count);
 

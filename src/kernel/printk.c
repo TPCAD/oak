@@ -1,8 +1,8 @@
-#include "oak/types.h"
 #include <oak/console.h>
 #include <oak/printk.h>
 #include <oak/stdarg.h>
 #include <oak/stdio.h>
+#include <oak/types.h>
 
 extern int32 console_write(void *dev, char *buf, u32 count);
 

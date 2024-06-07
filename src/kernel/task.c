@@ -1,17 +1,17 @@
-#include "oak/assert.h"
-#include "oak/bitmap.h"
-#include "oak/fs.h"
-#include "oak/interrupt.h"
-#include "oak/list.h"
-#include "oak/oak.h"
-#include "oak/types.h"
 #include <oak/arena.h>
+#include <oak/assert.h>
+#include <oak/bitmap.h>
 #include <oak/debug.h>
+#include <oak/fs.h>
 #include <oak/global.h>
+#include <oak/interrupt.h>
+#include <oak/list.h>
 #include <oak/memory.h>
+#include <oak/oak.h>
 #include <oak/printk.h>
 #include <oak/string.h>
 #include <oak/task.h>
+#include <oak/types.h>
 
 #define NR_TASKS 64
 

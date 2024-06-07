@@ -1,10 +1,10 @@
-#include "oak/io.h"
-#include "oak/stdlib.h"
 #include <oak/assert.h>
 #include <oak/debug.h>
 #include <oak/global.h>
 #include <oak/interrupt.h>
+#include <oak/io.h>
 #include <oak/printk.h>
+#include <oak/stdlib.h>
 #include <oak/types.h>
 
 #define ENTRY_SIZE 0x30

@@ -1,6 +1,6 @@
-#include "oak/types.h"
 #include <oak/assert.h>
 #include <oak/fifo.h>
+#include <oak/types.h>
 
 static _inline u32 fifo_next(fifo_t *fifo, u32 pos) {
     return (pos + 1) % fifo->length;
