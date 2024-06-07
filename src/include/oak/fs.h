@@ -28,6 +28,10 @@
 #define TOTAL_BLOCK                                                            \
     (DIRECT_BLOCK + INDIRECT1_BLOCK + INDIRECT2_BLOCK) // 全部块数量
 
+#define SEPARATOR1 '/'
+#define SEPARATOR2 '\\'
+#define IS_SEPARATOR(c) (c == SEPARATOR1 || c == SEPARATOR2)
+
 typedef struct inode_desc_t {
     u16 mode;    // file type and attribute (rwx bit)
     u16 uid;     // user id

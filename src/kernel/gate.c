@@ -28,6 +28,9 @@ void syscall_check(u32 nr) {
 static void sys_default() { panic("syscall not implemented!"); }
 
 static u32 sys_test() {
+    extern void dir_test();
+    dir_test();
+
     char ch;
     device_t *device;
 
