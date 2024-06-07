@@ -7,8 +7,6 @@
 #include <oak/string.h>
 #include <oak/syscall.h>
 
-#define LOGK(fmt, args...) DEBUGK(fmt, ##args)
-
 #define INODE_NR 64
 
 static inode_t inode_table[INODE_NR];
@@ -22,6 +20,7 @@ static inode_t *get_free_inode() {
         }
     }
     panic("no more inode!!!");
+    return NULL; // no use
 }
 
 // 释放一个 inode
