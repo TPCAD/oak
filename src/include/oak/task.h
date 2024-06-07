@@ -1,11 +1,12 @@
 #ifndef OAK_TASK_H
 #define OAK_TASK_H
 
+#include "oak/fs.h"
 #include <oak/list.h>
 #include <oak/types.h>
 
 #define KERNEL_USER 0
-#define NORMAL_USER 1
+#define NORMAL_USER 1000
 
 #define TASK_NAME_LEN 16
 
@@ -30,6 +31,7 @@ typedef struct task_t {
     u32 jiffies;              // jiffies last ran
     char name[TASK_NAME_LEN]; // task name
     u32 uid;                  // user id
+    u32 gid;                  // gid
     u32 pid;                  // task id
     u32 ppid;                 // task father id
     u32 pde;                  // pde
@@ -37,8 +39,9 @@ typedef struct task_t {
     u32 brk;                  // the highest address of heap memory
     int status;               // process special status
     pid_t waitpid;            // wait pid
-    struct inode *ipwd;       //
-    struct inode *iroot;      //
+    struct inode_t *ipwd;     //
+    struct inode_t *iroot;    //
+    u16 umask;                // process user privilege
     u32 magic;                // magic number
 } task_t;
 

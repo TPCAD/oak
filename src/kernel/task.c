@@ -210,12 +210,14 @@ static task_t *task_create(target_t target, const char *name, u32 priority,
     task->jiffies = 0;
     task->state = TASK_READY;
     task->uid = uid;
+    task->gid = 0;
     task->vmap = &kernel_map;
     task->pde = KERNEL_PAGE_DIR;
     task->brk = KERNEL_MEMORY_SIZE;
     task->iroot = get_root_inode();
     task->ipwd = get_root_inode();
     task->magic = OAK_MAGIC;
+    task->umask = 0022;
 
     return task;
 }
@@ -409,5 +411,5 @@ void task_init() {
 
     idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
     task_create(init_thread, "init", 5, NORMAL_USER);
-    task_create(test_thread, "test", 5, KERNEL_USER);
+    task_create(test_thread, "test", 5, NORMAL_USER);
 }

@@ -39,6 +39,8 @@ int32 write(fd_t fd, char *buf, u32 len) {
 
 time_t time() { return _syscall0(SYS_NR_TIME); }
 
+mode_t umask(mode_t umask) { return _syscall1(SYS_NR_UMASK, (u32)umask); }
+
 int32 brk(void *addr) { return _syscall1(SYS_NR_BRK, (u32)addr); }
 
 pid_t get_pid() { return _syscall0(SYS_NR_GETPID); }
