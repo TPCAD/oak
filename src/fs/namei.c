@@ -254,15 +254,10 @@ inode_t *namei(char *pathname) {
     return inode;
 }
 
-#include <oak/task.h>
+#include <oak/memory.h>
 
 void dir_test() {
-    char pathname[] = "/";
-    char *name = NULL;
-    inode_t *inode = named(pathname, &name);
-    iput(inode);
-
-    inode = namei("/home/hello.txt");
-    DEBUGK("get inode %d\n", inode->nr);
+    inode_t *inode = namei("/d1/d2/d3/../../../hello.txt");
+    inode_truncate(inode);
     iput(inode);
 }

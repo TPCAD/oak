@@ -41,4 +41,6 @@ typedef u16 mode_t;
 typedef int32 fd_t;
 typedef enum std_fd_t { stdin, stdout, stderr } std_fd_t;
 
+typedef int32 off_t; // file offset
+
 #endif // DEBUG
