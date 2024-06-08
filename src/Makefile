@@ -131,6 +131,7 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	# change owner
 	sudo chown ${USER} /mnt
 	# create dir
+	mkdir -p /mnt/empty
 	mkdir -p /mnt/home
 	mkdir -p /mnt/d1/d2/d3/d4
 	# create file
