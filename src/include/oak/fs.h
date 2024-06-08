@@ -59,11 +59,11 @@ typedef struct inode_t {
     inode_desc_t *desc;
     struct buffer_t *buf;
     dev_t dev;
-    idx_t nr;     // inode number
-    u32 count;    // reference count
-    time_t atime; // access time
-    time_t ctime; // change time
-    list_node_t node;
+    idx_t nr;         // inode number
+    u32 count;        // reference count
+    time_t atime;     // access time
+    time_t ctime;     // change time
+    list_node_t node; // node store in super_block_t's inode_list
     dev_t mount;
 } inode_t;
 
@@ -85,8 +85,8 @@ typedef struct super_block_t {
     struct buffer_t *imaps[IMAP_NR];
     struct buffer_t *zmaps[ZMAP_NR];
     dev_t dev;
-    list_t inode_list;
-    inode_t *iroot; // inode of root directory
+    list_t inode_list; // list contains the inode read to memory yet
+    inode_t *iroot;    // inode of root directory
     inode_t *imount;
 } super_block_t;
 

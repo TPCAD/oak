@@ -5,7 +5,7 @@
 #include <oak/fs.h>
 #include <oak/string.h>
 
-// allocate a file block
+// allocate a block
 idx_t balloc(dev_t dev) {
     super_block_t *sb = get_super(dev);
     assert(sb);
@@ -22,10 +22,10 @@ idx_t balloc(dev_t dev) {
         bitmap_make(&map, buf->data, BLOCK_SIZE,
                     i * BLOCK_BITS + sb->desc->firstdatazone - 1);
 
-        // 从位图中扫描一位
+        // set continuous 1 bit in zmap
         bit = bitmap_scan(&map, 1);
         if (bit != EOF) {
-            // 如果扫描成功，则 标记缓冲区脏，中止查找
+            // successful, mark bufer as dirty, stop searching
             assert(bit < sb->desc->zones);
             buf->dirty = true;
             break;
@@ -35,7 +35,7 @@ idx_t balloc(dev_t dev) {
     return bit;
 }
 
-// release a file block
+// release a block
 void bfree(dev_t dev, idx_t idx) {
     super_block_t *sb = get_super(dev);
     assert(sb != NULL);

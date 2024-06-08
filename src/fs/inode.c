@@ -1,4 +1,3 @@
-#include "oak/types.h"
 #include <oak/arena.h>
 #include <oak/assert.h>
 #include <oak/buffer.h>
@@ -8,6 +7,7 @@
 #include <oak/stdlib.h>
 #include <oak/string.h>
 #include <oak/syscall.h>
+#include <oak/types.h>
 
 #define INODE_NR 64
 
@@ -143,7 +143,7 @@ int inode_read(inode_t *inode, char *buf, u32 len, off_t offset) {
     // 剩余字节数
     u32 left = MIN(len, inode->desc->size - offset);
     while (left) {
-        // 找到对应的文件便宜，所在文件块
+        // 找到对应的文件偏移，所在文件块
         idx_t nr = bmap(inode, offset / BLOCK_SIZE, false);
         assert(nr);
 
