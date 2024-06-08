@@ -32,16 +32,16 @@ void syscall_check(u32 nr) {
 static void sys_default() { panic("syscall not implemented!"); }
 
 static u32 sys_test() {
-    inode_t *inode = inode_open("/world.txt", O_RDWR | O_CREAT, 0755);
-    assert(inode);
-
-    char *buf = (char *)alloc_kpage(1);
-    int i = inode_read(inode, buf, 1024, 0);
-
-    memset(buf, 'A', 4096);
-    inode_write(inode, buf, 4096, 0);
-
-    iput(inode);
+    // inode_t *inode = inode_open("/world.txt", O_RDWR | O_CREAT, 0755);
+    // assert(inode);
+    //
+    // char *buf = (char *)alloc_kpage(1);
+    // int i = inode_read(inode, buf, 1024, 0);
+    //
+    // memset(buf, 'A', 4096);
+    // inode_write(inode, buf, 4096, 0);
+    //
+    // iput(inode);
 
     char ch;
     device_t *device;

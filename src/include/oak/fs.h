@@ -86,7 +86,7 @@ typedef struct super_block_t {
     struct buffer_t *zmaps[ZMAP_NR];
     dev_t dev;
     list_t inode_list;
-    inode_t *iroot;
+    inode_t *iroot; // inode of root directory
     inode_t *imount;
 } super_block_t;
 
@@ -95,6 +95,14 @@ typedef struct dentry_t {
     u16 nr;              // inode
     char name[NAME_LEN]; // file name
 } dentry_t;
+
+typedef struct file_t {
+    inode_t *inode; // 文件 inode
+    u32 count;      // 引用计数
+    off_t offset;   // 文件偏移
+    int flags;      // 文件标记
+    int mode;       // 文件模式
+} file_t;
 
 super_block_t *get_super(dev_t dev);
 super_block_t *read_super(dev_t dev);
@@ -126,5 +134,8 @@ int inode_write(inode_t *inode, char *buf, u32 len, off_t offset);
 
 // release all file blocks in inode
 void inode_truncate(inode_t *inode);
+
+file_t *get_file();
+void put_file(file_t *file);
 
 #endif // !OAK_FS_H

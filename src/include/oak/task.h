@@ -9,6 +9,7 @@
 #define NORMAL_USER 1000
 
 #define TASK_NAME_LEN 16
+#define TASK_FILE_NR 16 // most file amount of process
 
 typedef void target_t();
 
@@ -23,26 +24,27 @@ typedef enum task_state_t {
 } task_state_t;
 
 typedef struct task_t {
-    u32 *stack;               // kernel stack
-    list_node_t node;         // task blocked node
-    task_state_t state;       // task status
-    u32 priority;             // priority
-    int ticks;                // left jiffies
-    u32 jiffies;              // jiffies last ran
-    char name[TASK_NAME_LEN]; // task name
-    u32 uid;                  // user id
-    u32 gid;                  // gid
-    u32 pid;                  // task id
-    u32 ppid;                 // task father id
-    u32 pde;                  // pde
-    struct bitmap_t *vmap;    // virtual memory map
-    u32 brk;                  // the highest address of heap memory
-    int status;               // process special status
-    pid_t waitpid;            // wait pid
-    struct inode_t *ipwd;     //
-    struct inode_t *iroot;    //
-    u16 umask;                // process user privilege
-    u32 magic;                // magic number
+    u32 *stack;                         // kernel stack
+    list_node_t node;                   // task blocked node
+    task_state_t state;                 // task status
+    u32 priority;                       // priority
+    int ticks;                          // left jiffies
+    u32 jiffies;                        // jiffies last ran
+    char name[TASK_NAME_LEN];           // task name
+    u32 uid;                            // user id
+    u32 gid;                            // gid
+    u32 pid;                            // task id
+    u32 ppid;                           // task father id
+    u32 pde;                            // pde
+    struct bitmap_t *vmap;              // virtual memory map
+    u32 brk;                            // the highest address of heap memory
+    int status;                         // process special status
+    pid_t waitpid;                      // wait pid
+    struct inode_t *ipwd;               //
+    struct inode_t *iroot;              //
+    u16 umask;                          // process user privilege
+    struct file_t *files[TASK_FILE_NR]; // 进程文件表
+    u32 magic;                          // magic number
 } task_t;
 
 // ABI
@@ -98,5 +100,8 @@ void task_wakeup();
 void task_to_user_mode(target_t target);
 pid_t sys_getpid();
 pid_t sys_getppid();
+
+fd_t task_get_fd(task_t *task);
+void task_put_fd(task_t *task, fd_t fd);
 
 #endif // !OAK_TASK_H
