@@ -23,8 +23,8 @@ void idle_thread() {
 }
 
 void static user_init_thread() {
-    u32 counter = 0;
-    int status;
+    fd_t fd = open("/world.txt", O_CREAT | O_RDWR, 0755);
+    close(fd);
     while (true) {
         sleep(1000);
     }

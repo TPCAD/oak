@@ -8,7 +8,10 @@ typedef enum syscall_t {
     SYS_NR_EXIT = 1,
     SYS_NR_FORK = 2,
     SYS_NR_WRITE = 4,
+    SYS_NR_OPEN = 5,
+    SYS_NR_CLOSE = 6,
     SYS_NR_WAITPID = 7,
+    SYS_NR_CREAT = 8,
     SYS_NR_LINK = 9,
     SYS_NR_UNLINK = 10,
     SYS_NR_TIME = 13,
@@ -31,6 +34,9 @@ void sleep(u32 ms);
 pid_t get_pid();
 pid_t get_ppid();
 int32 brk(void *addr);
+fd_t open(char *filename, int flags, int mode);
+fd_t creat(char *filename, int mode);
+void close(fd_t fd);
 int32 write(fd_t fd, char *buf, u32 len);
 int mkdir(char *pathname, int mode);
 int rmdir(char *pathname);
