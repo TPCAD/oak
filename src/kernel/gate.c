@@ -14,6 +14,8 @@
 
 extern time_t sys_time();
 extern mode_t sys_umask();
+extern int sys_mkdir();
+extern int sys_rmdir();
 
 handler_t syscall_table[SYSCALL_SIZE];
 
@@ -28,9 +30,6 @@ void syscall_check(u32 nr) {
 static void sys_default() { panic("syscall not implemented!"); }
 
 static u32 sys_test() {
-    extern void dir_test();
-    dir_test();
-
     char ch;
     device_t *device;
 
@@ -75,6 +74,9 @@ void syscall_init() {
     syscall_table[SYS_NR_GETPPID] = sys_getppid;
 
     syscall_table[SYS_NR_WRITE] = sys_write;
+
+    syscall_table[SYS_NR_MKDIR] = sys_mkdir;
+    syscall_table[SYS_NR_RMDIR] = sys_rmdir;
 
     syscall_table[SYS_NR_TIME] = sys_time;
 
