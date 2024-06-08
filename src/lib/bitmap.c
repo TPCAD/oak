@@ -38,8 +38,9 @@ void bitmap_init(bitmap_t *map, u8 *bits, u32 length, u32 offset) {
  */
 bool bitmap_is_set(bitmap_t *map, u32 index) {
     assert(index >= map->offset);
-    u32 bytes = index / 8;
-    u8 bits = index % 8;
+    idx_t idx = index - map->offset;
+    u32 bytes = idx / 8;
+    u8 bits = idx % 8;
 
     assert(bytes < map->length);
 
@@ -56,8 +57,9 @@ void bitmap_set(bitmap_t *map, u32 index, bool value) {
     assert(index >= map->offset);
     assert(value == 0 || value == 1);
 
-    u32 bytes = index / 8;
-    u8 bits = index % 8;
+    idx_t idx = index - map->offset;
+    u32 bytes = idx / 8;
+    u8 bits = idx % 8;
 
     assert(bytes < map->length);
 
@@ -79,12 +81,12 @@ void bitmap_set(bitmap_t *map, u32 index, bool value) {
  */
 u32 bitmap_scan(bitmap_t *map, u32 count) {
     int start = EOF;
-    u32 bits_left = map->length * 8 - map->offset;
-    u32 next_bit = map->offset;
+    u32 bits_left = map->length * 8;
+    u32 next_bit = 0;
     u32 counter = 0;
 
     while (bits_left-- > 0) {
-        if (!bitmap_is_set(map, next_bit)) {
+        if (!bitmap_is_set(map, map->offset + next_bit)) {
             counter++;
         } else {
             counter = 0;
@@ -105,11 +107,11 @@ u32 bitmap_scan(bitmap_t *map, u32 count) {
     bits_left = count;
     next_bit = start;
     while (bits_left--) {
-        bitmap_set(map, next_bit, true);
+        bitmap_set(map, map->offset + next_bit, true);
         next_bit++;
     }
 
-    return start;
+    return start + map->offset;
 }
 
 void bitmap_test() {
