@@ -82,9 +82,12 @@ char *strrchr(const char *str, int ch) {
 int memcmp(const void *lhs, const void *rhs, size_t count) {
     char *lptr = (char *)lhs;
     char *rptr = (char *)rhs;
-    while (*lptr == *rptr && count-- > 0) {
+    while (count-- > 0 && *lptr == *rptr) {
         lptr++;
         rptr++;
+    }
+    if (count == 0) {
+        return 0;
     }
     return *lptr < *rptr ? -1 : *lptr > *rptr;
 }
