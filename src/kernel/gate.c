@@ -24,6 +24,9 @@ extern void sys_close();
 extern int sys_read();
 extern int sys_write();
 extern int sys_lseek();
+extern int sys_chdir();
+extern int sys_chroot();
+extern char *sys_getcwd();
 
 handler_t syscall_table[SYSCALL_SIZE];
 
@@ -99,4 +102,8 @@ void syscall_init() {
     syscall_table[SYS_NR_TIME] = sys_time;
 
     syscall_table[SYS_NR_UMASK] = sys_umask;
+
+    syscall_table[SYS_NR_CHDIR] = sys_chdir;
+    syscall_table[SYS_NR_CHROOT] = sys_chroot;
+    syscall_table[SYS_NR_GETCWD] = sys_getcwd;
 }

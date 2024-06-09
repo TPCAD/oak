@@ -2,6 +2,7 @@
 #include <oak/debug.h>
 #include <oak/interrupt.h>
 #include <oak/printk.h>
+#include <oak/stdio.h>
 #include <oak/stdlib.h>
 #include <oak/string.h>
 #include <oak/syscall.h>
@@ -24,14 +25,11 @@ void idle_thread() {
 
 void static user_init_thread() {
     char buf[256];
-    memset(buf, 'A', sizeof(buf));
 
-    fd_t fd;
-    int len = 0;
-    fd = open("/hello.txt", O_RDWR, 0755);
-    lseek(fd, 5, SEEK_SET);
-    len = write(fd, buf, sizeof(buf));
-    close(fd);
+    // chroot("/d1");
+    chdir("d2");
+    getcwd(buf, sizeof(buf));
+    printf("current working directory: %s\n", buf);
     while (true) {
         char ch;
         read(stdin, &ch, 1);
@@ -48,7 +46,7 @@ void init_thread() {
 void test_thread() {
     set_interrupt_state(true);
 
-    test();
+    // test();
     // mkdir("/world.txt", 0755);
     // rmdir("empty");
     // link("/hello.txt", "/world.txt");
