@@ -40,6 +40,7 @@ typedef struct task_t {
     u32 brk;                            // the highest address of heap memory
     int status;                         // process special status
     pid_t waitpid;                      // wait pid
+    char *pwd;                          // current dir of process
     struct inode_t *ipwd;               //
     struct inode_t *iroot;              //
     u16 umask;                          // process user privilege

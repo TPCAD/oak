@@ -10,6 +10,7 @@
 #include <oak/oak.h>
 #include <oak/printk.h>
 #include <oak/string.h>
+#include <oak/syscall.h>
 #include <oak/task.h>
 #include <oak/types.h>
 
@@ -235,6 +236,11 @@ static task_t *task_create(target_t target, const char *name, u32 priority,
     task->brk = KERNEL_MEMORY_SIZE;
     task->iroot = get_root_inode();
     task->ipwd = get_root_inode();
+    task->iroot->count += 2;
+
+    task->pwd = (void *)alloc_kpage(1);
+    strcpy(task->pwd, "/");
+
     task->magic = OAK_MAGIC;
     task->umask = 0022;
 
@@ -332,6 +338,19 @@ pid_t task_fork() {
 
     child->pde = (u32)copy_pde();
 
+    child->pwd = (char *)alloc_kpage(1);
+    strncpy(child->pwd, task->pwd, PAGE_SIZE);
+
+    task->iroot->count++;
+    task->ipwd->count++;
+
+    for (size_t i = 0; i < TASK_FILE_NR; i++) {
+        file_t *file = child->files[i];
+        if (file) {
+            file->count++;
+        }
+    }
+
     task_build_stack(child);
 
     return child->pid;
@@ -350,6 +369,17 @@ void task_exit(int status) {
 
     free_kpage((u32)task->vmap->bits, 1);
     kfree(task->vmap);
+
+    free_kpage((u32)task->pwd, 1);
+    iput(task->ipwd);
+    iput(task->iroot);
+
+    for (size_t i = 0; i < TASK_FILE_NR; i++) {
+        file_t *file = task->files[i];
+        if (file) {
+            close(i);
+        }
+    }
 
     for (size_t i = 2; i < NR_TASKS; i++) {
         task_t *child = task_table[i];
