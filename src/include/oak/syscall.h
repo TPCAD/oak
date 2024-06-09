@@ -16,6 +16,7 @@ typedef enum syscall_t {
     SYS_NR_LINK = 9,
     SYS_NR_UNLINK = 10,
     SYS_NR_TIME = 13,
+    SYS_NR_LSEEK = 19,
     SYS_NR_GETPID = 20,
     SYS_NR_MKDIR = 39,
     SYS_NR_RMDIR = 40,
@@ -40,6 +41,7 @@ fd_t creat(char *filename, int mode);
 void close(fd_t fd);
 int read(fd_t fd, char *buf, int len);
 int write(fd_t fd, char *buf, int len);
+int lseek(fd_t fd, off_t offset, int whence);
 int mkdir(char *pathname, int mode);
 int rmdir(char *pathname);
 int link(char *oldname, char *newname);
