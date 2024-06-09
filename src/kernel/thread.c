@@ -10,6 +10,7 @@
 #include <oak/types.h>
 
 extern u32 keyboard_read(char *buf, u32 count);
+extern void ash_main();
 
 void idle_thread() {
     set_interrupt_state(true);
@@ -24,17 +25,15 @@ void idle_thread() {
 }
 
 void static user_init_thread() {
-    char buf[256];
-
-    // chroot("/d1");
-    chdir("d2");
-    getcwd(buf, sizeof(buf));
-    printf("current working directory: %s\n", buf);
     while (true) {
-        char ch;
-        read(stdin, &ch, 1);
-        write(stdout, &ch, 1);
-        sleep(10);
+        int32 status;
+        pid_t pid = fork();
+        if (pid) {
+            pid_t child = waitpid(pid, &status);
+            printf("wait pid %d status %d %d\n", child, status, time());
+        } else {
+            ash_main();
+        }
     }
 }
 

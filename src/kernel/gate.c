@@ -27,6 +27,8 @@ extern int sys_lseek();
 extern int sys_chdir();
 extern int sys_chroot();
 extern char *sys_getcwd();
+extern time_t sys_readdir();
+extern void console_clear();
 
 handler_t syscall_table[SYSCALL_SIZE];
 
@@ -88,6 +90,7 @@ void syscall_init() {
     syscall_table[SYS_NR_READ] = sys_read;
     syscall_table[SYS_NR_WRITE] = sys_write;
     syscall_table[SYS_NR_LSEEK] = sys_lseek;
+    syscall_table[SYS_NR_READDIR] = sys_readdir;
 
     syscall_table[SYS_NR_MKDIR] = sys_mkdir;
     syscall_table[SYS_NR_RMDIR] = sys_rmdir;
@@ -106,4 +109,6 @@ void syscall_init() {
     syscall_table[SYS_NR_CHDIR] = sys_chdir;
     syscall_table[SYS_NR_CHROOT] = sys_chroot;
     syscall_table[SYS_NR_GETCWD] = sys_getcwd;
+
+    syscall_table[SYS_NR_CLEAR] = console_clear;
 }
