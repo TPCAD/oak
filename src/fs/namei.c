@@ -712,8 +712,9 @@ int sys_chroot(char *pathname) {
     task_t *task = running_task();
     inode_t *inode = namei(pathname);
 
-    if (!inode)
+    if (!inode) {
         goto rollback;
+    }
     if (!ISDIR(inode->desc->mode) || inode == task->iroot)
         goto rollback;
 

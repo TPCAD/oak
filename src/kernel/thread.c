@@ -25,6 +25,11 @@ void idle_thread() {
 }
 
 void static user_init_thread() {
+    // char buf[256];
+    // chroot("/d1");
+    // chdir("/d2");
+    // getcwd(buf, sizeof(buf));
+    // printf("current work directory: %s\n", buf);
     while (true) {
         int32 status;
         pid_t pid = fork();
@@ -51,7 +56,7 @@ void test_thread() {
     // link("/hello.txt", "/world.txt");
     // unlink("/hello.txt");
     while (true) {
-        test();
+        // test();
         sleep(10);
     }
 }
