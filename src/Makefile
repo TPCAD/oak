@@ -4,6 +4,7 @@ BUILD_BOOT:=$(BUILD)/boot
 BUILD_KERNEL:=$(BUILD)/kernel
 BUILD_FS:=$(BUILD)/fs
 BUILD_LIB:=$(BUILD)/lib
+BUILD_BUILTIN:=$(BUILD)/builtin
 
 MULTIBOOT2:=0x10000
 ENTRYPOINT:=0x10040
@@ -36,6 +37,8 @@ $(BUILD_LIB):
 	@mkdir -p $(BUILD)/lib
 $(BUILD_FS):
 	@mkdir -p $(BUILD)/fs
+$(BUILD_BUILTIN):
+	@mkdir -p $(BUILD)/builtin
 
 # bootloader
 $(BUILD_BOOT)/%.bin: $(SRC)/boot/%.asm | $(BUILD_BOOT)
@@ -56,6 +59,10 @@ $(BUILD_LIB)/%.o: $(SRC)/lib/%.c | $(BUILD_LIB)
 
 # src/fs/*.c
 $(BUILD_FS)/%.o: $(SRC)/fs/%.c | $(BUILD_FS)
+	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+
+# src/builtin/*.c
+$(BUILD_BUILTIN)/%.o: $(SRC)/builtin/%.c | $(BUILD_BUILTIN)
 	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
@@ -96,6 +103,7 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_FS)/inode.o \
 	$(BUILD_FS)/namei.o \
 	$(BUILD_FS)/super.o \
+	$(BUILD_BUILTIN)/ash.o \
 	| $(BUILD_KERNEL)
 	i686-elf-ld $(LDFLAGS) $^ -o $@
 
