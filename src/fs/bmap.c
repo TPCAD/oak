@@ -119,6 +119,7 @@ void ifree(dev_t dev, idx_t idx) {
 
 // 获取 inode 第 block 块的索引值
 // 如果不存在 且 create 为 true，则创建
+// 即获取 zone 数组中的值
 idx_t bmap(inode_t *inode, idx_t block, bool create) {
     // 确保 block 合法
     assert(block >= 0 && block < TOTAL_BLOCK);
