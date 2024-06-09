@@ -63,8 +63,17 @@ char *strrsep(const char *str) {
     }
 }
 
-static bool match_name(const char *name, const char *entry_name, char **next) {
-    char *lhs = (char *)name;
+/* match if path contains entry name
+ *
+ * @param path path
+ * @param entry_name
+ * @param next pointer to the path without entry name
+ *
+ * @return Boolean
+ */
+
+static bool match_name(const char *path, const char *entry_name, char **next) {
+    char *lhs = (char *)path;
     char *rhs = (char *)entry_name;
 
     while (*lhs == *rhs && *lhs != EOS && *rhs != EOS) {
@@ -88,6 +97,9 @@ static bool match_name(const char *name, const char *entry_name, char **next) {
     return true;
 }
 
+/* Find the first dir entry in the path. Return the buffer of the block
+ * contains dir entry. The dir entry save in the parameter result.
+ */
 static buffer_t *find_entry(inode_t **dir, const char *name, char **next,
                             dentry_t **result) {
     assert(ISDIR((*dir)->desc->mode));
@@ -182,6 +194,7 @@ inode_t *named(char *pathname, char **next) {
     inode->count++;
     *next = left;
 
+    // root dir "/"
     if (!*left) {
         return inode;
     }
@@ -611,7 +624,15 @@ rollback:
 #include <oak/memory.h>
 
 void dir_test() {
-    inode_t *inode = namei("/d1/d2/d3/../../../hello.txt");
-    inode_truncate(inode);
-    iput(inode);
+    inode_t *inode = namei("/hello.txt");
+    char *buf = (char *)alloc_kpage(1);
+    int i = inode_read(inode, buf, 1024, 6);
+
+    DEBUGK("content: %s\n", buf);
+
+    memset(buf, 'A', PAGE_SIZE);
+    inode_write(inode, buf, PAGE_SIZE, 0);
+
+    memset(buf, 'B', PAGE_SIZE);
+    inode_write(inode, buf, PAGE_SIZE, PAGE_SIZE);
 }
