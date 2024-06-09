@@ -7,6 +7,7 @@ typedef enum syscall_t {
     SYS_NR_TEST,
     SYS_NR_EXIT = 1,
     SYS_NR_FORK = 2,
+    SYS_NR_READ = 3,
     SYS_NR_WRITE = 4,
     SYS_NR_OPEN = 5,
     SYS_NR_CLOSE = 6,
@@ -37,7 +38,8 @@ int32 brk(void *addr);
 fd_t open(char *filename, int flags, int mode);
 fd_t creat(char *filename, int mode);
 void close(fd_t fd);
-int32 write(fd_t fd, char *buf, u32 len);
+int read(fd_t fd, char *buf, int len);
+int write(fd_t fd, char *buf, int len);
 int mkdir(char *pathname, int mode);
 int rmdir(char *pathname);
 int link(char *oldname, char *newname);
