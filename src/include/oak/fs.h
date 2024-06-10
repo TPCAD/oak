@@ -124,9 +124,10 @@ void ifree(dev_t dev, idx_t idx); // release inode
 // 如果不存在 且 create 为 true，则创建
 idx_t bmap(inode_t *inode, idx_t block, bool create);
 
-inode_t *get_root_inode();          // 获取根目录 inode
-inode_t *iget(dev_t dev, idx_t nr); // 获得设备 dev 的 nr inode
-void iput(inode_t *inode);          // 释放 inode
+inode_t *get_root_inode();               // 获取根目录 inode
+inode_t *iget(dev_t dev, idx_t nr);      // 获得设备 dev 的 nr inode
+void iput(inode_t *inode);               // 释放 inode
+inode_t *new_inode(dev_t dev, idx_t nr); // 创建新 inode
 
 inode_t *named(char *pathname, char **next); // 获取 pathname 对应的父目录 inode
 inode_t *namei(char *pathname);              // 获取 pathname 对应的 inode

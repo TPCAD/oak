@@ -7,6 +7,7 @@
 #include <oak/stdlib.h>
 #include <oak/string.h>
 #include <oak/syscall.h>
+#include <oak/task.h>
 #include <oak/types.h>
 
 #define INODE_NR 64
@@ -91,6 +92,23 @@ inode_t *iget(dev_t dev, idx_t nr) {
 
     inode->ctime = inode->desc->mtime;
     inode->atime = time();
+
+    return inode;
+}
+
+inode_t *new_inode(dev_t dev, idx_t nr) {
+    task_t *task = running_task();
+    inode_t *inode = iget(dev, nr);
+    assert(inode->desc->nlinks == 0);
+
+    inode->buf->dirty = true;
+
+    inode->desc->mode = 0777 & (~task->umask);
+    inode->desc->uid = task->uid;
+    inode->desc->size = 0;
+    inode->desc->mtime = inode->atime = time();
+    inode->desc->gid = task->gid;
+    inode->desc->nlinks = 1;
 
     return inode;
 }

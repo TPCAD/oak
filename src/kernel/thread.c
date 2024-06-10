@@ -11,6 +11,7 @@
 
 extern u32 keyboard_read(char *buf, u32 count);
 extern void ash_main();
+extern void dev_init();
 
 void idle_thread() {
     set_interrupt_state(true);
@@ -44,6 +45,7 @@ void static user_init_thread() {
 
 void init_thread() {
     char tmp[100];
+    dev_init();
     task_to_user_mode(user_init_thread);
 }
 

@@ -31,6 +31,7 @@ extern time_t sys_readdir();
 extern void console_clear();
 extern int sys_stat();
 extern int sys_fstat();
+extern int sys_mknod();
 
 handler_t syscall_table[SYSCALL_SIZE];
 
@@ -94,4 +95,6 @@ void syscall_init() {
 
     syscall_table[SYS_NR_STAT] = sys_stat;
     syscall_table[SYS_NR_FSTAT] = sys_fstat;
+
+    syscall_table[SYS_NR_MKNOD] = sys_mknod;
 }

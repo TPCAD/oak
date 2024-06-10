@@ -18,6 +18,7 @@ typedef enum syscall_t {
     SYS_NR_UNLINK = 10,
     SYS_NR_CHDIR = 12,
     SYS_NR_TIME = 13,
+    SYS_NR_MKNOD = 14,
     SYS_NR_STAT = 18,
     SYS_NR_LSEEK = 19,
     SYS_NR_GETPID = 20,
@@ -59,6 +60,7 @@ int mkdir(char *pathname, int mode);
 int rmdir(char *pathname);
 int link(char *oldname, char *newname);
 int unlink(char *filename);
+int mknod(char *filename, int mode, int dev);
 time_t time();
 mode_t umask(mode_t mask);
 void clear();
