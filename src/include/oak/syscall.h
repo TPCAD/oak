@@ -1,6 +1,7 @@
 #ifndef OAK_SYSCALL_H
 #define OAK_SYSCALL_H
 
+#include <oak/stat.h>
 #include <oak/types.h>
 
 typedef enum syscall_t {
@@ -17,8 +18,10 @@ typedef enum syscall_t {
     SYS_NR_UNLINK = 10,
     SYS_NR_CHDIR = 12,
     SYS_NR_TIME = 13,
+    SYS_NR_STAT = 18,
     SYS_NR_LSEEK = 19,
     SYS_NR_GETPID = 20,
+    SYS_NR_FSTAT = 28,
     SYS_NR_MKDIR = 39,
     SYS_NR_RMDIR = 40,
     SYS_NR_BRK = 45,
@@ -59,5 +62,7 @@ int unlink(char *filename);
 time_t time();
 mode_t umask(mode_t mask);
 void clear();
+int stat(char *filename, stat_t *statbuf);
+int fstat(fd_t fd, stat_t *statbuf);
 
 #endif // OAK_SYSCALL_H

@@ -18,5 +18,5 @@ typedef struct tm {
 void time_read_bcd(tm *time);
 void time_read(tm *time);
 time_t mktime(tm *time); // timestamp start from 1970-01-01 00:00:00
-
+void localtime(time_t stamp, tm *time);
 #endif // !OAK_TIME_H
