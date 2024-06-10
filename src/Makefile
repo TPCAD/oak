@@ -103,6 +103,7 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_FS)/inode.o \
 	$(BUILD_FS)/namei.o \
 	$(BUILD_FS)/super.o \
+	$(BUILD_FS)/stat.o \
 	$(BUILD_BUILTIN)/ash.o \
 	| $(BUILD_KERNEL)
 	i686-elf-ld $(LDFLAGS) $^ -o $@
