@@ -37,6 +37,7 @@ typedef enum syscall_t {
     SYS_NR_GETCWD = 183,
 
     SYS_NR_CLEAR = 200,
+    SYS_NR_MKFS = 201,
 } syscall_t;
 
 u32 test();
@@ -70,5 +71,7 @@ mode_t umask(mode_t mask);
 void clear();
 int stat(char *filename, stat_t *statbuf);
 int fstat(fd_t fd, stat_t *statbuf);
+
+int mkfs(char *devname, int icount);
 
 #endif // OAK_SYSCALL_H

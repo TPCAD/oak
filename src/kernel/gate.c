@@ -34,6 +34,7 @@ extern int sys_fstat();
 extern int sys_mknod();
 extern int sys_mount();
 extern int sys_umount();
+extern int sys_mkfs();
 
 handler_t syscall_table[SYSCALL_SIZE];
 
@@ -102,4 +103,6 @@ void syscall_init() {
 
     syscall_table[SYS_NR_MOUNT] = sys_mount;
     syscall_table[SYS_NR_UMOUNT] = sys_umount;
+
+    syscall_table[SYS_NR_MKFS] = sys_mkfs;
 }
