@@ -142,12 +142,10 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	# change owner
 	sudo chown ${USER} /mnt
 	# create dir
-	mkdir -p /mnt/empty
-	mkdir -p /mnt/home
-	mkdir -p /mnt/d1/d2/d3/d4
+	mkdir -p /mnt/dev
+	mkdir -p /mnt/mnt
 	# create file
 	echo "hello oak from root directory!" > /mnt/hello.txt
-	echo "hello oak from home directory!" > /mnt/home/hello.txt
 	# unmount fs
 	sudo umount /mnt
 	# unmount device
@@ -166,6 +164,9 @@ $(BUILD)/slave.img: $(SRC)/utils/slave.sfdisk
 	sudo mount /dev/loop0p1 /mnt
 	# change owner
 	sudo chown ${USER} /mnt
+	
+	mkdir -p /mnt/home
+	echo "slave home directory file!" > /mnt/home/hello.txt
 	# create file
 	echo "slave root directory file!" > /mnt/hello.txt
 	# unmount fs
