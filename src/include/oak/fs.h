@@ -85,6 +85,7 @@ typedef struct super_block_t {
     struct buffer_t *imaps[IMAP_NR];
     struct buffer_t *zmaps[ZMAP_NR];
     dev_t dev;
+    u32 count;
     list_t inode_list; // list contains the inode read to memory yet
     inode_t *iroot;    // inode of root directory
     inode_t *imount;

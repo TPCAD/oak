@@ -22,6 +22,8 @@ typedef enum syscall_t {
     SYS_NR_STAT = 18,
     SYS_NR_LSEEK = 19,
     SYS_NR_GETPID = 20,
+    SYS_NR_MOUNT = 21,
+    SYS_NR_UMOUNT = 22,
     SYS_NR_FSTAT = 28,
     SYS_NR_MKDIR = 39,
     SYS_NR_RMDIR = 40,
@@ -60,6 +62,8 @@ int mkdir(char *pathname, int mode);
 int rmdir(char *pathname);
 int link(char *oldname, char *newname);
 int unlink(char *filename);
+int mount(char *devname, char *dirname, int flags);
+int umount(char *target);
 int mknod(char *filename, int mode, int dev);
 time_t time();
 mode_t umask(mode_t mask);
