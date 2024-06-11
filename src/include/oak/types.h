@@ -39,7 +39,7 @@ typedef u32 idx_t;
 typedef u16 mode_t;
 
 typedef int32 fd_t;
-typedef enum std_fd_t { stdin, stdout, stderr } std_fd_t;
+typedef enum std_fd_t { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO } std_fd_t;
 
 typedef int32 off_t; // file offset
 

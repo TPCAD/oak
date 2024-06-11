@@ -1,6 +1,8 @@
 #include <oak/assert.h>
 #include <oak/device.h>
 #include <oak/fs.h>
+#include <oak/stat.h>
+#include <oak/syscall.h>
 #include <oak/task.h>
 #include <oak/types.h>
 
@@ -29,7 +31,7 @@ void put_file(file_t *file) {
 }
 
 void file_init() {
-    for (size_t i = 0; i < FILE_NR; i++) {
+    for (size_t i = 3; i < FILE_NR; i++) {
         file_t *file = &file_table[i];
         file->mode = 0;
         file->count = 0;
@@ -79,21 +81,32 @@ void sys_close(fd_t fd) {
 }
 
 int sys_read(fd_t fd, char *buf, int count) {
-    if (fd == stdin) {
-        device_t *device = device_find(DEV_KEYBOARD, 0);
-        return device_read(device->dev, buf, count, 0, 0);
-    }
-
     task_t *task = running_task();
     file_t *file = task->files[fd];
     assert(file);
     assert(count > 0);
+    int len = 0;
 
     if ((file->flags & O_ACCMODE) == O_WRONLY) {
         return EOF;
     }
+
     inode_t *inode = file->inode;
-    int len = inode_read(inode, buf, count, file->offset);
+    if (ISCHR(inode->desc->mode)) {
+        assert(inode->desc->zone[0]);
+        len = device_read(inode->desc->zone[0], buf, count, 0, 0);
+        return len;
+    } else if (ISBLK(inode->desc->mode)) {
+        assert(inode->desc->zone[0]);
+        device_t *device = device_get(inode->desc->zone[0]);
+        assert(file->offset % BLOCK_SIZE == 0);
+        assert(count % BLOCK_SIZE == 0);
+        len = device_read(inode->desc->zone[0], buf, count / BLOCK_SIZE,
+                          file->offset / BLOCK_SIZE, 0);
+    } else {
+        len = inode_read(inode, buf, count, file->offset);
+    }
+
     if (len != EOF) {
         file->offset += len;
     }
@@ -101,11 +114,6 @@ int sys_read(fd_t fd, char *buf, int count) {
 }
 
 int sys_write(fd_t fd, char *buf, int count) {
-    if (fd == stdout || fd == stderr) {
-        device_t *device = device_find(DEV_CONSOLE, 0);
-        return device_write(device->dev, buf, count, 0, 0);
-    }
-
     task_t *task = running_task();
     file_t *file = task->files[fd];
     assert(file);
@@ -114,8 +122,28 @@ int sys_write(fd_t fd, char *buf, int count) {
     if ((file->flags & O_ACCMODE) == O_RDONLY) {
         return EOF;
     }
+
+    int len = 0;
     inode_t *inode = file->inode;
-    int len = inode_write(inode, buf, count, file->offset);
+    assert(inode);
+
+    if (ISCHR(inode->desc->mode)) {
+        assert(inode->desc->zone[0]);
+        device_t *device = device_get(inode->desc->zone[0]);
+        len = device_write(inode->desc->zone[0], buf, count, 0, 0);
+        return len;
+    } else if (ISBLK(inode->desc->mode)) {
+        assert(inode->desc->zone[0]);
+        device_t *device = device_get(inode->desc->zone[0]);
+        assert(file->offset % BLOCK_SIZE == 0);
+        assert(count % BLOCK_SIZE == 0);
+        len = device_write(inode->desc->zone[0], buf, count / BLOCK_SIZE,
+                           file->offset / BLOCK_SIZE, 0);
+        return len;
+    } else {
+        len = inode_write(inode, buf, count, file->offset);
+    }
+
     if (len != EOF) {
         file->offset += len;
     }

@@ -20,6 +20,7 @@ extern u32 volatile jiffies;
 extern u32 jiffy; // ms per jiffiy
 extern bitmap_t kernel_map;
 extern tss_t tss;
+extern file_t file_table[];
 
 extern void task_switch(task_t *next);
 extern void idle_thread();
@@ -243,6 +244,13 @@ static task_t *task_create(target_t target, const char *name, u32 priority,
 
     task->magic = OAK_MAGIC;
     task->umask = 0022;
+
+    task->files[STDIN_FILENO] = &file_table[STDIN_FILENO];
+    task->files[STDOUT_FILENO] = &file_table[STDOUT_FILENO];
+    task->files[STDERR_FILENO] = &file_table[STDERR_FILENO];
+    task->files[STDIN_FILENO]->count++;
+    task->files[STDOUT_FILENO]->count++;
+    task->files[STDERR_FILENO]->count++;
 
     return task;
 }
