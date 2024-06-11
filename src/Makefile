@@ -92,6 +92,7 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/memory.o \
 	$(BUILD_KERNEL)/mutex.o \
 	$(BUILD_KERNEL)/printk.o \
+	$(BUILD_KERNEL)/ramdisk.o \
 	$(BUILD_KERNEL)/rtc.o \
 	$(BUILD_KERNEL)/schedule.o \
 	$(BUILD_KERNEL)/system.o \
