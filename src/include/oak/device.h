@@ -17,6 +17,7 @@ enum device_subtype_t {
     DEV_KEYBOARD,
     DEV_IDE_DISK,
     DEV_IDE_PART,
+    DEV_RAMDISK,
 };
 
 enum device_cmd_t {

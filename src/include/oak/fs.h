@@ -148,4 +148,6 @@ void inode_truncate(inode_t *inode);
 file_t *get_file();
 void put_file(file_t *file);
 
+int devmkfs(dev_t dev, u32 icount);
+
 #endif // !OAK_FS_H
