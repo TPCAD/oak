@@ -1,11 +1,13 @@
 #include <oak/assert.h>
 #include <oak/bitmap.h>
 #include <oak/debug.h>
+#include <oak/fs.h>
 #include <oak/memory.h>
 #include <oak/multiboot2.h>
 #include <oak/oak.h>
 #include <oak/stdlib.h>
 #include <oak/string.h>
+#include <oak/syscall.h>
 #include <oak/task.h>
 #include <oak/types.h>
 
@@ -303,11 +305,16 @@ static page_entry_t *get_pte(u32 vaddr, bool create) {
     return table;
 }
 
+page_entry_t *get_entry(u32 vaddr, bool create) {
+    page_entry_t *pte = get_pte(vaddr, create);
+    return &pte[TIDX(vaddr)];
+}
+
 /* Flush table
  *
  * @param vaddr Virtual address of page table
  */
-static void flush_tlb(u32 vaddr) {
+void flush_tlb(u32 vaddr) {
     asm volatile("invlpg (%0)" ::"r"(vaddr) : "memory");
 }
 
@@ -379,8 +386,7 @@ void free_kpage(u32 vaddr, u32 count) {
 void link_page(u32 vaddr) {
     ASSERT_PAGE(vaddr);
 
-    page_entry_t *pte = get_pte(vaddr, true);
-    page_entry_t *entry = &pte[TIDX(vaddr)];
+    page_entry_t *entry = get_entry(vaddr, true);
 
     task_t *task = running_task();
     bitmap_t *map = task->vmap;
@@ -388,12 +394,8 @@ void link_page(u32 vaddr) {
 
     // if page exist
     if (entry->present) {
-        assert(bitmap_is_set(map, index));
         return;
     }
-
-    assert(!bitmap_is_set(map, index));
-    bitmap_set(map, index, true);
 
     u32 paddr = alloc_page();
     entry_init(entry, IDX(paddr));
@@ -405,23 +407,20 @@ void link_page(u32 vaddr) {
 void unlink_page(u32 vaddr) {
     ASSERT_PAGE(vaddr);
 
-    page_entry_t *pte = get_pte(vaddr, true);
-    page_entry_t *entry = &pte[TIDX(vaddr)];
-
-    task_t *task = running_task();
-    bitmap_t *map = task->vmap;
-    u32 index = IDX(vaddr);
-
-    // if page not exist
+    page_entry_t *pde = get_pde();
+    page_entry_t *entry = &pde[DIDX(vaddr)];
     if (!entry->present) {
-        assert(!bitmap_is_set(map, index));
         return;
     }
 
-    assert(entry->present && bitmap_is_set(map, index));
+    entry = get_entry(vaddr, false);
+
+    // if page not exist
+    if (!entry->present) {
+        return;
+    }
 
     entry->present = false;
-    bitmap_set(map, index, false);
 
     u32 paddr = PAGE(entry->index);
 
@@ -433,11 +432,14 @@ void unlink_page(u32 vaddr) {
 
 static u32 copy_page(void *page) {
     u32 paddr = alloc_page();
-    page_entry_t *entry = get_pte(0, false);
+    u32 vaddr = 0;
+    page_entry_t *entry = get_pte(vaddr, false);
     entry_init(entry, IDX(paddr));
-    memcpy((void *)0, (void *)page, PAGE_SIZE);
+    flush_tlb(vaddr);
+    memcpy((void *)vaddr, (void *)page, PAGE_SIZE);
 
     entry->present = false;
+    flush_tlb(vaddr);
     return paddr;
 }
 
@@ -466,7 +468,11 @@ page_entry_t *copy_pde() {
             }
 
             assert(memory_map[entry->index] > 0);
-            entry->write = false;
+
+            if (!entry->shared) {
+                entry->write = false;
+            }
+
             memory_map[entry->index]++;
 
             assert(memory_map[entry->index] < 255);
@@ -509,7 +515,7 @@ void free_pde() {
     }
 }
 
-int32 sys_brk(void *addr) {
+int sys_brk(void *addr) {
     DEBUGK("task brk 0x%p\n", addr);
     u32 brk = (u32)addr;
     ASSERT_PAGE(brk);
@@ -529,6 +535,66 @@ int32 sys_brk(void *addr) {
         return -1;
     }
     task->brk = brk;
+    return 0;
+}
+
+void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd,
+               off_t offset) {
+    ASSERT_PAGE((u32)addr);
+
+    u32 count = div_round_up(length, PAGE_SIZE);
+    u32 vaddr = (u32)addr;
+
+    task_t *task = running_task();
+    if (!vaddr) {
+        vaddr = scan_page(task->vmap, count);
+    }
+
+    assert(vaddr >= USER_MMAP_ADDR && vaddr < USER_STACK_BOTTOM);
+
+    for (size_t i = 0; i < count; i++) {
+        u32 page = vaddr + PAGE_SIZE * i;
+        link_page(page);
+        bitmap_set(task->vmap, IDX(page), true);
+
+        page_entry_t *entry = get_entry(page, false);
+        entry->user = true;
+        entry->write = false;
+        if (prot & PROT_WRITE) {
+            entry->write = true;
+        }
+        if (flags & MAP_SHARED) {
+            entry->shared = true;
+        }
+        if (flags & MAP_PRIVATE) {
+            entry->private = true;
+        }
+        flush_tlb(page);
+    }
+
+    if (fd != EOF) {
+        lseek(fd, offset, SEEK_SET);
+        read(fd, (char *)vaddr, length);
+    }
+
+    return (void *)vaddr;
+}
+
+int sys_munmap(void *addr, size_t length) {
+    task_t *task = running_task();
+    u32 vaddr = (u32)addr;
+    assert(vaddr >= USER_MMAP_ADDR && vaddr < USER_STACK_BOTTOM);
+
+    ASSERT_PAGE(vaddr);
+    u32 count = div_round_up(length, PAGE_SIZE);
+
+    for (size_t i = 0; i < count; i++) {
+        u32 page = vaddr + PAGE_SIZE * i;
+        unlink_page(page);
+        assert(bitmap_is_set(task->vmap, IDX(page)));
+        bitmap_set(task->vmap, IDX(page), false);
+    }
+
     return 0;
 }
 
@@ -560,10 +626,11 @@ void page_fault(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
     if (code->present) {
         assert(code->write);
 
-        page_entry_t *pte = get_pte(vaddr, false);
-        page_entry_t *entry = &pte[TIDX(vaddr)];
+        page_entry_t *entry = get_entry(vaddr, false);
 
         assert(entry->present);
+        assert(!entry->shared);
+
         assert(memory_map[entry->index] > 0);
         if (memory_map[entry->index] == 1) {
             entry->write = true;

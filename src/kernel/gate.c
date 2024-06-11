@@ -34,6 +34,9 @@ extern int sys_fstat();
 extern int sys_mknod();
 extern int sys_mount();
 extern int sys_umount();
+extern int sys_brk();
+extern int sys_mmap();
+extern int sys_munmap();
 extern int sys_mkfs();
 
 handler_t syscall_table[SYSCALL_SIZE];
@@ -66,7 +69,10 @@ void syscall_init() {
 
     syscall_table[SYS_NR_SLEEP] = task_sleep;
     syscall_table[SYS_NR_YIELD] = task_yield;
+
     syscall_table[SYS_NR_BRK] = sys_brk;
+    syscall_table[SYS_NR_MMAP] = sys_mmap;
+    syscall_table[SYS_NR_MUNMAP] = sys_munmap;
 
     syscall_table[SYS_NR_GETPID] = sys_getpid;
     syscall_table[SYS_NR_GETPPID] = sys_getppid;

@@ -261,7 +261,8 @@ void task_to_user_mode(target_t *target) {
     // user mode bitmap
     task->vmap = kmalloc(sizeof(bitmap_t));
     void *buf = (void *)alloc_kpage(1);
-    bitmap_init(task->vmap, buf, PAGE_SIZE, KERNEL_MEMORY_SIZE / PAGE_SIZE);
+    bitmap_init(task->vmap, buf, USER_MMAP_SIZE / PAGE_SIZE / 8,
+                USER_MMAP_ADDR / PAGE_SIZE);
 
     // user mode pde
     task->pde = (u32)copy_pde();

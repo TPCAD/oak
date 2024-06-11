@@ -51,7 +51,29 @@ void builtin_logo() {
     printf((char *)oak_logo);
 }
 
-void builtin_test(int argc, char *argv[]) { test(); }
+void builtin_test(int argc, char *argv[]) {
+    // test();
+    u32 status;
+
+    int *counter = (int *)mmap((void *)0x8001000, sizeof(int), PROT_WRITE,
+                               MAP_SHARED, EOF, 0);
+    pid_t pid = fork();
+
+    if (pid) {
+        // pid_t child = waitpid(pid, &status);
+        // printf("wait pid %d status %d %d\n", child, status, time());
+        while (true) {
+            (*counter)++;
+            sleep(300);
+        }
+    } else {
+        while (true) {
+            printf("counter %d\n", *counter);
+            // printf("%x\n", counter);
+            sleep(100);
+        }
+    }
+}
 
 void builtin_pwd() {
     getcwd(cwd, MAX_PATH_LEN);

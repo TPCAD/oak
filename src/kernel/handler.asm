@@ -175,16 +175,16 @@ syscall_handler:
 
 	push 0x80
 
-	; push ebp
-	; push edi
-	; push esi
+	push ebp
+	push edi
+	push esi
 	push edx
 	push ecx
 	push ebx
 
 	call [syscall_table + eax * 4]
 	
-	add esp, 12
+	add esp, (6 * 4)
 
 	mov dword [esp + 8 * 4], eax
 
