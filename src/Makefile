@@ -65,6 +65,12 @@ $(BUILD_FS)/%.o: $(SRC)/fs/%.c | $(BUILD_FS)
 $(BUILD_BUILTIN)/%.o: $(SRC)/builtin/%.c | $(BUILD_BUILTIN)
 	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
+$(BUILD_BUILTIN)/%.o: $(SRC)/builtin/%.asm | $(BUILD_BUILTIN)
+	nasm -gdwarf -f elf32 $< -o $@
+
+$(BUILD_BUILTIN)/%.out: $(BUILD_BUILTIN)/%.o
+	i686-elf-ld -static $^ -o $@ -Ttext 0x1001000
+
 $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_LIB)/bitmap.o \
 	$(BUILD_LIB)/fifo.o \
@@ -81,6 +87,7 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/console.o \
 	$(BUILD_KERNEL)/debug.o \
 	$(BUILD_KERNEL)/device.o \
+	$(BUILD_KERNEL)/execve.o \
 	$(BUILD_KERNEL)/gate.o \
 	$(BUILD_KERNEL)/global.o \
 	$(BUILD_KERNEL)/handler.o \
@@ -121,7 +128,8 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	$(BUILD_BOOT)/loader.bin \
 	$(BUILD_KERNEL)/system.bin \
 	$(BUILD_KERNEL)/system.map \
-	$(SRC)/utils/master.sfdisk
+	$(SRC)/utils/master.sfdisk \
+	$(BUILD_BUILTIN)/hello.out
 	# create a 16M disk image
 	yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
 	# write boot.bin to image
@@ -147,6 +155,8 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	mkdir -p /mnt/mnt
 	# create file
 	echo "hello oak from root directory!" > /mnt/hello.txt
+	# copy file
+	cp $(BUILD_BUILTIN)/hello.out /mnt/hello.out
 	# unmount fs
 	sudo umount /mnt
 	# unmount device

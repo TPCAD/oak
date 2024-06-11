@@ -62,6 +62,10 @@ u32 test() { return _syscall0(SYS_NR_TEST); }
 
 void yield() { _syscall0(SYS_NR_YIELD); }
 
+int execve(char *filename, char *argv[], char *envp[]) {
+    return _syscall3(SYS_NR_EXECVE, (u32)filename, (u32)argv, (u32)envp);
+}
+
 void sleep(u32 ms) { _syscall1(SYS_NR_SLEEP, ms); }
 
 fd_t open(char *filename, int flags, int mode) {
