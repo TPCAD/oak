@@ -16,6 +16,7 @@ CFLAGS+= -fno-pic # no position independent code
 CFLAGS+= -fno-pie # no position independent executable file
 CFLAGS+= -nostdlib # no stdlib
 CFLAGS+= -fno-stack-protector
+CFLAGS+= -DOAK
 CFLAGS:=$(strip ${CFLAGS})
 
 LDFLAGS:= -m elf_i386 \
@@ -56,6 +57,9 @@ $(BUILD_KERNEL)/%.o: $(SRC)/kernel/%.c | $(BUILD_KERNEL)
 # src/lib/*.c
 $(BUILD_LIB)/%.o: $(SRC)/lib/%.c | $(BUILD_LIB)
 	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+# src/lib/*.asm
+$(BUILD_LIB)/%.o: $(SRC)/lib/%.asm | $(BUILD_LIB)
+	nasm -gdwarf -f elf32 $< -o $@
 
 # src/fs/*.c
 $(BUILD_FS)/%.o: $(SRC)/fs/%.c | $(BUILD_FS)
@@ -68,7 +72,18 @@ $(BUILD_BUILTIN)/%.o: $(SRC)/builtin/%.c | $(BUILD_BUILTIN)
 $(BUILD_BUILTIN)/%.o: $(SRC)/builtin/%.asm | $(BUILD_BUILTIN)
 	nasm -gdwarf -f elf32 $< -o $@
 
-$(BUILD_BUILTIN)/%.out: $(BUILD_BUILTIN)/%.o
+$(BUILD_LIB)/libc.o: $(BUILD_LIB)/assert.o \
+	$(BUILD_LIB)/crt.o \
+	$(BUILD_LIB)/crt1.o \
+	$(BUILD_LIB)/printf.o \
+	$(BUILD_LIB)/stdlib.o \
+	$(BUILD_LIB)/string.o \
+	$(BUILD_LIB)/syscall.o \
+	$(BUILD_LIB)/vsprintf.o | $(BUILD_BUILTIN)
+	ld -m elf_i386 -r $^ -o $@
+
+$(BUILD_BUILTIN)/%.out: $(BUILD_BUILTIN)/%.o \
+	$(BUILD_LIB)/libc.o | $(BUILD_BUILTIN)
 	ld -m elf_i386 -static $^ -o $@ -Ttext 0x1001000
 
 $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
@@ -130,7 +145,7 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	$(BUILD_KERNEL)/system.bin \
 	$(BUILD_KERNEL)/system.map \
 	$(SRC)/utils/master.sfdisk \
-	$(BUILD_BUILTIN)/hello.out
+	$(BUILD_BUILTIN)/env.out
 	# create a 16M disk image
 	yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
 	# write boot.bin to image
@@ -152,12 +167,13 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	# change owner
 	sudo chown ${USER} /mnt
 	# create dir
+	mkdir -p /mnt/bin
 	mkdir -p /mnt/dev
 	mkdir -p /mnt/mnt
 	# create file
 	echo "hello oak from root directory!" > /mnt/hello.txt
 	# copy file
-	cp $(BUILD_BUILTIN)/hello.out /mnt/hello.out
+	cp $(BUILD_BUILTIN)/env.out /mnt/env.out
 	# unmount fs
 	sudo umount /mnt
 	# unmount device
