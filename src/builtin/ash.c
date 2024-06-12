@@ -51,12 +51,7 @@ void builtin_logo() {
     printf((char *)oak_logo);
 }
 
-void builtin_test(int argc, char *argv[]) {
-    printf("test start\n");
-    while (true) {
-        test();
-    }
-}
+void builtin_test(int argc, char *argv[]) { printf("test start\n"); }
 
 void builtin_pwd() {
     getcwd(cwd, MAX_PATH_LEN);
@@ -368,7 +363,7 @@ static int cmd_parse(char *cmd, char *argv[], char token) {
 }
 
 int ash_main() {
-    builtin_test(0, NULL);
+    // builtin_test(0, NULL);
 
     memset(cmd, 0, sizeof(cmd));
     memset(cwd, 0, sizeof(cwd));

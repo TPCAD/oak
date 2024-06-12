@@ -59,6 +59,16 @@ void dev_init() {
         mknod(name, IFBLK | 0600, device->dev);
     }
 
+    // serial device
+    for (size_t i = 0; true; i++) {
+        device = device_find(DEV_SERIAL, i);
+        if (!device) {
+            break;
+        }
+        sprintf(name, "/dev/%s", device->name);
+        mknod(name, IFCHR | 0600, device->dev);
+    }
+
     link("/dev/console", "/dev/stdout");
     link("/dev/console", "/dev/stderr");
     link("/dev/keyboard", "/dev/stdin");
