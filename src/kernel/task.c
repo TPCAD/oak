@@ -409,7 +409,7 @@ void task_exit(int status) {
         child->ppid = task->ppid;
     }
 
-    DEBUGK("task 0x%p exit...\n", task);
+    DEBUGK("task %s 0x%p exit...\n", task->name, task);
 
     task_t *parent = task_table[task->ppid];
     if (parent->state == TASK_WAITING &&
