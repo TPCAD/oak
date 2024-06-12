@@ -68,10 +68,11 @@ $(BUILD_FS)/%.o: $(SRC)/fs/%.c | $(BUILD_FS)
 # src/builtin/*.c
 $(BUILD_BUILTIN)/%.o: $(SRC)/builtin/%.c | $(BUILD_BUILTIN)
 	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
-
+# src/builtin/*.asm
 $(BUILD_BUILTIN)/%.o: $(SRC)/builtin/%.asm | $(BUILD_BUILTIN)
 	nasm -gdwarf -f elf32 $< -o $@
 
+# build libc
 $(BUILD_LIB)/libc.o: $(BUILD_LIB)/assert.o \
 	$(BUILD_LIB)/crt.o \
 	$(BUILD_LIB)/crt1.o \
@@ -79,8 +80,15 @@ $(BUILD_LIB)/libc.o: $(BUILD_LIB)/assert.o \
 	$(BUILD_LIB)/stdlib.o \
 	$(BUILD_LIB)/string.o \
 	$(BUILD_LIB)/syscall.o \
+	$(BUILD_LIB)/time.o \
 	$(BUILD_LIB)/vsprintf.o | $(BUILD_BUILTIN)
 	ld -m elf_i386 -r $^ -o $@
+
+BUILDIN_APPS := \
+		$(BUILD_BUILTIN)/cat.out \
+		$(BUILD_BUILTIN)/echo.out \
+		$(BUILD_BUILTIN)/env.out \
+		$(BUILD_BUILTIN)/ls.out \
 
 $(BUILD_BUILTIN)/%.out: $(BUILD_BUILTIN)/%.o \
 	$(BUILD_LIB)/libc.o | $(BUILD_BUILTIN)
@@ -145,7 +153,7 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	$(BUILD_KERNEL)/system.bin \
 	$(BUILD_KERNEL)/system.map \
 	$(SRC)/utils/master.sfdisk \
-	$(BUILD_BUILTIN)/env.out
+	$(BUILDIN_APPS)
 	# create a 16M disk image
 	yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
 	# write boot.bin to image
@@ -174,6 +182,10 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	echo "hello oak from root directory!" > /mnt/hello.txt
 	# copy file
 	cp $(BUILD_BUILTIN)/env.out /mnt/bin/env.out
+	for app in $(BUILDIN_APPS); \
+	do \
+		cp $$app /mnt/bin; \
+	done
 	# unmount fs
 	sudo umount /mnt
 	# unmount device
