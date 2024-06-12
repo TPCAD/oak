@@ -1,3 +1,4 @@
+#include "oak/stat.h"
 #include <oak/assert.h>
 #include <oak/fs.h>
 #include <oak/stdio.h>
@@ -13,8 +14,14 @@
 
 static char cwd[MAX_PATH_LEN];
 static char cmd[MAX_CMD_LEN];
-static char *argv[MAX_ARG_NR];
+static char *args[MAX_ARG_NR];
 static char buf[BUFLEN];
+
+static char *envp[] = {
+    "HOME=/",
+    "PATH=/bin",
+    NULL,
+};
 
 static char oak_logo[][52] = {
     "                                  ____        __  \n\t",
@@ -225,22 +232,23 @@ void builtin_mkfs(int argc, char *argv[]) {
     mkfs(argv[1], 0);
 }
 
-void builtin_exec(int argc, char *argv[]) {
-    if (argc < 2) {
-        return;
-    }
-
+void builtin_exec(char *filename, int argc, char *argv[]) {
     int status;
     pid_t pid = fork();
     if (pid) {
         // printf("fork after parent %d, %d, %d\n", pid, getpid(), getppid());
         pid_t child = waitpid(pid, &status);
-        printf("wait pid %d status %d %d\n", child, status, time());
-    } else {
-        // execve 除非文件不合法，否则不会返回
-        int i = execve(argv[1], NULL, NULL);
-        exit(i);
+        return;
+        // printf("wait pid %d status %d %d\n", child, status, time());
+        // } else {
+        //     // execve 除非文件不合法，否则不会返回
+        //     int i = execve(argv[1], NULL, NULL);
+        //     exit(i);
     }
+
+    // execve will return value if go wrong
+    int i = execve(filename, argv, envp);
+    exit(i);
 }
 
 static void execute(int argc, char *argv[]) {
@@ -294,10 +302,13 @@ static void execute(int argc, char *argv[]) {
     if (!strcmp(line, "mkfs")) {
         return builtin_mkfs(argc, argv);
     }
-    if (!strcmp(line, "exec")) {
-        return builtin_exec(argc, argv);
+
+    stat_t statbuf;
+    sprintf(buf, "/bin/%s.out", argv[0]);
+    if (stat(buf, &statbuf) == EOF) {
+        printf("ash: command not found: %s\n", argv[0]);
     }
-    printf("ash: command not found: %s\n", argv[0]);
+    return builtin_exec(buf, argc - 1, &argv[1]);
 }
 
 void readline(char *buf, u32 count) {
@@ -376,11 +387,11 @@ int ash_main() {
         if (cmd[0] == 0) {
             continue;
         }
-        int argc = cmd_parse(cmd, argv, ' ');
+        int argc = cmd_parse(cmd, args, ' ');
         if (argc < 0 || argc >= MAX_ARG_NR) {
             continue;
         }
-        execute(argc, argv);
+        execute(argc, args);
     }
     return 0;
 }
