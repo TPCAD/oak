@@ -13,6 +13,10 @@
 #define true 1
 #define false 0
 
+#define weak __attribute__((__weak__))
+
+#define noreturn __attribute__((__noreturn__))
+
 #define _packed __attribute__((packed))
 
 #define _ofp __attribute__((optimize("omit-frame-pointer")))
