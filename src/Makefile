@@ -52,22 +52,22 @@ $(BUILD_KERNEL)/%.o: $(SRC)/kernel/%.asm | $(BUILD_KERNEL)
 
 # src/kernel/*.c
 $(BUILD_KERNEL)/%.o: $(SRC)/kernel/%.c | $(BUILD_KERNEL)
-	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 # src/lib/*.c
 $(BUILD_LIB)/%.o: $(SRC)/lib/%.c | $(BUILD_LIB)
-	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 # src/lib/*.asm
 $(BUILD_LIB)/%.o: $(SRC)/lib/%.asm | $(BUILD_LIB)
 	nasm -gdwarf -f elf32 $< -o $@
 
 # src/fs/*.c
 $(BUILD_FS)/%.o: $(SRC)/fs/%.c | $(BUILD_FS)
-	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 # src/builtin/*.c
 $(BUILD_BUILTIN)/%.o: $(SRC)/builtin/%.c | $(BUILD_BUILTIN)
-	i686-elf-gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_BUILTIN)/%.o: $(SRC)/builtin/%.asm | $(BUILD_BUILTIN)
 	nasm -gdwarf -f elf32 $< -o $@
@@ -131,13 +131,13 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_FS)/super.o \
 	$(BUILD_BUILTIN)/ash.o \
 	| $(BUILD_KERNEL)
-	i686-elf-ld $(LDFLAGS) $^ -o $@
+	ld $(LDFLAGS) $^ -o $@
 
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
-	i686-elf-objcopy -O binary $< $@
+	objcopy -O binary $< $@
 
 $(BUILD_KERNEL)/system.map: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
-	i686-elf-nm $< | sort > $@
+	nm $< | sort > $@
 
 # master.img
 $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
@@ -173,7 +173,7 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	# create file
 	echo "hello oak from root directory!" > /mnt/hello.txt
 	# copy file
-	cp $(BUILD_BUILTIN)/env.out /mnt/env.out
+	cp $(BUILD_BUILTIN)/env.out /mnt/bin/env.out
 	# unmount fs
 	sudo umount /mnt
 	# unmount device
