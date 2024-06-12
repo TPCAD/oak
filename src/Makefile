@@ -102,6 +102,7 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/ramdisk.o \
 	$(BUILD_KERNEL)/rtc.o \
 	$(BUILD_KERNEL)/schedule.o \
+	$(BUILD_KERNEL)/serial.o \
 	$(BUILD_KERNEL)/system.o \
 	$(BUILD_KERNEL)/task.o \
 	$(BUILD_KERNEL)/thread.o \
@@ -223,6 +224,12 @@ QEMU+= -rtc base=localtime # local time
 QEMU+= -drive file=$(BUILD)/master.img,if=ide,index=0,media=disk,format=raw
 # slave disk
 QEMU+= -drive file=$(BUILD)/slave.img,if=ide,index=1,media=disk,format=raw
+QEMU+= -chardev stdio,mux=on,id=com1 # character device 1, terminal
+# QEMU+= -chardev vc,mux=on,id=com1 # character device 1, vc in qemu
+QEMU+= -chardev vc,mux=on,id=com2 # character device 2, vc in qemu
+# QEMU+= -chardev udp,mux=on,id=com2,port=7777,ipv4=on # character device 2,udp
+QEMU+= -serial chardev:com1 # serial 1
+QEMU+= -serial chardev:com2 # serial 2
 
 QEMU_DISK:=-boot c
 
