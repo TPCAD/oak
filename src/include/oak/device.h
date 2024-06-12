@@ -15,6 +15,7 @@ enum device_type_t {
 enum device_subtype_t {
     DEV_CONSOLE = 1,
     DEV_KEYBOARD,
+    DEV_SERIAL,
     DEV_IDE_DISK,
     DEV_IDE_PART,
     DEV_RAMDISK,

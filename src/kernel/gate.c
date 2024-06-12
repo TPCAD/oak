@@ -53,7 +53,24 @@ void syscall_check(u32 nr) {
 static void sys_default() { panic("syscall not implemented!"); }
 
 static u32 sys_test() {
-    DEBUGK("sys_test called\n");
+    char ch;
+    device_t *device;
+
+    device_t *serial = device_find(DEV_SERIAL, 0);
+    assert(serial);
+
+    device_t *keyboard = device_find(DEV_KEYBOARD, 0);
+    assert(keyboard);
+
+    device_t *console = device_find(DEV_CONSOLE, 0);
+    assert(console);
+
+    device_read(serial->dev, &ch, 1, 0, 0);
+    // device_read(keyboard->dev, &ch, 1, 0, 0);
+
+    device_write(serial->dev, &ch, 1, 0, 0);
+    device_write(console->dev, &ch, 1, 0, 0);
+    // DEBUGK("sys_test called\n");
 
     return 255;
 }

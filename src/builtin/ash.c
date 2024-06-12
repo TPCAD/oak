@@ -52,26 +52,9 @@ void builtin_logo() {
 }
 
 void builtin_test(int argc, char *argv[]) {
-    // test();
-    u32 status;
-
-    int *counter = (int *)mmap((void *)0x8001000, sizeof(int), PROT_WRITE,
-                               MAP_SHARED, EOF, 0);
-    pid_t pid = fork();
-
-    if (pid) {
-        // pid_t child = waitpid(pid, &status);
-        // printf("wait pid %d status %d %d\n", child, status, time());
-        while (true) {
-            (*counter)++;
-            sleep(300);
-        }
-    } else {
-        while (true) {
-            printf("counter %d\n", *counter);
-            // printf("%x\n", counter);
-            sleep(100);
-        }
+    printf("test start\n");
+    while (true) {
+        test();
     }
 }
 
@@ -385,6 +368,8 @@ static int cmd_parse(char *cmd, char *argv[], char token) {
 }
 
 int ash_main() {
+    builtin_test(0, NULL);
+
     memset(cmd, 0, sizeof(cmd));
     memset(cwd, 0, sizeof(cwd));
 
