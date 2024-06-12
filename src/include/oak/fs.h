@@ -150,4 +150,10 @@ void put_file(file_t *file);
 
 int devmkfs(dev_t dev, u32 icount);
 
+#define P_EXEC IXOTH
+#define P_READ IROTH
+#define P_WRITE IWOTH
+
+bool permission(inode_t *inode, u16 mask);
+
 #endif // !OAK_FS_H

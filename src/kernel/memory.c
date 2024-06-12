@@ -523,7 +523,7 @@ int sys_brk(void *addr) {
     task_t *task = running_task();
     assert(task->uid != KERNEL_USER);
 
-    assert(KERNEL_MEMORY_SIZE <= brk && brk < USER_STACK_BOTTOM);
+    assert(task->end <= brk && brk <= USER_MMAP_ADDR);
 
     u32 old_brk = task->brk;
 
@@ -560,7 +560,9 @@ void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd,
         page_entry_t *entry = get_entry(page, false);
         entry->user = true;
         entry->write = false;
+        entry->readonly = true;
         if (prot & PROT_WRITE) {
+            entry->readonly = false;
             entry->write = true;
         }
         if (flags & MAP_SHARED) {
@@ -630,6 +632,7 @@ void page_fault(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
 
         assert(entry->present);
         assert(!entry->shared);
+        assert(!entry->readonly);
 
         assert(memory_map[entry->index] > 0);
         if (memory_map[entry->index] == 1) {

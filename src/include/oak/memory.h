@@ -37,7 +37,7 @@ typedef struct page_entry_t {
     u8 global : 1;
     u8 shared : 1;
     u8 private : 1;
-    u8 flag : 1; // no use
+    u8 readonly : 1;
     u32 index : 20;
 } _packed page_entry_t;
 

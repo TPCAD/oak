@@ -37,12 +37,16 @@ typedef struct task_t {
     u32 ppid;                           // task father id
     u32 pde;                            // pde
     struct bitmap_t *vmap;              // virtual memory map
+    u32 text;                           // code section address
+    u32 data;                           // data section address
+    u32 end;                            // program end address
     u32 brk;                            // the highest address of heap memory
     int status;                         // process special status
     pid_t waitpid;                      // wait pid
     char *pwd;                          // current dir of process
     struct inode_t *ipwd;               //
     struct inode_t *iroot;              //
+    struct inode_t *iexec;              // program file inode
     u16 umask;                          // process user privilege
     struct file_t *files[TASK_FILE_NR]; // 进程文件表
     u32 magic;                          // magic number
