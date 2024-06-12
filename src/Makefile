@@ -69,7 +69,7 @@ $(BUILD_BUILTIN)/%.o: $(SRC)/builtin/%.asm | $(BUILD_BUILTIN)
 	nasm -gdwarf -f elf32 $< -o $@
 
 $(BUILD_BUILTIN)/%.out: $(BUILD_BUILTIN)/%.o
-	i686-elf-ld -static $^ -o $@ -Ttext 0x1001000
+	ld -m elf_i386 -static $^ -o $@ -Ttext 0x1001000
 
 $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_LIB)/bitmap.o \
