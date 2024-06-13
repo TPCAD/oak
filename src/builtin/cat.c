@@ -1,14 +1,8 @@
-#ifdef OAK
 #include <oak/fs.h>
 #include <oak/stdio.h>
 #include <oak/string.h>
 #include <oak/syscall.h>
 #include <oak/types.h>
-#else
-#include <stdio.h>
-#include <string.h>
-#include <sys/file.h>
-#endif
 
 #define BUFLEN 1024
 
