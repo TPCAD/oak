@@ -85,6 +85,7 @@ $(BUILD_LIB)/libc.o: $(BUILD_LIB)/assert.o \
 	ld -m elf_i386 -r $^ -o $@
 
 BUILDIN_APPS := \
+		$(BUILD_BUILTIN)/ash.out \
 		$(BUILD_BUILTIN)/cat.out \
 		$(BUILD_BUILTIN)/echo.out \
 		$(BUILD_BUILTIN)/env.out \
@@ -139,7 +140,6 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_FS)/pipe.o \
 	$(BUILD_FS)/stat.o \
 	$(BUILD_FS)/super.o \
-	$(BUILD_BUILTIN)/ash.o \
 	| $(BUILD_KERNEL)
 	ld $(LDFLAGS) $^ -o $@
 
