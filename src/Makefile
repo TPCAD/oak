@@ -89,6 +89,7 @@ BUILDIN_APPS := \
 		$(BUILD_BUILTIN)/echo.out \
 		$(BUILD_BUILTIN)/env.out \
 		$(BUILD_BUILTIN)/ls.out \
+		$(BUILD_BUILTIN)/dup.out \
 
 $(BUILD_BUILTIN)/%.out: $(BUILD_BUILTIN)/%.o \
 	$(BUILD_LIB)/libc.o | $(BUILD_BUILTIN)
