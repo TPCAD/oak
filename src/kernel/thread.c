@@ -10,7 +10,6 @@
 #include <oak/types.h>
 
 extern u32 keyboard_read(char *buf, u32 count);
-extern void ash_main();
 extern void dev_init();
 
 void idle_thread() {
@@ -38,7 +37,9 @@ void static user_init_thread() {
             pid_t child = waitpid(pid, &status);
             printf("wait pid %d status %d %d\n", child, status, time());
         } else {
-            ash_main();
+            int err = execve("/bin/ash.out", NULL, NULL);
+            printf("execve /bin/ash.out error %d\n", err);
+            exit(err);
         }
     }
 }

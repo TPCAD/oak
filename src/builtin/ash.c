@@ -443,9 +443,7 @@ static int cmd_parse(char *cmd, char *argv[]) {
     return argc;
 }
 
-int ash_main() {
-    // builtin_test(0, NULL);
-
+int main() {
     memset(cmd, 0, sizeof(cmd));
     memset(cwd, 0, sizeof(cwd));
 

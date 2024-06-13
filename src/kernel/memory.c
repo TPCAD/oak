@@ -654,5 +654,7 @@ void page_fault(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
         link_page(page);
         return;
     }
+    DEBUGK("task 0x%p name %s brk 0x%p page fault\n", task, task->name,
+           task->brk);
     panic("page fault");
 }
