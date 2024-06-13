@@ -32,6 +32,8 @@
 #define SEPARATOR2 '\\'
 #define IS_SEPARATOR(c) (c == SEPARATOR1 || c == SEPARATOR2)
 
+#define ACC_MODE(x) ("\004\002\006\377"[(x) & O_ACCMODE])
+
 enum file_flag {
     O_RDONLY = 00,      // 只读方式
     O_WRONLY = 01,      // 只写方式
