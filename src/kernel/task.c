@@ -359,7 +359,7 @@ pid_t task_fork() {
     task->iroot->count++;
     task->ipwd->count++;
     if (task->iexec) {
-        task->iexec++;
+        task->iexec->count++;
     }
 
     for (size_t i = 0; i < TASK_FILE_NR; i++) {
