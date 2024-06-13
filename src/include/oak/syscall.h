@@ -29,6 +29,7 @@ typedef enum syscall_t {
     SYS_NR_MKDIR = 39,
     SYS_NR_RMDIR = 40,
     SYS_NR_DUP = 41,
+    SYS_NR_PIPE = 42,
     SYS_NR_BRK = 45,
     SYS_NR_UMASK = 60,
     SYS_NR_CHROOT = 62,
@@ -74,6 +75,7 @@ fd_t creat(char *filename, int mode);
 void close(fd_t fd);
 fd_t dup(fd_t oldfd);
 fd_t dup2(fd_t oldfd, fd_t newfd);
+int pipe(fd_t pipefd[2]);
 int read(fd_t fd, char *buf, int len);
 int write(fd_t fd, char *buf, int len);
 int lseek(fd_t fd, off_t offset, int whence);

@@ -1,12 +1,12 @@
-#include "oak/stat.h"
-#include "oak/types.h"
 #include <oak/assert.h>
 #include <oak/fs.h>
+#include <oak/stat.h>
 #include <oak/stdio.h>
 #include <oak/stdlib.h>
 #include <oak/string.h>
 #include <oak/syscall.h>
 #include <oak/time.h>
+#include <oak/types.h>
 
 #define MAX_CMD_LEN 256
 #define MAX_ARG_NR 16
@@ -59,7 +59,33 @@ void builtin_logo() {
     printf((char *)oak_logo);
 }
 
-void builtin_test(int argc, char *argv[]) { printf("test start\n"); }
+void builtin_test(int argc, char *argv[]) {
+    printf("test start\n");
+    int status = 0;
+    fd_t pipefd[2];
+
+    int result = pipe(pipefd);
+
+    pid_t pid = fork();
+    if (pid) {
+        char buf[128];
+        printf("--%d-- geting message\n", get_pid());
+        int len = read(pipefd[0], buf, 24);
+        printf("--%d-- get message: %s count %d\n", get_pid(), buf, len);
+
+        pid_t child = waitpid(pid, &status);
+        close(pipefd[1]);
+        close(pipefd[0]);
+    } else {
+        char *message = "pipe written message!!!";
+        printf("--%d-- put message: %s\n", get_pid(), message);
+        write(pipefd[1], message, 24);
+
+        close(pipefd[1]);
+        close(pipefd[0]);
+        exit(0);
+    }
+}
 
 void builtin_pwd() {
     getcwd(cwd, MAX_PATH_LEN);

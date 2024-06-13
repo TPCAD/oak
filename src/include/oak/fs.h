@@ -67,6 +67,9 @@ typedef struct inode_t {
     time_t ctime;     // change time
     list_node_t node; // node store in super_block_t's inode_list
     dev_t mount;
+    struct task_t *rxwaiter;
+    struct task_t *txwaiter;
+    bool pipe;
 } inode_t;
 
 // super block
@@ -157,5 +160,9 @@ int devmkfs(dev_t dev, u32 icount);
 #define P_WRITE IWOTH
 
 bool permission(inode_t *inode, u16 mask);
+
+inode_t *get_pipe_inode();
+int pipe_read(inode_t *inode, char *buf, int count);
+int pipe_write(inode_t *inode, char *buf, int count);
 
 #endif // !OAK_FS_H

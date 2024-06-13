@@ -24,6 +24,7 @@ extern void sys_close();
 extern void sys_execve();
 extern fd_t sys_dup();
 extern fd_t sys_dup2();
+extern int sys_pipe();
 extern int sys_read();
 extern int sys_write();
 extern int sys_lseek();
@@ -98,6 +99,8 @@ void syscall_init() {
 
     syscall_table[SYS_NR_DUP] = sys_dup;
     syscall_table[SYS_NR_DUP2] = sys_dup2;
+
+    syscall_table[SYS_NR_PIPE] = sys_pipe;
 
     syscall_table[SYS_NR_GETPID] = sys_getpid;
     syscall_table[SYS_NR_GETPPID] = sys_getppid;
