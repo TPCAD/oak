@@ -68,6 +68,12 @@ int execve(char *filename, char *argv[], char *envp[]) {
 
 void sleep(u32 ms) { _syscall1(SYS_NR_SLEEP, ms); }
 
+fd_t dup(fd_t oldfd) { return _syscall1(SYS_NR_DUP, oldfd); }
+
+fd_t dup2(fd_t oldfd, fd_t newfd) {
+    return _syscall2(SYS_NR_DUP2, oldfd, newfd);
+}
+
 fd_t open(char *filename, int flags, int mode) {
     return _syscall3(SYS_NR_OPEN, (u32)filename, (u32)flags, (u32)mode);
 }
