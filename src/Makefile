@@ -89,6 +89,8 @@ BUILDIN_APPS := \
 		$(BUILD_BUILTIN)/cat.out \
 		$(BUILD_BUILTIN)/echo.out \
 		$(BUILD_BUILTIN)/env.out \
+		$(BUILD_BUILTIN)/err.out \
+		$(BUILD_BUILTIN)/init.out \
 		$(BUILD_BUILTIN)/ls.out \
 		$(BUILD_BUILTIN)/dup.out \
 
@@ -100,7 +102,6 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_LIB)/bitmap.o \
 	$(BUILD_LIB)/fifo.o \
 	$(BUILD_LIB)/list.o \
-	$(BUILD_LIB)/printf.o \
 	$(BUILD_LIB)/stdlib.o \
 	$(BUILD_LIB)/string.o \
 	$(BUILD_LIB)/syscall.o \
@@ -183,7 +184,6 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	# create file
 	echo "hello oak from root directory!" > /mnt/hello.txt
 	# copy file
-	cp $(BUILD_BUILTIN)/env.out /mnt/bin/env.out
 	for app in $(BUILDIN_APPS); \
 	do \
 		cp $$app /mnt/bin; \

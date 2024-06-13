@@ -5,6 +5,7 @@
 #include <oak/memory.h>
 #include <oak/multiboot2.h>
 #include <oak/oak.h>
+#include <oak/printk.h>
 #include <oak/stdlib.h>
 #include <oak/string.h>
 #include <oak/syscall.h>
@@ -249,6 +250,7 @@ void mapping_init() {
 
         page_entry_t *dentry = &pde[didx];
         entry_init(dentry, IDX((u32)pte));
+        dentry->user = 0;
 
         // mapping
         for (size_t tidx = 0; tidx < 1024; tidx++, index++) {
@@ -257,6 +259,7 @@ void mapping_init() {
             }
             page_entry_t *tentry = &pte[tidx];
             entry_init(tentry, index);
+            tentry->user = 0;
             memory_map[index] = 1;
         }
     }
@@ -623,7 +626,12 @@ void page_fault(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
     page_error_code_t *code = (page_error_code_t *)&error;
     task_t *task = running_task();
 
-    assert(KERNEL_MEMORY_SIZE <= vaddr && vaddr < USER_STACK_TOP);
+    // assert(KERNEL_MEMORY_SIZE <= vaddr && vaddr < USER_STACK_TOP);
+    if (vaddr < USER_EXEC_ADDR || vaddr >= USER_STACK_TOP) {
+        assert(task->uid);
+        printk("Segmentation Fault!!!\n");
+        task_exit(-1);
+    }
 
     if (code->present) {
         assert(code->write);

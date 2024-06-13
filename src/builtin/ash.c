@@ -59,33 +59,7 @@ void builtin_logo() {
     printf((char *)oak_logo);
 }
 
-void builtin_test(int argc, char *argv[]) {
-    printf("test start\n");
-    int status = 0;
-    fd_t pipefd[2];
-
-    int result = pipe(pipefd);
-
-    pid_t pid = fork();
-    if (pid) {
-        char buf[128];
-        printf("--%d-- geting message\n", get_pid());
-        int len = read(pipefd[0], buf, 24);
-        printf("--%d-- get message: %s count %d\n", get_pid(), buf, len);
-
-        pid_t child = waitpid(pid, &status);
-        close(pipefd[1]);
-        close(pipefd[0]);
-    } else {
-        char *message = "pipe written message!!!";
-        printf("--%d-- put message: %s\n", get_pid(), message);
-        write(pipefd[1], message, 24);
-
-        close(pipefd[1]);
-        close(pipefd[0]);
-        exit(0);
-    }
-}
+void builtin_test(int argc, char *argv[]) { printf("test start\n"); }
 
 void builtin_pwd() {
     getcwd(cwd, MAX_PATH_LEN);
@@ -305,7 +279,7 @@ void builtin_exec(int argc, char *argv[]) {
         stat_t statbuf;
         sprintf(name, "/bin/%s.out", argv[i]);
         if (stat(name, &statbuf) == EOF) {
-            printf("osh: command not found: %s\n", argv[i]);
+            printf("ash: command not found: %s\n", argv[i]);
             return;
         }
         bargv = &argv[i + 1];

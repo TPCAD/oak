@@ -24,30 +24,10 @@ void idle_thread() {
     }
 }
 
-void static user_init_thread() {
-    // char buf[256];
-    // chroot("/d1");
-    // chdir("/d2");
-    // getcwd(buf, sizeof(buf));
-    // printf("current work directory: %s\n", buf);
-    while (true) {
-        int32 status;
-        pid_t pid = fork();
-        if (pid) {
-            pid_t child = waitpid(pid, &status);
-            printf("wait pid %d status %d %d\n", child, status, time());
-        } else {
-            int err = execve("/bin/ash.out", NULL, NULL);
-            printf("execve /bin/ash.out error %d\n", err);
-            exit(err);
-        }
-    }
-}
-
 void init_thread() {
     char tmp[100];
     dev_init();
-    task_to_user_mode(user_init_thread);
+    task_to_user_mode();
 }
 
 void test_thread() {
