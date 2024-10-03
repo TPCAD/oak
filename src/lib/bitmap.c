@@ -7,8 +7,8 @@
 /* Make bitmap
  *
  * @param map Bitmap struct
- * @param bits Arrage
- * @param length Length of arragy in bytes
+ * @param bits Array
+ * @param length Length of array in bytes
  * @param offset Start location in bits
  */
 void bitmap_make(bitmap_t *map, u8 *bits, u32 length, u32 offset) {
@@ -20,8 +20,8 @@ void bitmap_make(bitmap_t *map, u8 *bits, u32 length, u32 offset) {
 /* Initialize bitmap
  *
  * @param map Bitmap struct
- * @param bits Arrage
- * @param length Length of arragy in bytes
+ * @param bits Array
+ * @param length Length of array in bytes
  * @param offset Start location in bits
  */
 void bitmap_init(bitmap_t *map, u8 *bits, u32 length, u32 offset) {
