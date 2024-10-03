@@ -3,8 +3,10 @@
 
 #include <oak/types.h>
 
-#define PAGE_SIZE 0x1000     // 4K per page
-#define MEMORY_BASE 0x100000 // 1M, start address of free memory
+#define PAGE_SIZE 0x1000 // 4K per page
+// The largest memory address which can be used by bios is 1M.
+// Therefore 1M is the start address of free memory,
+#define MEMORY_BASE 0x100000
 
 #define KERNEL_MEMORY_SIZE 0x1000000 // memory occupied by kernel
 

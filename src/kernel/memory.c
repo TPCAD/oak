@@ -21,7 +21,7 @@
 #define PAGE(idx) ((u32)idx << 12)
 #define ASSERT_PAGE(addr) assert((addr & 0xfff) == 0)
 
-#define KERNEL_MAP_BITS 0x6000
+#define KERNEL_MAP_BITS 0x6000 // array address of kernel virtual memory
 
 #define PDE_MASK 0xffc00000
 
@@ -98,7 +98,7 @@ void memory_init(u32 magic, u32 addr) {
     }
 
     assert(memory_base == MEMORY_BASE);
-    assert((memory_size & 0xfff) == 0);
+    assert((memory_size & 0xfff) == 0); // 要求内存大小按页对齐
 
     total_pages = IDX(memory_size) + IDX(MEMORY_BASE);
     free_pages = IDX(memory_size);
@@ -115,6 +115,17 @@ static u32 memory_map_pages; // pages amount for managing
 
 bitmap_t kernel_map;
 
+/*
+ *  @brief  内核内存管理初始化
+ *
+ *  使用数组 u8 memory_map[memory_map_pages * PAGE_SIZE]
+ *  表示内核物理内存的分配情况
+ *  @a memory_map_pages  用于管理内存的内存页数，一字节代表一页内存
+ *  @a memory_map  用于管理内存的数组，置于内存起始位置
+ *
+ *  使用位图 @a kernel_map  管理内核虚拟内存
+ *  @a length  字节为单位的位图长度
+ *  */
 void memory_map_init() {
     memory_map_pages = div_round_up(total_pages, PAGE_SIZE);
 
@@ -231,7 +242,14 @@ static void entry_init(page_entry_t *entry, u32 index) {
     entry->index = index;
 }
 
-/* Mapping kernel memory and enable paging
+/*
+ *  @brief  内核内存映射并开启分页
+ *
+ *  页表是一个大小为 1024 的数组。页表元素称为页表项，一个页表项大小为 4 字节
+ *  因此一个页表的大小为 4K 字节，可以表示 1K 页。
+ *
+ *  系统采用二级页表。顶级页表称为页目录，一般只有一个页目录。页目录项存储页表
+ *  的地址。
  *
  * Place page directory which is 4K bytes in size in 0x1000.Page directory has
  * 3 page table in index 0, 1 and 1023.The top 2 map the virtual 8M to physical
@@ -240,20 +258,24 @@ static void entry_init(page_entry_t *entry, u32 index) {
  * this entry.
  */
 void mapping_init() {
+    // 初始化页目录
     page_entry_t *pde = (page_entry_t *)KERNEL_PAGE_DIR;
     memset(pde, 0, PAGE_SIZE);
 
     idx_t index = 0;
     for (idx_t didx = 0; didx < (sizeof(KERNEL_PAGE_TABLE) / 4); didx++) {
+        // 初始化页表
         page_entry_t *pte = (page_entry_t *)KERNEL_PAGE_TABLE[didx];
         memset(pte, 0, PAGE_SIZE);
 
+        // 初始化页目录项
         page_entry_t *dentry = &pde[didx];
         entry_init(dentry, IDX((u32)pte));
         dentry->user = 0;
 
-        // mapping
+        // 初始化页表项
         for (size_t tidx = 0; tidx < 1024; tidx++, index++) {
+            // 第 0 个页表不作映射
             if (index == 0) {
                 continue;
             }
@@ -264,7 +286,7 @@ void mapping_init() {
         }
     }
 
-    // last page table index points to page directory itself
+    // 最后一个页目录项指向页目录本身
     page_entry_t *entry = &pde[1023];
     entry_init(entry, IDX(KERNEL_PAGE_DIR));
 
@@ -273,18 +295,18 @@ void mapping_init() {
     enable_page();
 }
 
-/* Get page directory
- *
- * @return Address of page directory
+/*
+ *  @brief  获取页目录地址
+ *  @return  指向页目录的**虚拟地址**
  */
 static page_entry_t *get_pde() { return (page_entry_t *)(0xfffff000); }
 
-/* Get page table entry
- *
- * @param vaddr Address of page table?
- *
- * @return Address of page table
- */
+/*
+ *  @breif  获取页表地址
+ *  @param  vaddr  虚拟地址
+ *  @param  create
+ *  @return  指向对应页表的虚拟地址
+ **/
 static page_entry_t *get_pte(u32 vaddr, bool create) {
     // return (page_entry_t *)(0xffc00000 | (DIDX(vaddr) << 12));
 
@@ -308,14 +330,19 @@ static page_entry_t *get_pte(u32 vaddr, bool create) {
     return table;
 }
 
+/*
+ *  @breif  获取页表项地址
+ *  @param  vaddr  虚拟地址
+ *  @param  create
+ *  @return  指向对应页表项的虚拟地址
+ **/
 page_entry_t *get_entry(u32 vaddr, bool create) {
     page_entry_t *pte = get_pte(vaddr, create);
     return &pte[TIDX(vaddr)];
 }
 
-/* Flush table
- *
- * @param vaddr Virtual address of page table
+/*  @breif  Flush table
+ *  @param  vaddr  Virtual address of page table
  */
 void flush_tlb(u32 vaddr) {
     asm volatile("invlpg (%0)" ::"r"(vaddr) : "memory");
