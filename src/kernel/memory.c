@@ -348,12 +348,11 @@ void flush_tlb(u32 vaddr) {
     asm volatile("invlpg (%0)" ::"r"(vaddr) : "memory");
 }
 
-/* Get continuous page
- *
- * @param map Bitmap
- * @param count Amount of pages to allcate
- *
- * @return Address of page allocated
+/*
+ *  @brief  分配连续虚拟页
+ *  @param  map  位图
+ *  @param  count  需要分配的页数
+ *  @return  分配到的第一个页的地址
  */
 static u32 scan_page(bitmap_t *map, u32 count) {
     assert(count > 0);
@@ -368,11 +367,11 @@ static u32 scan_page(bitmap_t *map, u32 count) {
     return addr;
 }
 
-/* Reset page
- *
- * @param map Bitmap
- * @param addr Address of page
- * @param count Amount of page
+/*
+ *  @breif  释放分配的虚拟页
+ *  @param  map  位图
+ *  @param  addr  需要释放的页的地址
+ *  @param  count  需要释放的页数
  */
 static void reset_page(bitmap_t *map, u32 addr, u32 count) {
     ASSERT_PAGE(addr);
@@ -386,11 +385,12 @@ static void reset_page(bitmap_t *map, u32 addr, u32 count) {
     }
 }
 
-/* Allocate continuous kernel page
+/*
+ *  @brief  分配连续虚拟页
+ *  @param  count  需要分配的页数
+ *  @return  分配到的第一个页的地址
  *
- * @param count Amount of pages
- *
- * @return Address of start page
+ *  对 scan_page 的包装
  */
 u32 alloc_kpage(u32 count) {
     assert(count > 0);
@@ -399,12 +399,12 @@ u32 alloc_kpage(u32 count) {
     return vaddr;
 }
 
-/* Free continuous kernel page
+/*
+ *  @breif  释放分配的虚拟页
+ *  @param  addr  需要释放的页的地址
+ *  @param  count  需要释放的页数
  *
- * @param vaddr Address of page to free
- * @param count Amount of pages
- *
- * @return Address of start page
+ *  对 reset_page 的包装
  */
 void free_kpage(u32 vaddr, u32 count) {
     ASSERT_PAGE(vaddr);
