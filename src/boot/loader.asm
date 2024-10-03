@@ -90,12 +90,14 @@ protect_mode:
 
 	mov esp, 0x10000
 	
+	; load kernel to 0x10000
 	mov edi, 0x10000
 	mov ecx, 10
 	mov bl, 200
 
 	call read_disk
 
+	; pass parameters for memory_init()
 	mov eax, 0x20240419
 	mov ebx, ards_count
 

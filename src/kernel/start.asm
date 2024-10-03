@@ -30,14 +30,17 @@ data_selector equ (2 << 3)
 section .text
 global _start
 _start:
-	push ebx
-	push eax
+	; avoid modifing the params
+	push ebx ; ards_count
+	push eax ; magic_number
 	
 	call device_init
 	call console_init
 	
 	call gdt_init
-
+	
+	; grub may change the selector, load selector to make sure it is loaded
+	; correctly
 	lgdt [gdt_ptr]
 
 	jmp dword code_selector:_next
@@ -52,6 +55,7 @@ _next:
 	
 	call memory_init
 	
+	; modify stack top
 	mov esp, 0x10000
 	call kernel_init
 
