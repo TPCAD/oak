@@ -139,3 +139,11 @@ IDTR 的结构：
     - 0b0110：16 位中断门
     - 0b1110：32 位中断门
 
+## 外中断
+
+80x86 采用两片 8259a 可编程中断控制器（Programmable Interrupt Controller，PIC）
+管理中断。控制器上的 IR0～IR7 引脚每个可以处理一个中断，两片级联可以处理 15 个
+中断源。主片 INT 引脚连接 CPU，从片 INT 引脚连接主片 IR2 引脚。主片端口基地址从
+ 0x20 开始，从片从 0xa0 开始。
+
+见[外中断控制器](https://github.com/StevenBaby/onix/blob/dev/docs/04%20%E4%B8%AD%E6%96%AD%E5%92%8C%E6%97%B6%E9%92%9F/033%20%E5%A4%96%E4%B8%AD%E6%96%AD%E6%8E%A7%E5%88%B6%E5%99%A8.md)
