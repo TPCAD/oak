@@ -9,10 +9,10 @@
 #define PIT_CHAN2_REG 0x42
 #define PIT_CTRL_REG 0x43
 
-#define HZ 100
+#define HZ 100 // 时钟频率，10 ms
 #define OSCILLATOR 1193182
 #define CLOCK_COUNTER (OSCILLATOR / HZ)
-#define JIFFY (1000 / HZ)
+#define JIFFY (1000 / HZ) // 时间片的长度，10 ms
 
 #define SPEAKER_REG 0x61
 #define BEEP_HZ 440
@@ -78,6 +78,6 @@ void pit_init() {
 
 void clock_init() {
     pit_init();
-    set_interrupt_handler(IRQ_CLOCK, clock_handler);
-    set_interrupt_mask(IRQ_CLOCK, true);
+    set_interrupt_handler(IRQ_CLOCK, clock_handler); // 设置时钟中断处理函数
+    set_interrupt_mask(IRQ_CLOCK, true);             // 开启时钟中断
 }
