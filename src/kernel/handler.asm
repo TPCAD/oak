@@ -14,6 +14,8 @@ interrupt_handler_%1: ; expand to interrupt_handler_0x01 for example
 %endmacro
 
 interrupt_entry:
+	; interrupt context
+	; total 12 register
 	push ds
 	push es
 	push fs

@@ -49,6 +49,7 @@ static char *messages[] = {
     "#CP Control Protection Exception\0",
 };
 
+// 通知外中断控制器中断结束
 void send_eoi(int vector) {
     if (vector >= 0x20 && vector < 0x28) {
         outb(PIC_M_CTRL, PIC_EOI);
@@ -132,12 +133,15 @@ void exception_handler(int vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
     hang();
 }
 
+// 初始化中断控制器
 void pic_init() {
+    // master chip init
     outb(PIC_M_CTRL, 0b00010001); // ICW1: edge trigger,  cascade, need ICW4
     outb(PIC_M_DATA, 0x20);       // ICW2: start interrupt vector
     outb(PIC_M_DATA, 0b00000100); // ICW3: IR2 for slave
     outb(PIC_M_DATA, 0b00000001); // ICW4: non-auto EOI, 8086 mode
 
+    // slave chip init
     outb(PIC_S_CTRL, 0b00010001); // ICW1: edge trigger,  cascade, need ICW4
     outb(PIC_S_DATA, 0x28);       // ICW2: start interrupt vector
     outb(PIC_S_DATA, 0b00000010); // ICW3: IR2 for slave
@@ -148,9 +152,10 @@ void pic_init() {
 }
 
 void idt_init() {
+    // 初始化中断描述符表
     for (size_t i = 0; i < ENTRY_SIZE; i++) {
         gate_t *gate = &idt[i];
-        handler_t handler = handler_entry_table[i];
+        handler_t handler = handler_entry_table[i]; // 中断函数指针
 
         gate->offset_low = (u32)handler & 0xffff;
         gate->offset_high = ((u32)handler >> 16) & 0xffff;
@@ -162,10 +167,13 @@ void idt_init() {
         gate->present = 1;
     }
 
+    // 前 32 个中断初始化为异常
     for (size_t i = 0; i < EXCEPTION_SIZE; i++) {
         handler_table[i] = exception_handler;
     }
+    // 14 号中断初始化为缺页异常
     handler_table[0xe] = page_fault;
+    // 剩余中断初始化为默认中断
     for (size_t i = EXCEPTION_SIZE; i < ENTRY_SIZE; i++) {
         handler_table[i] = default_handler;
     }
