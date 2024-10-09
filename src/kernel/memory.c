@@ -413,6 +413,10 @@ void free_kpage(u32 vaddr, u32 count) {
     DEBUGK("free kernel page 0x%p count %d\n", vaddr, count);
 }
 
+/**
+ *  @brief  绑定虚拟页与物理页
+ *  @param  vaddr  虚拟地址
+ */
 void link_page(u32 vaddr) {
     ASSERT_PAGE(vaddr);
 
@@ -434,6 +438,10 @@ void link_page(u32 vaddr) {
     DEBUGK("link from 0x%p to 0x%p\n", vaddr, paddr);
 }
 
+/**
+ *  @brief  解绑虚拟页与物理页
+ *  @param  vaddr  虚拟地址
+ */
 void unlink_page(u32 vaddr) {
     ASSERT_PAGE(vaddr);
 
@@ -461,11 +469,15 @@ void unlink_page(u32 vaddr) {
 }
 
 static u32 copy_page(void *page) {
+    // 分配一页物理页
     u32 paddr = alloc_page();
     u32 vaddr = 0;
+    // 利用第 0 页进行复制
     page_entry_t *entry = get_pte(vaddr, false);
+    // 将分配的物理页绑定到页表项
     entry_init(entry, IDX(paddr));
     flush_tlb(vaddr);
+    // 拷贝旧的页到新的物理页，通过虚拟地址找到分配的物理页
     memcpy((void *)vaddr, (void *)page, PAGE_SIZE);
 
     entry->present = false;
