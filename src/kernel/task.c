@@ -26,6 +26,7 @@ extern void task_switch(task_t *next);
 extern void idle_thread();
 extern void init_thread();
 extern void test_thread();
+extern void foo_thread();
 
 static task_t *task_table[NR_TASKS];
 static list_t block_list;
@@ -480,4 +481,5 @@ void task_init() {
     idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
     task_create(init_thread, "init", 5, NORMAL_USER);
     task_create(test_thread, "test", 5, NORMAL_USER);
+    // task_create(foo_thread, "foo", 5, NORMAL_USER);
 }

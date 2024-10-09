@@ -39,7 +39,17 @@ void test_thread() {
     // link("/hello.txt", "/world.txt");
     // unlink("/hello.txt");
     while (true) {
+        // printk("A");
         // test();
         sleep(10);
+    }
+}
+
+void foo_thread() {
+    set_interrupt_state(true);
+    while (true) {
+        printk("B");
+        // test();
+        // sleep(10);
     }
 }
