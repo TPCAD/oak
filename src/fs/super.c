@@ -61,8 +61,8 @@ super_block_t *read_super(dev_t dev) {
     // if super_table has
     super_block_t *sb = get_super(dev);
     if (sb) {
-        return sb;
         sb->count++;
+        return sb;
     }
 
     DEBUGK("reading super block of device %d\n", dev);
