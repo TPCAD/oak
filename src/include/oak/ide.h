@@ -10,6 +10,7 @@
 #define IDE_DISK_NR 2 // disk amount of each controller, fixed to 2
 #define IDE_PART_NR 4 // partition amount of each disk
 
+// 存储于主引导扇区的分区信息
 typedef struct part_entry_t {
     u8 bootable;             // boot flag
     u8 start_head;           // partition start head
@@ -23,12 +24,14 @@ typedef struct part_entry_t {
     u32 count;               // sector amount occupied by partition
 } _packed part_entry_t;
 
+// 主引导扇区
 typedef struct boot_sector_t {
     u8 code[446];
-    part_entry_t entry[4];
-    u16 signature;
+    part_entry_t entry[4]; // 分区表
+    u16 signature;         // 魔数
 } _packed boot_sector_t;
 
+// 嵌套于硬盘信息中的分区信息
 typedef struct ide_part_t {
     char name[8];            // partition name
     struct ide_disk_t *disk; // disk pointer
