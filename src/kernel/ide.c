@@ -224,11 +224,11 @@ static void ide_select_sector(ide_disk_t *disk, u32 lba, u8 count) {
 }
 
 /**
- *  @brief  写入缓冲区内容到扇区
+ *  @brief  读取扇区内容到缓冲区
  *  @param  disk  硬盘
  *  @param  buf  缓冲区
  *
- *  写入一个扇区的内容，每一次写入两个字节
+ *  读取一个扇区的内容，每一次读取两个字节
  */
 static void ide_pio_read_sector(ide_disk_t *disk, u16 *buf) {
     for (size_t i = 0; i < (SECTOR_SIZE / 2); i++) {
@@ -237,11 +237,11 @@ static void ide_pio_read_sector(ide_disk_t *disk, u16 *buf) {
 }
 
 /**
- *  @brief  读取扇区内容到缓冲区
+ *  @brief  写入缓冲区内容到扇区
  *  @param  disk  硬盘
  *  @param  buf  缓冲区
  *
- *  读取一个扇区的内容，每一次读取两个字节
+ *  写入一个扇区的内容，每一次写入两个字节
  */
 static void ide_pio_write_sector(ide_disk_t *disk, u16 *buf) {
     for (size_t i = 0; i < (SECTOR_SIZE / 2); i++) {
