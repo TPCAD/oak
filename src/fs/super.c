@@ -57,6 +57,7 @@ void put_super(super_block_t *sb) {
     brelse(sb->buf);
 }
 
+// 从设备读取超级块
 super_block_t *read_super(dev_t dev) {
     // if super_table has
     super_block_t *sb = get_super(dev);
@@ -91,7 +92,7 @@ super_block_t *read_super(dev_t dev) {
         }
     }
 
-    // read inode bitmap
+    // read zone bitmap
     for (int i = 0; i < sb->desc->zmap_blocks; i++) {
         assert(i < ZMAP_NR);
         if ((sb->zmaps[i] = bread(dev, idx))) {
@@ -103,6 +104,7 @@ super_block_t *read_super(dev_t dev) {
     return sb;
 }
 
+// 挂载 root
 static void mount_root() {
     DEBUGK("mount root file system\n");
     device_t *device = device_find(DEV_IDE_PART, 0);
@@ -130,6 +132,13 @@ void super_init() {
     mount_root();
 }
 
+/**
+ *  @brief  系统调用 mount，挂载设备到目录
+ *  @param  devname  设备名称
+ *  @param  dirname  目录名称
+ *  @param  flags  标记
+ *  @return  错误编码
+ */
 int sys_mount(char *devname, char *dirname, int flags) {
     DEBUGK("mount %s to %s\n", devname, dirname);
 

@@ -78,7 +78,7 @@ static inline idx_t inode_block(super_block_t *sb, idx_t nr) {
            (nr - 1) / BLOCK_INODES;
 }
 
-// 从已有 inode 中查找编号为 nr 的 inode
+// 从已读取到内存的 inode 中查找编号为 nr 的 inode
 static inode_t *find_inode(dev_t dev, idx_t nr) {
     super_block_t *sb = get_super(dev);
     assert(sb);
@@ -106,9 +106,10 @@ static inode_t *fit_inode(inode_t *inode) {
     return inode;
 }
 
-// 获得设备 dev 的 nr inode
+// 获得设备 dev 的第 nr 个 inode
 inode_t *iget(dev_t dev, idx_t nr) {
     inode_t *inode = find_inode(dev, nr);
+    // inode 已读入内存
     if (inode) {
         inode->count++;
         inode->atime = time();
@@ -129,7 +130,9 @@ inode_t *iget(dev_t dev, idx_t nr) {
     // 加入超级块 inode 链表
     list_push(&sb->inode_list, &inode->node);
 
+    // 获取对应块号
     idx_t block = inode_block(sb, inode->nr);
+    // 读取对应块到高速缓冲
     buffer_t *buf = bread(inode->dev, block);
 
     inode->buf = buf;

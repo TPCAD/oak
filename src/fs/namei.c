@@ -32,15 +32,12 @@ bool permission(inode_t *inode, u16 mask) {
     return false;
 }
 
-/* match if path contains entry name
- *
- * @param path path
- * @param entry_name
- * @param next pointer to the path without entry name
- *
- * @return Boolean
+/**
+ *  @brief  检查路径的第一项是否是指定项
+ *  @param  path  路径
+ *  @param  entry_name  待匹配的项
+ *  @param  next  去除指定项后的路径指针
  */
-
 static bool match_name(const char *path, const char *entry_name, char **next) {
     char *lhs = (char *)path;
     char *rhs = (char *)entry_name;
@@ -50,14 +47,17 @@ static bool match_name(const char *path, const char *entry_name, char **next) {
         rhs++;
     }
 
+    // rhs 未结束，即路径第一项比指定项短
     if (*rhs) {
         return false;
     }
 
+    // 路径未结束且当前字符不是分隔符，即路径第一项比指定项长
     if (*lhs && !IS_SEPARATOR(*lhs)) {
         return false;
     }
 
+    // 匹配，去除分隔符
     if (IS_SEPARATOR(*lhs)) {
         lhs++;
     }
@@ -154,11 +154,13 @@ static buffer_t *add_entry(inode_t *dir, const char *name, dentry_t **result) {
     };
 }
 
+// 根据目录名找到父目录 inode
 inode_t *named(char *pathname, char **next) {
     inode_t *inode = NULL;
     task_t *task = running_task();
     char *left = pathname;
 
+    // root
     if (IS_SEPARATOR(left[0])) {
         inode = task->iroot;
         left++;
