@@ -25,3 +25,30 @@ target ... : prerequisites ...
 clean:
     rm -rf build
 ```
+
+### Tips
+
+#### 不显示执行的命令
+
+Make 执行命令前会先打印要执行的命令，如果不想 Make 打印命令可以在命令前添加 `@`。
+
+打印要执行的命令：
+
+```makefile
+.PHONY: test
+test:
+    echo Hello
+
+# echo Hello
+# Hello
+```
+
+不打印要执行的命令：
+
+```makefile
+.PHONY: test
+test:
+    @echo Hello
+
+# Hello
+```
