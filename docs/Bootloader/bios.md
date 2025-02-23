@@ -68,8 +68,8 @@ DAPACK:
     .word 0x1000 # offset
     .word 0      # segment
     # 读取的起始扇区，使用 LBA 地址，注意小端序
-    .quad 0x2
-    .quad 0
+    .long 0x2
+    .long 0
 ```
 
 ## Reference
