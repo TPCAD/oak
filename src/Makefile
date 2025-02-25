@@ -25,6 +25,11 @@ IMAGE:=$(BUILD)/master.img
 .PHONY: image
 image: $(IMAGE)
 
+# bochs
+.PHONY: bochs
+bochs: $(IMAGE)
+	bochs -q -f ../debug/bochsrc -unlock
+
 .PHONY: clean
 clean:
 	rm -rf $(BUILD)
