@@ -2,7 +2,6 @@
 .global _start
 
 _start:
-    xchgw %bx, %bx
     # 调用 BIOS 10 号中断，设置显示模式
     # 操作码 ah = 00h，参数 al = 03h
     movw $0x3, %ax
@@ -17,37 +16,40 @@ _start:
     # 初始化栈顶
     movw $0x7c00, %sp
 
-    # 打印字符串
+    # 打印 "Booting..."
     movw $booting_msg, %si
     call print_str
 
-    # 读取硬盘，加载 loader
+    # 读取硬盘，加载 loader.s
     movw $DAPACK, %si # Disk Address Packet
     movb $0x42, %ah   # 操作码
     movb $0x80, %dl   # 硬盘号，0x80 是第一个硬盘
     int $0x13
 
+    # 检验是否正确加载 loader.s
     cmpw $0x55aa, [0x1000]
+    # 跳转 loader.s
     je 0x1002
 
+    # 加载错误
     movw $error_msg, %si
     call print_str
 
     hlt
 
+# 打印函数
 print_str:
     movb $0xe, %ah
-print_char:
-    lodsb
-    cmpb $0, %al
-    je print_done
-    int $0x10
-    jmp print_char
-print_done:
-    ret
+    .Lprint_char:
+        lodsb
+        cmpb $0, %al
+        je .Lprint_done
+        int $0x10
+        jmp .Lprint_char
+    .Lprint_done:
+        ret
 
 booting_msg: .asciz "Booting...\n\r"
-
 error_msg: .asciz "Booting error...\n\r"
 
 DAPACK:
