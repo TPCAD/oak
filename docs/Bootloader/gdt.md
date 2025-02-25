@@ -1,15 +1,13 @@
 # GDT
 
-GDT（Global Descriptor Table）全局描述符表，是一个用于描述内存分布的数组，数组
-的每一项称为段描述符（Segment Descriptor），用于描述一个内存区域。GDT 的第一项
-必须为全 0。在进入保护模式之前要先将 GDT 加载到寄存器 `gdtr` 中。
+GDT（Global Descriptor Table）全局描述符表，是一个用于描述内存分布的数组，数组的每一项称为段描述符（Segment Descriptor），用于描述一段内存区域。GDT 的第一项 必须为全 0。在进入保护模式之前要先将 GDT 加载到寄存器 `gdtr` 中。
 
 ## `gdtr` 寄存器
 
 结构：
 
-- 0 ～ 1 bytes：GDT 的大小
-- 2 ～ 5 bytes：描述符的偏移地址，即在数组中的位置
+- 0～1 bytes：GDT 的大小
+- 2～5 bytes：GDT 的地址
 
 ```asm
 lgdt <gdt_ptr> ; 加载 GDT 到 gdtr
@@ -18,12 +16,21 @@ sgdt <gdt_ptr> ; 保存 GDT
 
 ## 段描述符
 
-<img src="https://habrastorage.org/r/w1560/storage1/c46ddde2/3ff7d2f3/6af3408f/0d65fa31.jpg">
+<img src="https://en.wikipedia.org/wiki/Global_Descriptor_Table#/media/File:SegmentDescriptor.svg">
 
-- 基地址（base）：32 bits，表示内存段的基地址
-- 内存界限（limit）：32 bits，表示内存段大小
+```language
+|32                 24|23            20|19          16|15 | 2b  | 12|11   8|7                              0|
++-----------------------------------------------------+-----------------------------------------------------+
+| Base Address(24~31) | G | DB | L | A | Limit(16~19) | P | DPL | S | Type | Base Address(16~23)            |
++-----------------------------------------------------+-----------------------------------------------------+
+| Base Address(0~15)                                  | Limit(0~15)                                         |
++-----------------------------------------------------+-----------------------------------------------------+
+```
+
+- 基地址（base）：32 位，表示内存段的基地址
+- 内存界限（limit）：20 位，表示内存段大小
 - 访问类型（access type）：40～47 位，用于控制访问权限
-- 标志（Flags）：52~55 位，控制粒度，表示 CPU 模式
+- 标志（Flags）：52～55 位，控制粒度，表示 CPU 模式
 
 ### 访问类型
 
@@ -49,7 +56,7 @@ sgdt <gdt_ptr> ; 保存 GDT
 - L：Long-mode flag：1 表示 64 位段
 - A：置 0
 
-## 段选择器
+## 段选择子
 
 段选择器（Selector）类似实模式中的段地址，它指明了段描述符在 GDT 中的偏移位置，还带有校验功能。
 
@@ -57,17 +64,6 @@ sgdt <gdt_ptr> ; 保存 GDT
 - 0～1：RPL
 - 2：0 表示全局描述符，1 表示本地描述符
 - 3～15：GDT 索引
-
-## 保护模式
-
-```asm
-mov eax, cr0
-or al, 1
-mov cr0, eax
-
-; 开启保护模式后立即使用一个远跳转
-jmp <segment:offset>
-```
 
 ## 参考资料
 
