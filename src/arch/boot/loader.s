@@ -1,9 +1,9 @@
+.code16
 .global _start
 
 # 魔数，用于校验是否正确加载
 .word 0x55aa
 
-.code16
 _start:
     # 初始化段寄存器
     xorw %ax, %ax
@@ -102,8 +102,9 @@ enter_protected_mode:
     movl %eax, %cr0
 
     # 进入保护模式后应立即进行一次远跳转以确保不会执行实模式指令
-    ljmp $0x8, $protected_mode
+    ljmp $code_selector, $protected_mode
 
+.code32
 protected_mode:
     xchgw %bx, %bx
     movw $data_selector, %ax
@@ -215,7 +216,7 @@ success_msg: .asciz "Success!\n\r"
 # 32 位系统可访问的最大内存为 4G
 .equ memory_base, 0 # 内存起始地址
 # 内存结束地址，需要乘上 4K
-.equ memory_limit, ((1024*1024*1024*4) / (1024*4) - 1)
+.equ memory_limit, ((1024*1024*1024*4) / (1024*4)) - 1
 
 # GDT 寄存器，前 16 位表示 GDT 大小，后 32 位表示 GDT 地址
 gdt_ptr:
@@ -247,7 +248,7 @@ gdt_code:
     # L: 0, not long-mode
     # AV: 0
     # 段界限后 4 位
-    .byte 0b11000000 | (memory_limit >> 16) & 0xf
+    .byte 0b11000000 | ((memory_limit >> 16) & 0xf)
     # 段基地址 24～31 位
     .byte (memory_base >> 24) & 0xff
 # 数据段
@@ -264,7 +265,7 @@ gdt_data:
     # W: 1, writable
     # A: 0, no accessed
     .byte 0b10010010
-    .byte 0b11000000 | (memory_limit >> 16) & 0xf
+    .byte 0b11000000 | ((memory_limit >> 16) & 0xf)
     .byte (memory_base >> 24) & 0xff
 gdt_end:
 
