@@ -3,8 +3,9 @@ ARCH:=x86
 
 # source directories
 SRC:=.
-BOOT_DIR:=$(SRC)/arch/$(ARCH)/boot
+BOOT_DIR:=$(SRC)/arch/boot/$(ARCH)
 KERNEL_DIR:=$(SRC)/kernel
+UTILS_DIR:=$(SRC)/utils
 
 # build directories
 BUILD:=../build
@@ -50,6 +51,14 @@ $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
 $(BUILD_KERNEL)/system.map: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
 	nm $< | sort > $@
 
+# kernel.iso(boot with grub)
+$(BUILD)/kernel.iso: $(BUILD_KERNEL)/kernel.bin $(UTILS_DIR)/grub.cfg
+	grub-file --is-x86-multiboot2 $<
+	mkdir -p $(BUILD)/iso/boot/grub
+	cp $< $(BUILD)/iso/boot
+	cp $(UTILS_DIR)/grub.cfg $(BUILD)/iso/boot/grub
+	grub-mkrescue -o $@ $(BUILD)/iso
+
 $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	$(BUILD_BOOT)/loader.bin \
 	$(BUILD_KERNEL)/system.bin
@@ -68,6 +77,11 @@ image: $(IMAGE)
 .PHONY: bochs
 bochs: $(IMAGE)
 	bochs -q -f ../debug/bochsrc -unlock
+
+# bochs
+.PHONY: bochs-grub
+bochs-grub: $(BUILD)/kernel.iso
+	bochs -q -f ../debug/bochsrc_grub -unlock
 
 .PHONY: clean
 clean:
