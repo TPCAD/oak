@@ -106,7 +106,6 @@ enter_protected_mode:
 
 .code32
 protected_mode:
-    xchgw %bx, %bx
     movw $data_selector, %ax
     movw %ax, %ds
     movw %ax, %es
@@ -118,9 +117,12 @@ protected_mode:
 
     # 读取硬盘，加载内核
     movl $0x10000, %edi # 目标内存地址
-    movl $0, %ecx      # 扇区起始地址（LBA28）
-    movb $1, %bl      # 读取扇区数
+    movl $10, %ecx      # 扇区起始地址（LBA28）
+    movb $200, %bl      # 读取扇区数
     call read_disk
+
+    # 跳转内核
+    ljmp $code_selector, $0x10040
 
     hlt
 
