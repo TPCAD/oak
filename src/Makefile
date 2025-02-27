@@ -1,6 +1,9 @@
+# ARCH
+ARCH:=x86
+
 # source directories
 SRC:=.
-BOOT_DIR:=$(SRC)/arch/boot
+BOOT_DIR:=$(SRC)/arch/$(ARCH)/boot
 KERNEL_DIR:=$(SRC)/kernel
 
 # build directories
