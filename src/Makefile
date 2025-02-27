@@ -5,6 +5,7 @@ ARCH:=x86
 SRC:=.
 BOOT_DIR:=$(SRC)/arch/boot/$(ARCH)
 KERNEL_DIR:=$(SRC)/kernel
+KERNEL_ARCH_DIR:=$(SRC)/arch/kernel/$(ARCH)
 UTILS_DIR:=$(SRC)/utils
 
 # build directories
@@ -24,6 +25,7 @@ CFLAGS+= -fno-pic # no position independent code
 CFLAGS+= -fno-pie # no position independent executable file
 CFLAGS+= -nostdlib # no stdlib
 CFLAGS+= -fno-stack-protector
+CFLAGS+= -I$(SRC)/include
 # CFLAGS+= -DOAK
 # CFLAGS:=$(strip ${CFLAGS})
 
@@ -42,9 +44,11 @@ $(BUILD_BOOT)/loader.bin: $(BUILD_BOOT)/loader.o
 	ld -o $@ --oformat binary -Ttext=0x1000 $<
 
 # kernel
+C_FILES:= $(wildcard $(KERNEL_DIR)/*.c) \
+		 $(wildcard $(KERNEL_ARCH_DIR)/*.c)
 $(BUILD_KERNEL)/%.o: $(KERNEL_DIR)/%.S | $(BUILD_KERNEL)
 	as --32 -g $< -o $@
-$(BUILD_KERNEL)/%.o: $(KERNEL_DIR)/%.c | $(BUILD_KERNEL)
+$(BUILD_KERNEL)/%.o: $(C_FILES) | $(BUILD_KERNEL)
 	$(CC) $(CFLAGS) -g -c $< -o $@
 $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/main.o \
