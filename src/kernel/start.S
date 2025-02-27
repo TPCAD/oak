@@ -21,5 +21,6 @@ multiboot_header_end:
 
 _start:
     xchgw %bx, %bx
-    movw $0x0041, [0xb8000]
+    call kernel_init
+    xchgw %bx, %bx
     hlt

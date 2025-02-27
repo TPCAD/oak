@@ -44,7 +44,11 @@ $(BUILD_BOOT)/loader.bin: $(BUILD_BOOT)/loader.o
 # kernel
 $(BUILD_KERNEL)/%.o: $(KERNEL_DIR)/%.S | $(BUILD_KERNEL)
 	as --32 -g $< -o $@
-$(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o | $(BUILD_KERNEL)
+$(BUILD_KERNEL)/%.o: $(KERNEL_DIR)/%.c | $(BUILD_KERNEL)
+	$(CC) $(CFLAGS) -g -c $< -o $@
+$(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
+	$(BUILD_KERNEL)/main.o \
+	| $(BUILD_KERNEL)
 	ld $(LDFLAGS) $^ -o $@
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
 	objcopy -O binary --remove-section=.note.gnu.property $< $@
@@ -78,10 +82,28 @@ image: $(IMAGE)
 bochs: $(IMAGE)
 	bochs -q -f ../debug/bochsrc -unlock
 
-# bochs
+# bochs-grub
 .PHONY: bochs-grub
 bochs-grub: $(BUILD)/kernel.iso
 	bochs -q -f ../debug/bochsrc_grub -unlock
+
+# bochs-gdb
+.PHONY: bochs-gdb
+bochs-gdb: $(IMAGE)
+	bochs-gdb -q -f ../debug/bochsrc_gdb -unlock
+
+QEMU:= qemu-system-i386
+QEMU+= -m 32M
+
+QEMU_DEBUG:= -s -S
+
+.PHONY: qemu
+qemu: $(IMAGE)
+	$(QEMU) -boot c -hda $<
+
+.PHONY: qemu-gdb
+qemu-gdb: $(IMAGE)
+	$(QEMU) $(QEMU_DEBUG) -boot c -hda $<
 
 .PHONY: clean
 clean:
