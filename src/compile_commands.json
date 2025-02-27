@@ -1,0 +1,22 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-m32",
+      "-fno-builtin",
+      "-nostdinc",
+      "-fno-pic",
+      "-fno-pie",
+      "-fno-stack-protector",
+      "-I./include",
+      "-g",
+      "-c",
+      "-o",
+      "../build/kernel/main.o",
+      "kernel/main.c"
+    ],
+    "directory": "/home/tpcad/Code/oak/src",
+    "file": "/home/tpcad/Code/oak/src/kernel/main.c",
+    "output": "/home/tpcad/Code/oak/build/kernel/main.o"
+  }
+]
