@@ -57,7 +57,7 @@ void vga_set_screen_start_addr(u32 scr_addr);
 u32 vga_get_cursor_addr();
 void vga_set_cursor_addr(u32 cursor_addr);
 
-void vga_clear_screen();
+void vga_text_clear_screen();
 
 vga_attributes vga_text_set_theme(vga_attributes fg, vga_attributes bg);
 u32 vga_text_write_char(u32 addr, vga_attributes attr, char ch);
