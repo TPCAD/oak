@@ -6,6 +6,8 @@ SRC:=.
 BOOT_DIR:=$(SRC)/arch/boot/$(ARCH)
 KERNEL_DIR:=$(SRC)/kernel
 KERNEL_ARCH_DIR:=$(SRC)/arch/kernel/$(ARCH)
+DRIVE_ARCH_DIR:=$(SRC)/arch/drive/$(ARCH)
+LIB_DIR:=$(SRC)/lib
 UTILS_DIR:=$(SRC)/utils
 
 # build directories
@@ -26,6 +28,7 @@ CFLAGS+= -fno-pie # no position independent executable file
 CFLAGS+= -nostdlib # no stdlib
 CFLAGS+= -fno-stack-protector
 CFLAGS+= -I$(SRC)/include
+CFLAGS+= -I$(SRC)/arch/include/
 CFLAGS+= -O0
 # CFLAGS+= -DOAK
 # CFLAGS:=$(strip ${CFLAGS})
@@ -51,9 +54,15 @@ $(BUILD_KERNEL)/%.o: $(KERNEL_DIR)/%.c | $(BUILD_KERNEL)
 	$(CC) $(CFLAGS) -g -c $< -o $@
 $(BUILD_KERNEL)/%.o: $(KERNEL_ARCH_DIR)/%.c | $(BUILD_KERNEL)
 	$(CC) $(CFLAGS) -g -c $< -o $@
+$(BUILD_KERNEL)/%.o: $(DRIVE_ARCH_DIR)/%.c | $(BUILD_KERNEL)
+	$(CC) $(CFLAGS) -g -c $< -o $@
+$(BUILD_KERNEL)/%.o: $(LIB_DIR)/%.c | $(BUILD_KERNEL)
+	$(CC) $(CFLAGS) -g -c $< -o $@
 $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/main.o \
 	$(BUILD_KERNEL)/io.o \
+	$(BUILD_KERNEL)/vga.o \
+	$(BUILD_KERNEL)/string.o \
 	| $(BUILD_KERNEL)
 	ld $(LDFLAGS) $^ -o $@
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
