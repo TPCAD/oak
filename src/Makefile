@@ -63,6 +63,7 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/io.o \
 	$(BUILD_KERNEL)/vga.o \
 	$(BUILD_KERNEL)/string.o \
+	$(BUILD_KERNEL)/tty.o \
 	| $(BUILD_KERNEL)
 	ld $(LDFLAGS) $^ -o $@
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
