@@ -7,8 +7,10 @@
 #define VGA_TEXT_WIDTH 80
 #define VGA_TEXT_HEIGHT 25
 
+#define VGA_CHAR_SIZE 2
+
 // 一个 VGA 字符占 2 字节
-#define VGA_ROW_SIZE (VGA_TEXT_WIDTH * 2)
+#define VGA_ROW_SIZE (VGA_TEXT_WIDTH * VGA_CHAR_SIZE)
 // 80x25 共 80*2*25 = 4000 字节
 #define VGA_SCR_SIZE (VGA_ROW_SIZE * VGA_TEXT_HEIGHT)
 
@@ -53,15 +55,16 @@
 typedef unsigned short vga_attributes;
 
 u32 vga_get_screen_start_addr();
-void vga_set_screen_start_addr(u32 scr_addr);
+u32 vga_set_screen_start_addr(u32 scr_addr);
 u32 vga_get_cursor_addr();
-void vga_set_cursor_addr(u32 cursor_addr);
+u32 vga_set_cursor_addr(u32 cursor_addr);
 
 void vga_text_clear_screen();
 
 vga_attributes vga_text_set_theme(vga_attributes fg, vga_attributes bg);
 u32 vga_text_write_char(u32 addr, vga_attributes attr, char ch);
-u32 vga_text_write_str(u32 addr, vga_attributes attr, const char *str);
+u32 vga_text_write_str(u32 addr, vga_attributes attr, const char *str,
+                       u32 count);
 void vga_text_clear_screen();
 u32 vga_text_scroll_up();
 
