@@ -6,7 +6,7 @@ typedef char *va_list;
 /**
  *  @brief  获取参数列表的第二个参数
  *  @param  ap  用于指向参数的指针
- *  @param  v  参数列表的第一个参数
+ *  @param  v  首个可变形参前的具名形参
  */
 #define va_start(ap, v) (ap = (va_list) & v + sizeof(char *))
 
