@@ -159,3 +159,15 @@ void *memcpy(void *dest, const void *src, size_t count) {
     }
     return dest;
 }
+
+/**
+ *  @brief  就地反转字符串
+ *  @param  s  要反转的字符串
+ */
+void reverse(char *s) {
+    for (int i = 0, j = strlen(s) - 1; i < j; i++, j--) {
+        char c = s[i];
+        s[i] = s[j];
+        s[j] = c;
+    }
+}
