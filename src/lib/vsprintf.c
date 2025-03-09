@@ -1,3 +1,4 @@
+#include "oak/kassert.h"
 #include <oak/stdarg.h>
 #include <oak/stdio.h>
 #include <oak/string.h>
@@ -339,6 +340,7 @@ int vsprintf(char *buf, const char *fmt, va_list vlist) {
 
     int tmp = str - buf;
     // TODO: assert tmp
+    kassert(tmp < 1024);
     return tmp;
 }
 
