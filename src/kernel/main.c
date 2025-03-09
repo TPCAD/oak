@@ -9,7 +9,9 @@ char buf[1024];
 void kernel_init() {
     tty_init();
 
-    kprintf("%s\n", msg);
-    reverse(msg);
-    kprintf("%s\n", msg);
+    char tmp[8];
+    itoa(1024, tmp);
+    kprintf("%s\n", tmp);
+    itoa(-1024, tmp);
+    kprintf("%s\n", tmp);
 }

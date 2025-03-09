@@ -66,6 +66,7 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/tty.o \
 	$(BUILD_KERNEL)/vsprintf.o \
 	$(BUILD_KERNEL)/kprintf.o \
+	$(BUILD_KERNEL)/stdlib.o \
 	| $(BUILD_KERNEL)
 	ld $(LDFLAGS) $^ -o $@
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
