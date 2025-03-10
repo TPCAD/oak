@@ -18,7 +18,7 @@ void tty_set_theme(vga_attributes fg, vga_attributes bg);
 // void tty_write_char(char chr);
 void tty_write_str(char *buf, u32 count);
 void tty_scroll_up();
-void tty_clear();
+void tty_clear(u32 addr);
 
 void tty_init();
 

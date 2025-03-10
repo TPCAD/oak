@@ -80,16 +80,32 @@ u32 vga_set_cursor_addr(u32 cursor_addr) {
 }
 
 /**
- *  @brief  清屏
+ *  @brief  清空 VGA 显存
  *
  *  重置屏幕起始位置、光标位置为基地址，将显存所有 VGA 字符设为 0x0720。
  */
-void vga_text_clear_screen() {
+void vga_text_clear_memory() {
     vga_set_screen_start_addr(VGA_TEXT_MEM_BASE);
     vga_set_cursor_addr(VGA_TEXT_MEM_BASE);
 
     u16 *ptr = (u16 *)VGA_TEXT_MEM_BASE;
     while (ptr < (u16 *)(VGA_TEXT_MEM_BASE + VGA_TEXT_MEM_SIZE)) {
+        *ptr++ = VGA_ERASE_CHAR;
+    }
+}
+
+/**
+ *  @brief  清空指定屏幕
+ *  @param  scr_addr  屏幕起始位置
+ */
+void vga_text_clear_screen(u32 scr_addr) {
+    correct_addr(&scr_addr);
+    vga_set_cursor_addr(scr_addr);
+
+    u16 *ptr = (u16 *)scr_addr;
+
+    while ((ptr < (u16 *)(scr_addr + VGA_SCR_SIZE)) &&
+           ptr < (u16 *)VGA_TEXT_MEM_END) {
         *ptr++ = VGA_ERASE_CHAR;
     }
 }

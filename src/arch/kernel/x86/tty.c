@@ -138,17 +138,21 @@ void tty_write_str(char *buf, u32 count) {
 /**
  *  @brief  清屏
  *
- *  屏幕起始位置、光标位置置基地址，将显存所有 VGA 字符设为 0x0720。
+ *  清空当前屏幕
  */
-void tty_clear() {
-    vga_text_clear_screen();
-    tty_screen_addr = VGA_TEXT_MEM_BASE;
-    tty_cursor_addr = VGA_TEXT_MEM_BASE;
+void tty_clear(u32 addr) {
+    vga_text_clear_screen(addr);
+    tty_screen_addr = addr;
+    tty_cursor_addr = addr;
     tty_column = 0;
     tty_row = 0;
 }
 
 void tty_init() {
-    tty_clear();
+    vga_text_clear_memory();
     tty_set_theme(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
+    tty_screen_addr = VGA_TEXT_MEM_BASE;
+    tty_cursor_addr = VGA_TEXT_MEM_BASE;
+    tty_column = 0;
+    tty_row = 0;
 }
