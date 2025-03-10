@@ -21,6 +21,29 @@ multiboot_header_end:
 
 _start:
     xchgw %bx, %bx
+
+    call gdt_init
+    subl $0x06, %esp
+    movl $gdt, 2(%esp)
+    movw gdt_limit, %ax
+    movw %ax, (%esp)
+    lgdt (%esp)
+    addl $0x06, %esp
+
+    movw $0x10, %ax
+    movw %ax, %ds
+    movw %ax, %es
+    movw %ax, %fs
+    movw %ax, %gs
+    movw %ax, %ss
+
+    xchgw %bx, %bx
+    pushw $0x08
+    pushl $_after
+    retf
+
+_after:
     call kernel_init
+
     xchgw %bx, %bx
     hlt
