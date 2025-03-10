@@ -1,3 +1,4 @@
+#include "oak/kpanic.h"
 #include <oak/kassert.h>
 #include <oak/kprintf.h>
 #include <oak/stdio.h>
@@ -8,5 +9,5 @@ char buf[1024];
 void kernel_init() {
     tty_init();
 
-    kassert(3 > 5);
+    kpanic("kernel init error");
 }
