@@ -69,6 +69,7 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
 	$(BUILD_KERNEL)/stdlib.o \
 	$(BUILD_KERNEL)/kassert.o \
 	$(BUILD_KERNEL)/kpanic.o \
+	$(BUILD_KERNEL)/kdebug.o \
 	| $(BUILD_KERNEL)
 	ld $(LDFLAGS) $^ -o $@
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)

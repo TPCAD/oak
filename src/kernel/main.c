@@ -1,3 +1,4 @@
+#include "oak/kdebug.h"
 #include "oak/kpanic.h"
 #include <oak/kassert.h>
 #include <oak/kprintf.h>
@@ -9,5 +10,6 @@ char buf[1024];
 void kernel_init() {
     tty_init();
 
-    kpanic("kernel init error");
+    BMB;
+    KDEBUG("kernel init error");
 }
