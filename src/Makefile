@@ -58,8 +58,8 @@ $(BUILD_KERNEL)/%.o: $(DRIVE_ARCH_DIR)/%.c | $(BUILD_KERNEL)
 	$(CC) $(CFLAGS) -g -c $< -o $@
 $(BUILD_KERNEL)/%.o: $(LIB_DIR)/%.c | $(BUILD_KERNEL)
 	$(CC) $(CFLAGS) -g -c $< -o $@
-$(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/start.o \
-	$(BUILD_KERNEL)/main.o \
+$(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/entry.o \
+	$(BUILD_KERNEL)/kernel.o \
 	$(BUILD_KERNEL)/io.o \
 	$(BUILD_KERNEL)/vga.o \
 	$(BUILD_KERNEL)/string.o \

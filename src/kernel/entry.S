@@ -21,8 +21,9 @@ multiboot_header_end:
 
 _start:
     xchgw %bx, %bx
+    call kernel_init
 
-    call gdt_init
+    // 加载 GDT
     subl $0x06, %esp
     movl $gdt, 2(%esp)
     movw gdt_limit, %ax
@@ -30,6 +31,7 @@ _start:
     lgdt (%esp)
     addl $0x06, %esp
 
+    // 加载数据段
     movw $0x10, %ax
     movw %ax, %ds
     movw %ax, %es
@@ -37,13 +39,12 @@ _start:
     movw %ax, %gs
     movw %ax, %ss
 
-    xchgw %bx, %bx
+    // 远跳转
     pushw $0x08
     pushl $_after
     retf
 
 _after:
-    call kernel_init
-
     xchgw %bx, %bx
+    call kernel_main
     hlt
