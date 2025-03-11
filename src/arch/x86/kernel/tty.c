@@ -1,6 +1,6 @@
 #include <oak/tty.h>
 #include <oak/types.h>
-#include <x86/vga.h>
+#include <oak/vga.h>
 
 u32 tty_screen_addr = 0;
 u32 tty_cursor_addr = 0;

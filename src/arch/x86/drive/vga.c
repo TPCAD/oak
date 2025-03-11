@@ -1,6 +1,6 @@
 #include <oak/io.h>
 #include <oak/string.h>
-#include <x86/vga.h>
+#include <oak/vga.h>
 
 static void correct_addr(u32 *addr) {
     if (*addr % 2 != 0) {

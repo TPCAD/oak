@@ -9,7 +9,7 @@
       "-fno-pie",
       "-fno-stack-protector",
       "-I./include",
-      "-I./arch/include",
+      "-I./arch/x86/include",
       "-g",
       "-c",
       "-o",

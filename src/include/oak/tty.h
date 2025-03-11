@@ -1,7 +1,7 @@
 #ifndef OAK_CONSOLE_H
 #define OAK_CONSOLE_H
 
-#include <x86/vga.h>
+#include <oak/vga.h>
 
 #define ASCII_NUL 0x00
 #define ASCII_ENQ 0x05

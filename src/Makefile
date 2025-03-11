@@ -3,10 +3,10 @@ ARCH:=x86
 
 # source directories
 SRC:=.
-BOOT_DIR:=$(SRC)/arch/boot/$(ARCH)
+BOOT_DIR:=$(SRC)/arch/$(ARCH)/boot
 KERNEL_DIR:=$(SRC)/kernel
-KERNEL_ARCH_DIR:=$(SRC)/arch/kernel/$(ARCH)
-DRIVE_ARCH_DIR:=$(SRC)/arch/drive/$(ARCH)
+KERNEL_ARCH_DIR:=$(SRC)/arch/$(ARCH)/kernel
+DRIVE_ARCH_DIR:=$(SRC)/arch/$(ARCH)/drive
 LIB_DIR:=$(SRC)/lib
 UTILS_DIR:=$(SRC)/utils
 
@@ -28,7 +28,7 @@ CFLAGS+= -fno-pie # no position independent executable file
 CFLAGS+= -nostdlib # no stdlib
 CFLAGS+= -fno-stack-protector
 CFLAGS+= -I$(SRC)/include
-CFLAGS+= -I$(SRC)/arch/include/
+CFLAGS+= -I$(SRC)/arch/$(ARCH)/include
 CFLAGS+= -O0
 # CFLAGS+= -DOAK
 # CFLAGS:=$(strip ${CFLAGS})

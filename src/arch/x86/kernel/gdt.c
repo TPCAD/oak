@@ -1,5 +1,5 @@
+#include <oak/gdt.h>
 #include <oak/types.h>
-#include <x86/gdt.h>
 
 seg_desc gdt[GDT_SIZE];
 u16 gdt_limit = sizeof(gdt) - 1;
