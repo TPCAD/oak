@@ -29,6 +29,12 @@ _start:
     movw gdt_limit, %ax
     movw %ax, (%esp)
     lgdt (%esp)
+
+    movl $idt, 2(%esp)
+    movw idt_limit, %ax
+    movw %ax, (%esp)
+    lidt (%esp)
+
     addl $0x06, %esp
 
     // 加载数据段

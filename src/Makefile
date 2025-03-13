@@ -50,6 +50,8 @@ $(BUILD_BOOT)/loader.bin: $(BUILD_BOOT)/loader.o
 # kernel
 $(BUILD_KERNEL)/%.o: $(KERNEL_DIR)/%.S | $(BUILD_KERNEL)
 	as --32 -g $< -o $@
+$(BUILD_KERNEL)/%.o: $(KERNEL_ARCH_DIR)/%.S | $(BUILD_KERNEL)
+	as --32 -g $< -o $@
 $(BUILD_KERNEL)/%.o: $(KERNEL_DIR)/%.c | $(BUILD_KERNEL)
 	$(CC) $(CFLAGS) -g -c $< -o $@
 $(BUILD_KERNEL)/%.o: $(KERNEL_ARCH_DIR)/%.c | $(BUILD_KERNEL)
@@ -71,6 +73,9 @@ $(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/entry.o \
 	$(BUILD_KERNEL)/kpanic.o \
 	$(BUILD_KERNEL)/kdebug.o \
 	$(BUILD_KERNEL)/gdt.o \
+	$(BUILD_KERNEL)/idt.o \
+	$(BUILD_KERNEL)/handler.o \
+	$(BUILD_KERNEL)/interrupt.o \
 	| $(BUILD_KERNEL)
 	ld $(LDFLAGS) $^ -o $@
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
