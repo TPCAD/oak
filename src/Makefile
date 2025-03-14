@@ -1,12 +1,11 @@
-# ARCH
+# architecture
 ARCH:=x86
 
 # source directories
 SRC:=.
-BOOT_DIR:=$(SRC)/arch/$(ARCH)/boot
+ARCH_DIR:=$(SRC)/arch/$(ARCH)
 KERNEL_DIR:=$(SRC)/kernel
-KERNEL_ARCH_DIR:=$(SRC)/arch/$(ARCH)/kernel
-DRIVE_ARCH_DIR:=$(SRC)/arch/$(ARCH)/drive
+BOOT_DIR:=$(ARCH_DIR)/boot
 LIB_DIR:=$(SRC)/lib
 UTILS_DIR:=$(SRC)/utils
 
@@ -33,13 +32,9 @@ CFLAGS+= -O0
 # CFLAGS+= -DOAK
 # CFLAGS:=$(strip ${CFLAGS})
 
-$(BUILD_BOOT):
-	@mkdir -p $@
-$(BUILD_KERNEL):
-	@mkdir -p $@
-
 # bootloader
-$(BUILD_BOOT)/%.o: $(BOOT_DIR)/%.s | $(BUILD_BOOT)
+$(BUILD_BOOT)/%.o: $(BOOT_DIR)/%.s
+	@mkdir -p $(@D)
 	$(AS) -o $@ $<
 
 $(BUILD_BOOT)/boot.bin: $(BUILD_BOOT)/boot.o
@@ -47,36 +42,19 @@ $(BUILD_BOOT)/boot.bin: $(BUILD_BOOT)/boot.o
 $(BUILD_BOOT)/loader.bin: $(BUILD_BOOT)/loader.o
 	ld -o $@ --oformat binary -Ttext=0x1000 $<
 
+KERNEL_SRC:=$(shell find $(KERNEL_DIR) $(ARCH_DIR) $(LIB_DIR) -name "*.[cS]")
+OBJ:=$(patsubst ./%, $(BUILD)/%.o, $(KERNEL_SRC))
+
+$(BUILD)/%.c.o: %.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -g -c $< -o $@
+
+$(BUILD)/%.S.o: %.S
+	@mkdir -p $(@D)
+	$(AS) --32 -g $< -o $@
+
 # kernel
-$(BUILD_KERNEL)/%.o: $(KERNEL_DIR)/%.S | $(BUILD_KERNEL)
-	as --32 -g $< -o $@
-$(BUILD_KERNEL)/%.o: $(KERNEL_ARCH_DIR)/%.S | $(BUILD_KERNEL)
-	as --32 -g $< -o $@
-$(BUILD_KERNEL)/%.o: $(KERNEL_DIR)/%.c | $(BUILD_KERNEL)
-	$(CC) $(CFLAGS) -g -c $< -o $@
-$(BUILD_KERNEL)/%.o: $(KERNEL_ARCH_DIR)/%.c | $(BUILD_KERNEL)
-	$(CC) $(CFLAGS) -g -c $< -o $@
-$(BUILD_KERNEL)/%.o: $(DRIVE_ARCH_DIR)/%.c | $(BUILD_KERNEL)
-	$(CC) $(CFLAGS) -g -c $< -o $@
-$(BUILD_KERNEL)/%.o: $(LIB_DIR)/%.c | $(BUILD_KERNEL)
-	$(CC) $(CFLAGS) -g -c $< -o $@
-$(BUILD_KERNEL)/kernel.bin: $(BUILD_KERNEL)/entry.o \
-	$(BUILD_KERNEL)/kernel.o \
-	$(BUILD_KERNEL)/io.o \
-	$(BUILD_KERNEL)/vga.o \
-	$(BUILD_KERNEL)/string.o \
-	$(BUILD_KERNEL)/tty.o \
-	$(BUILD_KERNEL)/vsprintf.o \
-	$(BUILD_KERNEL)/kprintf.o \
-	$(BUILD_KERNEL)/stdlib.o \
-	$(BUILD_KERNEL)/kassert.o \
-	$(BUILD_KERNEL)/kpanic.o \
-	$(BUILD_KERNEL)/kdebug.o \
-	$(BUILD_KERNEL)/gdt.o \
-	$(BUILD_KERNEL)/idt.o \
-	$(BUILD_KERNEL)/handler.o \
-	$(BUILD_KERNEL)/interrupt.o \
-	| $(BUILD_KERNEL)
+$(BUILD_KERNEL)/kernel.bin: $(OBJ)
 	ld $(LDFLAGS) $^ -o $@
 $(BUILD_KERNEL)/system.bin: $(BUILD_KERNEL)/kernel.bin | $(BUILD_KERNEL)
 	objcopy -O binary --remove-section=.note.gnu.property $< $@

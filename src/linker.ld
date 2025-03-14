@@ -13,6 +13,7 @@ SECTIONS {
         *(.multiboot2)
         FILL(0x00);
         . = 0x40;
+        ../build/kernel/entry.S.o (.text)
         *(.text)
     } :text
 }
