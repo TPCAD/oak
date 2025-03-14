@@ -1,5 +1,4 @@
-#include <oak/idt.h>
-#include <oak/interrupt.h>
+#include <oak/interrupt/idt.h>
 
 /**
  *  isr_entry_table 来自 handler.S，记录了每个 ISR 的入口地址。

@@ -1,5 +1,5 @@
 #include <oak/gdt.h>
-#include <oak/idt.h>
+#include <oak/interrupt/idt.h>
 #include <oak/kdebug.h>
 #include <oak/kprintf.h>
 #include <oak/tty.h>
