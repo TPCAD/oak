@@ -1,5 +1,5 @@
-#ifndef OAK_KDEBUG_H
-#define OAK_KDEBUG_H
+#ifndef OAK_DEBUG_KDEBUG_H
+#define OAK_DEBUG_KDEBUG_H
 
 void kdebug(char *file, int line, const char *fmt, ...);
 

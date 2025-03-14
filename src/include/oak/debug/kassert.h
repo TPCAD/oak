@@ -1,5 +1,5 @@
-#ifndef OAK_KASSERT_H
-#define OAK_KASSERT_H
+#ifndef OAK_DEBUG_KASSERT_H
+#define OAK_DEBUG_KASSERT_H
 
 void kassert_failure(char *exp, char *file, char *base, int line);
 

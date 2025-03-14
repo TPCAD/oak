@@ -1,15 +1,10 @@
-#include <oak/kassert.h>
+#include <oak/debug/kassert.h>
+#include <oak/kprintf.h>
+#include <oak/stdarg.h>
+#include <oak/stdio.h>
 #include <oak/stdlib.h>
 #include <oak/string.h>
 #include <oak/tty.h>
-
-static void kspin(char *func_name) {
-    tty_write_str("spinning in ", 12);
-    tty_write_str(func_name, strlen(func_name));
-    tty_write_str(" ...\n", 5);
-    while (true) {
-    }
-}
 
 void kassert_failure(char *exp, char *file, char *base, int line) {
     tty_write_str("\n-> assert(", 11);
@@ -28,7 +23,24 @@ void kassert_failure(char *exp, char *file, char *base, int line) {
     tty_write_str(line_str, strlen(line_str));
     tty_write_str("\n", 1);
 
-    kspin("assert_failure()");
+    while (true) {
+    }
+
+    asm volatile("ud2");
+}
+
+static char buf[1024];
+void kpanic(const char *fmt, ...) {
+    va_list vlist;
+    va_start(vlist, fmt);
+    int i = vsprintf(buf, fmt, vlist);
+    va_end(vlist);
+
+    tty_write_str("[kernel] Panic\n", 15);
+    tty_write_str(buf, i);
+
+    while (true) {
+    }
 
     asm volatile("ud2");
 }
