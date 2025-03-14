@@ -26,6 +26,19 @@ clean:
     rm -rf build
 ```
 
+### 特殊变量
+
+#### @D
+
+`@D` 表示当前目标文件的目录部分。
+
+```make
+build/myapp: main.o utils.o
+    # mkdir -p build
+    mkdir -p $(@D)
+    gcc $^ -o $@
+```
+
 ### Tips
 
 #### 不显示执行的命令
