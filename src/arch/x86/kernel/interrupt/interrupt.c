@@ -1,6 +1,6 @@
+#include <oak/debug/kdebug.h>
 #include <oak/interrupt/idt.h>
 #include <oak/interrupt/interrupt.h>
-#include <oak/kdebug.h>
 #include <oak/kprintf.h>
 
 static char *exception_msgs[] = {
