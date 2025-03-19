@@ -52,7 +52,7 @@ detect_memory:
         addl %ecx, %edi
 
         # 结构体数量加 1
-        incw [ards_count]
+        incl [ards_count]
 
         # 判断是否为最后一个 ARDS
         cmpl $0, %ebx
@@ -120,6 +120,10 @@ protected_mode:
     movl $10, %ecx      # 扇区起始地址（LBA28）
     movb $200, %bl      # 读取扇区数
     call read_disk
+
+    xchgw %bx, %bx
+    movl $0x20240419, %eax
+    movl $ards_count, %ebx
 
     # 跳转内核
     ljmp $code_selector, $0x10040
@@ -273,5 +277,5 @@ gdt_end:
 
 # Address Range Descriptor Structure
 # 内存布局长度不定，应将缓冲区置于文件末，防止覆盖其他内容
-ards_count: .byte 0
+ards_count: .long 0
 ards_buffer:

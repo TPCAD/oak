@@ -1,16 +1,16 @@
-#include <oak/gdt.h>
-#include <oak/interrupt/idt.h>
-#include <oak/kdebug.h>
+#include "oak/mm/memory.h"
+#include "oak/types.h"
+#include <oak/debug/kdebug.h>
 #include <oak/kprintf.h>
-#include <oak/tty.h>
 
-void kernel_init() {
-    gdt_init();
-    idt_init();
-}
+extern void tty_init();
+extern void pmm_init(u32 mem_upper_lim);
+
+extern mem_info_t mem_info;
+
+void kernel_init() { tty_init(); }
 
 void kernel_main() {
-    tty_init();
     kprintf("Hello Oak!\n");
     BMB;
     asm("int $0x24");
