@@ -1,0 +1,81 @@
+#include <oak/debug/kassert.h>
+#include <oak/mm/memory.h>
+#include <oak/mm/paging.h>
+#include <oak/mm/pmm.h>
+#include <oak/string.h>
+
+static u32 KERNEL_PAGE_TABLE[] = {0x2000, 0x3000, 0x4000, 0x5000};
+
+static u32 get_cr2() { asm volatile("movl %cr2, %eax\n"); }
+
+static u32 get_cr3() { asm volatile("movl %cr3, %eax\n"); }
+
+static void set_cr3(u32 page_dir_addr) {
+    ASSERT_PAGE(page_dir_addr);
+    asm volatile("movl %%eax, %%cr3\n" ::"a"(page_dir_addr));
+}
+
+static void enable_paging() {
+    asm volatile("movl %cr0, %eax\n"
+                 "orl $0x80000000, %eax\n"
+                 "movl %eax, %cr0\n");
+}
+
+/**
+ *  @brief  初始化页目录项或页表项
+ *  @param  entry  页目录项或页表项
+ *  @param  index  页表索引或页索引
+ *
+ *  PWT，PCD 置 0
+ *  PAT 置 0
+ *  Accessed，Dirty，Global 置 0
+ *  R/W，U/S，Present 置 1
+ */
+static void entry_init(page_entry_t *entry, u32 index) {
+    *(u32 *)entry = 0;
+    entry->write = 1;
+    entry->present = 1;
+    entry->user = 1;
+    entry->index = index;
+}
+
+void paging_init() {
+    page_entry_t *page_dir_addr = (page_entry_t *)KERNEL_PAGE_DIR_ADDR;
+    memset(page_dir_addr, 0, PAGE_SIZE);
+
+    u32 index = 0;
+    for (u32 page_dir_idx = 0;
+         page_dir_idx < (sizeof(KERNEL_PAGE_TABLE) / sizeof(u32));
+         page_dir_idx++) {
+        // 页表所在页清 0
+        page_entry_t *page_tbl_addr =
+            (page_entry_t *)KERNEL_PAGE_TABLE[page_dir_idx];
+        memset(page_tbl_addr, 0, PAGE_SIZE);
+
+        // 初始化页目录项
+        page_entry_t *page_dir_entry = &page_dir_addr[page_dir_idx];
+        entry_init(page_dir_entry, IDX((u32)page_tbl_addr));
+        page_dir_entry->user = 0;
+
+        // 初始化页表项
+        for (u32 page_tbl_idx = 0; page_tbl_idx < 1024;
+             page_tbl_idx++, index++) {
+            if (index == 0) {
+                continue;
+            }
+
+            page_entry_t *page_tbl_entry = &page_tbl_addr[page_tbl_idx];
+            entry_init(page_tbl_entry, index);
+            page_tbl_entry->user = 0;
+            pmm_mark_page_occupied(index);
+        }
+    }
+
+    // 最后一个页目录项指向页目录本身
+    page_entry_t *last_page_dir_entry = &page_dir_addr[1023];
+    entry_init(last_page_dir_entry, IDX(KERNEL_PAGE_DIR_ADDR));
+
+    // 开启分页
+    set_cr3((u32)page_dir_addr);
+    enable_paging();
+}

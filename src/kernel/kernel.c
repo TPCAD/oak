@@ -1,8 +1,9 @@
-#include "oak/mm/memory.h"
-#include "oak/mm/pmm.h"
-#include "oak/types.h"
 #include <oak/debug/kdebug.h>
 #include <oak/kprintf.h>
+#include <oak/mm/memory.h>
+#include <oak/mm/paging.h>
+#include <oak/mm/pmm.h>
+#include <oak/types.h>
 
 extern void tty_init();
 extern void pmm_init(u32 mem_upper_lim);
@@ -23,6 +24,8 @@ void kernel_init() {
             pmm_mark_chunk_free(IDX(ards->base), ards->size / PAGE_SIZE);
         }
     }
+
+    paging_init();
 }
 
 void kernel_main() {

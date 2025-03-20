@@ -22,7 +22,6 @@ void memory_info(u32 magic, u32 ards_count_addr) {
     } else {
         kpanic("[mm] Unknown memory magic\n");
     }
-    // kprintf("base: %p, size: %p\n", memory_base, memory_size);
 
     kassert(mem_info.max_zone_base == MEMORY_BASE);
     kassert((mem_info.max_zone_size & 0xfff) == 0);
