@@ -139,3 +139,34 @@ done:
 | .short       | 2      | 预留 2 字节 |
 | .int         | 4      | 预留 4 字节 |
 
+### 逻辑运算符
+
+GNU AS 的 `|` 和 `&` 是同一优先级的运算符，按从左到右的顺序运算。而 NASM 的 `&` 优先级要高于 `|`。
+
+## 内联汇编
+
+GNU 允许在 C 中嵌入汇编代码并读写 C 变量。
+
+```language
+asm asm-qualifiers ( AssemblerTemplate
+                      : OutputOperands
+                      : InputOperands
+                      : Clobbers
+                      : GotoLabels)
+```
+
+## 命令行参数
+
+### -g
+
+增加调试信息。
+
+#### --32
+
+编译 32 位程序。
+
+## 参考文献
+
+[AS Document](https://sourceware.org/binutils/docs/as/index.html)
+[x86-gnu-assembly-primer.md - Github Gist](https://gist.github.com/AVGP/85037b51856dc7ebc0127a63d6a601fa)
+[What is the purpose of GNU assembler directive .code16? - stackoverflow](https://stackoverflow.com/questions/60025609/what-is-the-purpose-of-gnu-assembler-directive-code16)
