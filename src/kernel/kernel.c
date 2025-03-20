@@ -16,7 +16,6 @@ void kernel_init() {
     pmm_init(MEMORY_BASE + (mem_info).max_zone_size);
 
     for (int i = 0; i < mem_info.ards_count; i++) {
-        BMB;
         ards_t *ards = mem_info.ards_arr + i;
         if (ards->type == 1) {
             kprintf("base: %p, size: %p, type: %d\n", (u32)ards->base,

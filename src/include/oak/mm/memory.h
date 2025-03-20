@@ -8,10 +8,10 @@
 
 #define PAGE_SIZE 0x1000 // 4K
 
-#define MEMORY_BASE 0x100000
-#define KERNEL_MEM_SIZE 0x1000000
+#define MEMORY_BASE 0x100000      // 1 MB
+#define KERNEL_MEM_SIZE 0x1000000 // 16 MB
 
-#define KERNEL_PAGE_DIR_ADDR 0x1000
+#define KERNEL_PAGE_DIR_ADDR 0x1000 // 内核页目录地址
 
 /**
  *  分页机制下，32 位地址中的高 10 位是页目录索引，中间 10 位是页表索引，低 12
@@ -40,19 +40,5 @@ typedef struct mem_info_t {
     u32 max_zone_base;
     u32 max_zone_size;
 } __pack mem_info_t;
-
-typedef struct page_entry_t {
-    u8 present : 1;  // 在内存中
-    u8 write : 1;    // 0 只读，1 可读可写
-    u8 user : 1;     // 1 所有人，0 超级用户 DPL < 3
-    u8 pwt : 1;      // page write through，1 直写模式，0 回写模式
-    u8 pcd : 1;      // page cache disable，禁止该页缓冲
-    u8 accessed : 1; // 被访问过，用于统计使用频率
-    u8 dirty : 1;    // 脏页，表示该页缓冲被写过
-    u8 pat : 1;      // page attribute table，页大小 4K / 4M
-    u8 global : 1;   // 全局，所有进程都会用到了，该页不刷新缓冲
-    u8 ignored : 3;  // 操作系统决定是否使用
-    u32 index : 20;  // 页索引
-} __pack page_entry_t;
 
 #endif // !OAK_MM_MEMORY_H

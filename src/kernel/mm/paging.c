@@ -25,20 +25,16 @@ static void enable_paging() {
  *  @brief  初始化页目录项或页表项
  *  @param  entry  页目录项或页表项
  *  @param  index  页表索引或页索引
- *
- *  PWT，PCD 置 0
- *  PAT 置 0
- *  Accessed，Dirty，Global 置 0
- *  R/W，U/S，Present 置 1
+ *  @param  pg_attr  页目录或页表的属性
  */
-static void entry_init(page_entry_t *entry, u32 index) {
-    *(u32 *)entry = 0;
-    entry->write = 1;
-    entry->present = 1;
-    entry->user = 1;
-    entry->index = index;
+static void entry_init(page_entry_t *entry, u32 index, u32 attr) {
+    *entry = 0;
+    *entry = (*entry) | index << 12 | attr;
 }
 
+/**
+ *  @brief  初始化内核页表并开启分页
+ */
 void paging_init() {
     page_entry_t *page_dir_addr = (page_entry_t *)KERNEL_PAGE_DIR_ADDR;
     memset(page_dir_addr, 0, PAGE_SIZE);
@@ -54,10 +50,8 @@ void paging_init() {
 
         // 初始化页目录项
         page_entry_t *page_dir_entry = &page_dir_addr[page_dir_idx];
-        entry_init(page_dir_entry, IDX((u32)page_tbl_addr));
-        page_dir_entry->user = 0;
-
-        // 初始化页表项
+        entry_init(page_dir_entry, IDX((u32)page_tbl_addr),
+                   PG_ATTR_PW); // 初始化页表项
         for (u32 page_tbl_idx = 0; page_tbl_idx < 1024;
              page_tbl_idx++, index++) {
             if (index == 0) {
@@ -65,15 +59,16 @@ void paging_init() {
             }
 
             page_entry_t *page_tbl_entry = &page_tbl_addr[page_tbl_idx];
-            entry_init(page_tbl_entry, index);
-            page_tbl_entry->user = 0;
+            entry_init(page_tbl_entry, index, PG_ATTR_PW);
+
+            // 将内核占用的页标记为已占用
             pmm_mark_page_occupied(index);
         }
     }
 
     // 最后一个页目录项指向页目录本身
     page_entry_t *last_page_dir_entry = &page_dir_addr[1023];
-    entry_init(last_page_dir_entry, IDX(KERNEL_PAGE_DIR_ADDR));
+    entry_init(last_page_dir_entry, IDX(KERNEL_PAGE_DIR_ADDR), PG_ATTR_PWU);
 
     // 开启分页
     set_cr3((u32)page_dir_addr);
