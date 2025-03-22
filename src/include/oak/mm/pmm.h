@@ -3,8 +3,8 @@
 
 #include <oak/types.h>
 
-#define PM_BITMAP_ADDR 0x100000
-#define PM_BIT_MAX_SIZE (128 * 1024)
+#define PM_BITMAP_ADDR 0x100000      // 1MB
+#define PM_BIT_MAX_SIZE (128 * 1024) // 128KB
 
 #define START_PAGE 1
 
