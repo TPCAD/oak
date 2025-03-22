@@ -108,7 +108,7 @@ void vmm_unmap_page(void *vaddr) {
         page_entry_t page_tbl_entry = page_tbl_vaddr[page_tbl_idx];
 
         if (PG_IS_PRESENT(page_tbl_entry) &&
-            pmm_free_page((void *)page_tbl_entry)) {
+            !pmm_free_page((void *)page_tbl_entry)) {
             asm volatile("invlpg (%0)" ::"r"(vaddr) : "memory");
         }
         page_tbl_vaddr[page_tbl_idx] = 0;

@@ -217,7 +217,7 @@ int pmm_free_page(void *page_addr) {
     u32 pg = (u32)page_addr >> 12;
     if (pg && pg < max_pg) {
         pmm_mark_page_free(pg);
-        return 1;
+        return 0;
     }
-    return 0;
+    return 1;
 }
