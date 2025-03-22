@@ -24,7 +24,10 @@
 #define IDX(addr) ((u32)addr >> 12)
 #define TIDX(addr) ((u32)addr >> 12 & 0x3ff)
 #define DIDX(addr) ((u32)addr >> 22 & 0x3ff)
-#define PAGE(idx) ((u32)idx << 12)
+#define PIDX(addr) ((u32)addr & 0x00000fffU)
+
+#define PG_ADDR(idx) ((u32)idx << 12)
+#define PAGE_ALIGN(addr) ((u32)addr & 0xfffff000U)
 
 #define ASSERT_PAGE(addr) kassert((addr & 0xfff) == 0)
 
@@ -40,11 +43,26 @@
 #define PG_ATTR_PW (PG_PRESENT | PG_WRITE)
 #define PG_ATTR_PWU (PG_PRESENT | PG_WRITE | PG_USER)
 
+#define PG_IS_PRESENT(entry) (0x1 & (entry))
+
+/* 创建页目录项/页表项 */
+#define PDE(addr, attr) (PAGE_ALIGN(addr) | ((attr) & 0xfff))
+#define PTE(addr, attr) (PAGE_ALIGN(addr) | ((attr) & 0xfff))
+
 /* 常用虚拟地址 */
 #define PD_BASE_VADDR 0xfffff000U // 页目录的虚拟基地址
 #define PT_BASE_VADDR 0xffc00000U // 页表的虚拟基地址
 
+/* 通过页表虚拟基地址和页目录索引构建页表的虚拟地址 */
+#define PT_VADDR(pd_idx) (PT_BASE_VADDR | ((u32)pd_idx << 12))
+
+/* 通过页目录索引，页表索引，页内索引构建虚拟地址 */
+#define VADDR(pd_idx, pt_idx, pg_idx)                                          \
+    ((pd_idx) << 22 | (pt_idx) << 12 | (pg_idx))
+
 typedef u32 page_entry_t;
+
+typedef u32 page_attr_t;
 
 typedef struct ards_t {
     u64 base;
