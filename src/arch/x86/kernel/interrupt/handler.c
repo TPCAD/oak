@@ -1,7 +1,9 @@
 #include <oak/debug/kdebug.h>
 #include <oak/interrupt/idt.h>
-#include <oak/interrupt/interrupt.h>
+#include <oak/interrupt/pic.h>
 #include <oak/kprintf.h>
+
+handler_t handler_table[IDT_SIZE];
 
 static char *exception_msgs[] = {
     "#DE Divide Error\0",
@@ -32,19 +34,19 @@ static char *exception_msgs[] = {
  *  @brief  非异常的 Intel 中断处理函数
  *  @param  vector  中断向量号
  */
-void default_handler(u32 vector) {
+void default_handler(u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx, u32 edx,
+                     u32 ecx, u32 eax, u32 gs, u32 fs, u32 es, u32 ds,
+                     u32 vector, u32 err_code, u32 eip, u32 cs, u32 eflags) {
     KDEBUG("%#x default interrupt called...\n", vector);
 }
 
 /**
  *  @brief  异常通用处理函数
  *  @param  vector  中断向量号
- *  @param  err_code  中断错误码
- *  @param  eip  eip 寄存器
- *  @param  cs  cs 寄存器
- *  @param  eflags  eflags 寄存器
  */
-void exception_handler(u32 vector, u32 err_code, u32 eip, u32 cs, u32 eflags) {
+void exception_handler(u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx, u32 edx,
+                       u32 ecx, u32 eax, u32 gs, u32 fs, u32 es, u32 ds,
+                       u32 vector, u32 err_code, u32 eip, u32 cs, u32 eflags) {
     char *msg = NULL;
     if (vector < 22) {
         msg = exception_msgs[vector];
@@ -62,21 +64,12 @@ void exception_handler(u32 vector, u32 err_code, u32 eip, u32 cs, u32 eflags) {
     }
 }
 
-/**
- *  @brief  中断处理函数
- *  @param  context  中断上下文
- *
- *  ISR 的核心部分，根据中断向量号选择具体的中断处理函数。中断上下文包括
- *  vector、err_code、eip、cs、eflags。
- */
-void interrupt_handler(interrupt_context context) {
-    if (context.vector < EXCEPTION_SIZE) {
-        exception_handler(context.vector, context.err_code, context.eip,
-                          context.cs, context.eflags);
-    } else if (context.vector > EXCEPTION_SIZE && context.vector < ISR_SIZE) {
-        default_handler(context.vector);
+void handler_init() {
+    for (u32 i = 0; i < EXCEPTION_SIZE; i++) {
+        handler_table[i] = exception_handler;
     }
-    // TODO: 0xe page fault
-    // TODO: 0x80 system call
-    // TODO: other interrupts
+
+    for (u32 i = EXCEPTION_SIZE; i < ISR_SIZE; i++) {
+        handler_table[i] = default_handler;
+    }
 }

@@ -38,9 +38,22 @@ isr\vector:
 
 interrupt_entry:
     # 调用 interrupt_handler，执行具体中断处理函数
-    call interrupt_handler
+    push %ds
+    push %es
+    push %fs
+    push %gs
+    pusha
+
+    movl  48(%esp), %eax
+    call *handler_table(,%eax,4)
 
 interrupt_exit:
+    popa
+    pop %gs
+    pop %fs
+    pop %es
+    pop %ds
+
     # 出栈中断向量号和错误码
     add $8, %esp
     # 中断返回
