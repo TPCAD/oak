@@ -45,9 +45,11 @@ interrupt_entry:
     pusha
 
     movl  48(%esp), %eax
+    pushl %eax
     call *handler_table(,%eax,4)
 
 interrupt_exit:
+    add $4, %esp
     popa
     pop %gs
     pop %fs

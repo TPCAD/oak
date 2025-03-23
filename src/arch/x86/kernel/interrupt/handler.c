@@ -34,9 +34,8 @@ static char *exception_msgs[] = {
  *  @brief  非异常的 Intel 中断处理函数
  *  @param  vector  中断向量号
  */
-void default_handler(u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx, u32 edx,
-                     u32 ecx, u32 eax, u32 gs, u32 fs, u32 es, u32 ds,
-                     u32 vector, u32 err_code, u32 eip, u32 cs, u32 eflags) {
+void default_handler(u32 vector) {
+    send_eoi(vector);
     KDEBUG("%#x default interrupt called...\n", vector);
 }
 
@@ -44,9 +43,10 @@ void default_handler(u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx, u32 edx,
  *  @brief  异常通用处理函数
  *  @param  vector  中断向量号
  */
-void exception_handler(u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx, u32 edx,
-                       u32 ecx, u32 eax, u32 gs, u32 fs, u32 es, u32 ds,
-                       u32 vector, u32 err_code, u32 eip, u32 cs, u32 eflags) {
+void exception_handler(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
+                       u32 edx, u32 ecx, u32 eax, u32 gs, u32 fs, u32 es,
+                       u32 ds, u32 vector0, u32 err_code, u32 eip, u32 cs,
+                       u32 eflags) {
     char *msg = NULL;
     if (vector < 22) {
         msg = exception_msgs[vector];
