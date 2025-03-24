@@ -46,7 +46,7 @@ void idt_set_intr_handler(u32 irq, handler_t handler) {
  *  @param  vector  中断向量号
  */
 void default_handler(u32 vector) {
-    send_eoi(vector);
+    pic_send_eoi(vector);
     KDEBUG("%#x default interrupt called...\n", vector);
 }
 
