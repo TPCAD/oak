@@ -1,3 +1,4 @@
+#include <oak/debug/kassert.h>
 #include <oak/debug/kdebug.h>
 #include <oak/interrupt/idt.h>
 #include <oak/interrupt/pic.h>
@@ -29,6 +30,16 @@ static char *exception_msgs[] = {
     "#VE Virtualization Exception\0",
     "#CP Control Protection Exception\0",
 };
+
+/**
+ *  @brief  注册中断处理函数
+ *  @param  irq  外中断号
+ *  @param  handler  中断处理函数
+ */
+void idt_set_intr_handler(u32 irq, handler_t handler) {
+    kassert(irq >= 0 && irq < 16);
+    handler_table[IRQ_MASTER_NR + irq] = handler;
+}
 
 /**
  *  @brief  非异常的 Intel 中断处理函数

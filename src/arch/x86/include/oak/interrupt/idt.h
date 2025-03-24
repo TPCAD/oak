@@ -22,4 +22,6 @@ void idt_init();
 
 void handler_init();
 
+void idt_set_intr_handler(u32 irq, handler_t handler);
+
 #endif // !OAK_IDT_H
