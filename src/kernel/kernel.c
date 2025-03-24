@@ -1,3 +1,4 @@
+#include "oak/clock.h"
 #include <oak/debug/kdebug.h>
 #include <oak/kprintf.h>
 #include <oak/mm/memory.h>
@@ -7,6 +8,8 @@
 
 extern void tty_init();
 extern void pmm_init(u32 mem_upper_lim);
+extern void pic_init();
+extern void clock_init();
 
 extern mem_info_t mem_info;
 
@@ -25,11 +28,27 @@ void kernel_init() {
     }
 
     paging_init();
+    pic_init();
+    clock_init();
 }
 
 void kernel_main() {
     kprintf("Hello Oak!\n");
-    BMB;
-    asm("int $0x24");
-    BMB;
+    // BMB;
+    asm volatile("sti\n");
+    while (true) {
+    }
+    // asm volatile("int $0x80\n");
+    // int *a = (int *)0x1000000;
+    // kprintf("%d\n", *a);
+    // BMB;
+
+    // u32 count = 0;
+    // while (true) {
+    //     KDEBUG("looping in kernel %d...\n", count++);
+    //     u32 delay = 100000;
+    //     while (delay--) {
+    //     }
+    // }
+    return;
 }
