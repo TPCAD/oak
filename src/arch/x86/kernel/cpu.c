@@ -31,7 +31,7 @@ void cpu_set_intr_state(bool state) {
     if (state) {
         asm volatile("sti\n");
     } else {
-        asm volatile("cti\n");
+        asm volatile("cli\n");
     }
 }
 
