@@ -1,4 +1,5 @@
 #include <oak/debug/kassert.h>
+#include <oak/debug/kdebug.h>
 #include <oak/mm/memory.h>
 #include <oak/mm/paging.h>
 #include <oak/mm/pmm.h>
@@ -62,7 +63,7 @@ void paging_init() {
             entry_init(page_tbl_entry, index, PG_ATTR_PW);
 
             // 将内核占用的页标记为已占用
-            pmm_mark_page_occupied(index);
+            // pmm_mark_page_occupied(index);
         }
     }
 
@@ -73,4 +74,13 @@ void paging_init() {
     // 开启分页
     set_cr3((u32)page_dir_addr);
     enable_paging();
+}
+
+void page_fault_handler(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
+                        u32 edx, u32 ecx, u32 eax, u32 gs, u32 fs, u32 es,
+                        u32 ds, u32 vector0, u32 err_code, u32 eip, u32 cs,
+                        u32 eflags) {
+    kassert(vector == 0xe);
+    u32 missed_vaddr = get_cr2();
+    KDEBUG("Fault address 0x%p\n", missed_vaddr);
 }

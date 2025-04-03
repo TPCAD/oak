@@ -8,8 +8,8 @@
 
 #define PAGE_SIZE 0x1000 // 4K
 
-#define MEMORY_BASE 0x100000      // 1 MB
-#define KERNEL_MEM_SIZE 0x1000000 // 16 MB
+#define MEMORY_BASE 0x100000     // 1 MB
+#define KERNEL_MEM_END 0x1000000 // 16 MB
 
 #define KERNEL_PAGE_DIR_ADDR 0x1000 // 内核页目录地址
 
@@ -42,6 +42,9 @@
 #define PG_ATTR_P (PG_PRESENT)
 #define PG_ATTR_PW (PG_PRESENT | PG_WRITE)
 #define PG_ATTR_PWU (PG_PRESENT | PG_WRITE | PG_USER)
+
+#define PG_ATTR_W (PG_WRITE)
+#define PG_ATTR_WU (PG_WRITE | PG_USER)
 
 #define PG_IS_PRESENT(entry) (0x1 & (entry))
 
