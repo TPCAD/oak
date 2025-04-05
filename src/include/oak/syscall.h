@@ -45,8 +45,7 @@ typedef enum syscall_t {
     SYS_NR_MKFS = 201,
 } syscall_t;
 
-#define SYSCALL_SIZE 256
-
-void syscall_check(u32 nr);
+u32 test();
+void yield();
 
 #endif // !OAK_SYSCALL_H
