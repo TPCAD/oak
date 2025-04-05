@@ -31,8 +31,8 @@ static task_t *find_free_task() {
     return NULL; // no need
 }
 
-static task_t *task_create(target_t target, const char *name, u32 priority,
-                           u32 uid) {
+static task_t *build_basic_task(target_t target, const char *name, u32 priority,
+                                u32 uid) {
     task_t *task = find_free_task();
 
     u32 stack = (u32)task + PAGE_SIZE - sizeof(task_frame_t);
@@ -64,7 +64,7 @@ static task_t *task_create(target_t target, const char *name, u32 priority,
  *
  *  从任务数组中搜索指定状态的运行时间最短或剩余时间片最少的任务，不包括当前任务
  */
-static task_t *task_search(task_state_t state) {
+static task_t *search_state_task(task_state_t state) {
     kassert(!cpu_get_intr_state());
 
     task_t *task = NULL;
@@ -92,11 +92,28 @@ static task_t *task_search(task_state_t state) {
 }
 
 /**
+ *  @brief  构建临时内核任务
+ *
+ *  内核被 bootloader 放在 0x10000 的位置，内核的栈底地址也是 0x10000。根据
+ *  `task_t` 的结构，内核的 `task_t` 起始位置是 0xf000。为了在时钟中断到来时可以
+ *  正确切换到其他任务，构建一个临时的 `task_t` 结构，这个结构只有 `magic` 和
+ *  `ticks` 字段有值。
+ *
+ *  内核任务在切换到其他任务后就不会再被执行，因为 `task_table` 没有记录内核任务
+ */
+static void build_temp_kernel_task() {
+    task_t *temp_kernel_task = task_current_running();
+    temp_kernel_task->magic = OAK_MAGIC;
+    temp_kernel_task->ticks = 1;
+}
+
+/**
  *  @brief  任务调度
  */
 void task_schedule() {
+    kassert(!cpu_get_intr_state());
     task_t *curr_task = task_current_running();
-    task_t *found_task = task_search(TASK_READY);
+    task_t *found_task = search_state_task(TASK_READY);
 
     kassert(found_task != NULL);
     kassert(found_task->magic == OAK_MAGIC);
@@ -114,6 +131,13 @@ void task_schedule() {
 }
 
 /**
+ *  @brief  任务主动进行调度
+ *
+ *  对 `task_schedule` 的包装，会被用作系统调用 `yield`
+ */
+void task_yield() { task_schedule(); }
+
+/**
  *  @brief  获取当前运行的任务
  *  @return  当前运行的任务的地址
  *
@@ -125,24 +149,9 @@ task_t *task_current_running() {
                  "andl $0xfffff000, %eax\n");
 }
 
-/**
- *  @brief  构建临时内核任务
- *
- *  内核被 bootloader 放在 0x10000 的位置，内核的栈底地址也是 0x10000。根据
- *  `task_t` 的结构，内核的 `task_t` 起始位置是 0xf000。为了在时钟中断到来时可以
- *  正确切换到其他任务，构建一个临时的 `task_t` 结构，这个结构只有 `magic` 和
- *  `ticks` 字段有值。
- *
- *  内核任务在切换到其他任务后就不会再被执行，因为 `task_table` 没有记录内核任务
- */
-static void build_temp_kernel_task() {
-    task_t *temp_kernel_task = task_current_running();
-    temp_kernel_task->magic = OAK_MAGIC;
-    temp_kernel_task->ticks = 1;
-}
-
 extern u32 thread_a();
 extern u32 thread_b();
+extern u32 thread_c();
 
 /**
  *  @brief  初始化阻塞队列、任务表，构建临时内核任务，创建主要进程
@@ -151,6 +160,7 @@ void task_init() {
     build_temp_kernel_task();
     memset(task_table, 0, sizeof(task_table));
 
-    task_create(thread_a, "testA", 5, NORMAL_USER);
-    task_create(thread_b, "testB", 5, NORMAL_USER);
+    build_basic_task(thread_a, "testA", 5, NORMAL_USER);
+    build_basic_task(thread_b, "testB", 5, NORMAL_USER);
+    build_basic_task(thread_c, "testC", 5, NORMAL_USER);
 }

@@ -43,7 +43,6 @@ typedef struct task_frame_t {
 
 typedef void *target_t;
 
-void task_init();
 void task_schedule();
 task_t *task_current_running();
 

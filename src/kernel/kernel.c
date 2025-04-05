@@ -45,11 +45,11 @@ void kernel_init() {
 extern void vmm_test();
 void kernel_main() {
     kprintf("Hello Oak!\n");
-    // cpu_set_intr_state(true);
+    cpu_set_intr_state(true);
     BMB;
-    asm volatile("movl $0, %eax\n"
-                 "int $0x80\n");
-    kprintf("Hello Oak!\n");
+    // asm volatile("movl $0, %eax\n"
+    //              "int $0x80\n");
+    // kprintf("Hello Oak!\n");
     // vmm_test();
     return;
 }
