@@ -26,8 +26,8 @@ void memory_info(u32 magic, u32 ards_count_addr) {
     kassert(mem_info.max_zone_base == MEMORY_BASE);
     kassert((mem_info.max_zone_size & 0xfff) == 0);
 
-    if (mem_info.max_zone_size < KERNEL_MEM_SIZE) {
+    if (mem_info.max_zone_size < KERNEL_MEM_END) {
         kpanic("[mm] System memory is too small, at least %dM needed\n",
-               KERNEL_MEM_SIZE / MEMORY_BASE);
+               KERNEL_MEM_END / MEMORY_BASE);
     }
 }
