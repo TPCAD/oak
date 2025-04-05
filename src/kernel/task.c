@@ -9,13 +9,15 @@
 #include <oak/task.h>
 
 extern void task_switch(task_t *addr);
+extern u32 jiffies; // 全局时间片
+extern u32 jiffy;   // 时间片长度，单位 ms
 
 /* 记录系统运行中的任务，最多存在 64 个任务 */
 #define NR_TASKS 64
 static task_t *task_table[NR_TASKS];
 
-// 阻塞链表
-static list_t block_list;
+static list_t block_list; // 阻塞链表
+static list_t sleep_list; // 睡眠链表
 
 // 空闲任务
 static task_t *idle_task = NULL;
@@ -183,6 +185,8 @@ void task_block(task_t *task, list_t *blist, task_state_t state) {
 /**
  *  @brief  将一个任务解除阻塞
  *  @param  task  要解除阻塞的任务
+ *
+ *  将任务从队列中删除并变为就绪状态
  */
 void task_unblock(task_t *task) {
     kassert(!cpu_get_intr_state());
@@ -193,6 +197,51 @@ void task_unblock(task_t *task) {
     kassert(task->node.prev == NULL);
 
     task->state = TASK_READY;
+}
+
+/**
+ *  @brief  使当前任务睡眠
+ *  @param  ms  睡眠的毫秒数
+ */
+void task_sleep(u32 ms) {
+    kassert(!cpu_get_intr_state());
+
+    // 需要多少个时间片
+    u32 ticks = ms / jiffy;
+    // 最小为 1
+    ticks = ticks > 0 ? ticks : 1;
+
+    task_t *curr_task = task_current_running();
+    curr_task->ticks = jiffies + ticks;
+
+    list_insert_sort(&sleep_list, &curr_task->node,
+                     element_node_offset(task_t, node, ticks));
+
+    curr_task->state = TASK_SLEEPING;
+
+    task_schedule();
+}
+
+/**
+ *  @brief  唤醒所有合适的任务
+ *
+ *  从睡眠链表中唤醒所有时间片小于当前全局时间片的任务
+ */
+void task_wakeup() {
+    kassert(!cpu_get_intr_state());
+
+    for (list_node_t *ptr = sleep_list.head.next; ptr != &sleep_list.tail;) {
+        task_t *task = element_entry(task_t, node, ptr);
+        if (task->ticks > jiffies) {
+            break;
+        }
+
+        // 提前修改 ptr，因为 task_unblock 会将指针清空
+        ptr = ptr->next;
+
+        task->ticks = 0;
+        task_unblock(task);
+    }
 }
 
 /**
@@ -207,26 +256,23 @@ task_t *task_current_running() {
                  "andl $0xfffff000, %eax\n");
 }
 
-extern u32 thread_a();
-extern u32 thread_b();
-extern u32 thread_c();
-
 extern void idle_thread();
 extern void init_thread();
+extern u32 test_thread();
 
 /**
  *  @brief  初始化阻塞队列、任务表，构建临时内核任务，创建主要进程
  */
 void task_init() {
     list_init(&block_list);
+    list_init(&sleep_list);
 
     build_temp_kernel_task();
     memset(task_table, 0, sizeof(task_table));
 
     idle_task = build_basic_task(idle_thread, "idle", 1, KERNEL_USER);
     build_basic_task(init_thread, "init", 5, NORMAL_USER);
-
-    // build_basic_task(thread_a, "testA", 5, NORMAL_USER);
+    build_basic_task(test_thread, "testA", 5, NORMAL_USER);
     // build_basic_task(thread_b, "testB", 5, NORMAL_USER);
     // build_basic_task(thread_c, "testC", 5, NORMAL_USER);
 }

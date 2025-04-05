@@ -1,4 +1,3 @@
-#include "oak/debug/kdebug.h"
 #include "oak/interrupt/idt.h"
 #include "oak/task.h"
 #include <oak/debug/kassert.h>
@@ -33,6 +32,7 @@ static u32 test_syscall() {
 }
 
 extern void task_yield();
+extern void task_sleep(u32 ms);
 
 void syscall_init() {
     for (size_t i = 0; i < SYSCALL_SIZE; i++) {
@@ -41,4 +41,5 @@ void syscall_init() {
 
     syscall_table[SYS_NR_TEST] = test_syscall;
     syscall_table[SYS_NR_YIELD] = task_yield;
+    syscall_table[SYS_NR_SLEEP] = task_sleep;
 }

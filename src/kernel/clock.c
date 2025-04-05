@@ -7,11 +7,20 @@
 #include <oak/interrupt/pic.h>
 #include <oak/interrupt/pit.h>
 
+// 全局时间片，每次时钟中断会加 1
 u32 volatile jiffies = 0;
+
+// 时间片长度，单位为 ms，改变量只是为了方便其他文件使用，这样不必引入多余头文件
+u32 jiffy = JIFFY;
+
+extern void task_wakeup();
 
 void clock_handler(u32 vector) {
     kassert(vector == IRQ_MASTER_NR + IRQ_CLOCK);
     pic_send_eoi(vector);
+
+    // 每个时间片都唤醒合适的任务
+    task_wakeup();
 
     jiffies++;
     // KDEBUG("clock interrupt, jiffies: %d\n", jiffies);

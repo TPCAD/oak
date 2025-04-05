@@ -8,7 +8,7 @@ void idle_thread() {
     cpu_set_intr_state(true);
     u32 count = 0;
     while (true) {
-        KDEBUG("idle task %d\n", count++);
+        // KDEBUG("idle task %d\n", count++);
         asm volatile("sti\n"
                      "hlt\n");
         yield();
@@ -17,36 +17,19 @@ void idle_thread() {
 
 void init_thread() {
     cpu_set_intr_state(true);
+    u32 count = 0;
     while (true) {
-        KDEBUG("init task...\n");
-        test();
+        KDEBUG("init task %d\n", count++);
+        sleep(1000);
     }
 }
 
-u32 thread_a() {
-
+u32 test_thread() {
     cpu_set_intr_state(true);
 
+    u32 count = 0;
     while (true) {
-        kprintf("A");
-        test();
-    }
-}
-
-u32 thread_b() {
-
-    cpu_set_intr_state(true);
-    while (true) {
-        kprintf("B");
-        test();
-    }
-}
-
-u32 thread_c() {
-
-    cpu_set_intr_state(true);
-    while (true) {
-        kprintf("C");
-        test();
+        kprintf("test task %d\n", count++);
+        sleep(2000);
     }
 }
