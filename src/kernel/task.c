@@ -17,6 +17,9 @@ static task_t *task_table[NR_TASKS];
 // 阻塞链表
 static list_t block_list;
 
+// 空闲任务
+static task_t *idle_task = NULL;
+
 /**
  *  @brief  从 `task_table` 中找到一个空位
  *  @return  新的 `task_t` 地址
@@ -90,6 +93,10 @@ static task_t *search_state_task(task_state_t state) {
             ptr->jiffies < task->jiffies) {
             task = ptr;
         }
+    }
+
+    if (task == NULL && state == TASK_READY) {
+        task = idle_task;
     }
 
     return task;
@@ -204,6 +211,9 @@ extern u32 thread_a();
 extern u32 thread_b();
 extern u32 thread_c();
 
+extern void idle_thread();
+extern void init_thread();
+
 /**
  *  @brief  初始化阻塞队列、任务表，构建临时内核任务，创建主要进程
  */
@@ -213,7 +223,10 @@ void task_init() {
     build_temp_kernel_task();
     memset(task_table, 0, sizeof(task_table));
 
-    build_basic_task(thread_a, "testA", 5, NORMAL_USER);
-    build_basic_task(thread_b, "testB", 5, NORMAL_USER);
+    idle_task = build_basic_task(idle_thread, "idle", 1, KERNEL_USER);
+    build_basic_task(init_thread, "init", 5, NORMAL_USER);
+
+    // build_basic_task(thread_a, "testA", 5, NORMAL_USER);
+    // build_basic_task(thread_b, "testB", 5, NORMAL_USER);
     // build_basic_task(thread_c, "testC", 5, NORMAL_USER);
 }
