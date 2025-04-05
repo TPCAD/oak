@@ -1,5 +1,6 @@
 #include "oak/debug/kdebug.h"
 #include "oak/interrupt/idt.h"
+#include "oak/task.h"
 #include <oak/debug/kassert.h>
 #include <oak/syscall.h>
 
@@ -16,8 +17,18 @@ static void default_syscall() {
     kpanic("[intr] Syscall isn't implemented...\n");
 }
 
+task_t *task = NULL;
+
 static u32 test_syscall() {
-    KDEBUG("syscall test...\n");
+    // KDEBUG("syscall test...\n");
+
+    if (!task) {
+        task = task_current_running();
+        task_block(task, NULL, TASK_BLOCKED);
+    } else {
+        task_unblock(task);
+        task = NULL;
+    }
     return 255;
 }
 

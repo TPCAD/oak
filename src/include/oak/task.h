@@ -1,6 +1,7 @@
 #ifndef OAK_TASK_H
 #define OAK_TASK_H
 
+#include <oak/list.h>
 #include <oak/types.h>
 
 #define KERNEL_USER 0
@@ -20,6 +21,7 @@ typedef enum task_state_t {
 
 typedef struct task_t {
     u32 *statck_addr;   // 进程栈地址
+    list_node_t node;   // 链表结点
     task_state_t state; // 进程状态
     u32 priority;
     u32 ticks;
@@ -45,5 +47,10 @@ typedef void *target_t;
 
 void task_schedule();
 task_t *task_current_running();
+
+void task_yield();
+
+void task_block(task_t *task, list_t *blist, task_state_t state);
+void task_unblock(task_t *task);
 
 #endif // !OAK_TASK_H

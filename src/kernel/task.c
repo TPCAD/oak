@@ -1,4 +1,5 @@
 #include "oak/cpu.h"
+#include "oak/list.h"
 #include "oak/mm/memory.h"
 #include "oak/mm/pmm.h"
 #include <oak/debug/kassert.h>
@@ -12,6 +13,9 @@ extern void task_switch(task_t *addr);
 /* 记录系统运行中的任务，最多存在 64 个任务 */
 #define NR_TASKS 64
 static task_t *task_table[NR_TASKS];
+
+// 阻塞链表
+static list_t block_list;
 
 /**
  *  @brief  从 `task_table` 中找到一个空位
@@ -138,6 +142,53 @@ void task_schedule() {
 void task_yield() { task_schedule(); }
 
 /**
+ *  @brief  阻塞一个任务
+ *  @param  task  要阻塞的任务
+ *  @param  blist  阻塞链表
+ *  @param  state  阻塞状态
+ *
+ *  若阻塞任务是当前运行任务则进行调度
+ */
+void task_block(task_t *task, list_t *blist, task_state_t state) {
+    kassert(!cpu_get_intr_state());
+
+    // 要阻塞的任务不能是已阻塞的任务
+    kassert(task->node.next == NULL);
+    kassert(task->node.prev == NULL);
+
+    if (blist == NULL) {
+        blist = &block_list;
+    }
+
+    list_push(blist, &task->node);
+
+    // TODO: 细分阻塞状态
+    kassert(state != TASK_READY && state != TASK_RUNNING);
+
+    task->state = state;
+
+    task_t *curr_task = task_current_running();
+    if (task == curr_task) {
+        task_schedule();
+    }
+}
+
+/**
+ *  @brief  将一个任务解除阻塞
+ *  @param  task  要解除阻塞的任务
+ */
+void task_unblock(task_t *task) {
+    kassert(!cpu_get_intr_state());
+
+    list_remove(&task->node);
+
+    kassert(task->node.next == NULL);
+    kassert(task->node.prev == NULL);
+
+    task->state = TASK_READY;
+}
+
+/**
  *  @brief  获取当前运行的任务
  *  @return  当前运行的任务的地址
  *
@@ -157,10 +208,12 @@ extern u32 thread_c();
  *  @brief  初始化阻塞队列、任务表，构建临时内核任务，创建主要进程
  */
 void task_init() {
+    list_init(&block_list);
+
     build_temp_kernel_task();
     memset(task_table, 0, sizeof(task_table));
 
     build_basic_task(thread_a, "testA", 5, NORMAL_USER);
     build_basic_task(thread_b, "testB", 5, NORMAL_USER);
-    build_basic_task(thread_c, "testC", 5, NORMAL_USER);
+    // build_basic_task(thread_c, "testC", 5, NORMAL_USER);
 }

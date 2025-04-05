@@ -9,7 +9,7 @@ u32 thread_a() {
 
     while (true) {
         kprintf("A");
-        yield();
+        test();
     }
 }
 
@@ -18,7 +18,7 @@ u32 thread_b() {
     cpu_set_intr_state(true);
     while (true) {
         kprintf("B");
-        yield();
+        test();
     }
 }
 
@@ -27,6 +27,6 @@ u32 thread_c() {
     cpu_set_intr_state(true);
     while (true) {
         kprintf("C");
-        yield();
+        test();
     }
 }
