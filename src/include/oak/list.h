@@ -6,6 +6,9 @@
 #define element_offset(type, member) (u32)(&((type *)0)->member)
 #define element_entry(type, member, ptr)                                       \
     (type *)((u32)ptr - element_offset(type, member))
+#define element_node_offset(type, node, key)                                   \
+    ((int)(&((type *)0)->key) - (int)(&((type *)0)->node))
+#define element_node_key(node, offset) *(int *)((int)node + offset)
 
 typedef struct list_node_t {
     struct list_node_t *prev;
