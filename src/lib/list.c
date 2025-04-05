@@ -1,4 +1,4 @@
-#include "oak/debug/kassert.h"
+#include <oak/debug/kassert.h>
 #include <oak/list.h>
 
 /**
@@ -146,7 +146,29 @@ u32 list_size(list_t *list) {
     return size;
 }
 
-void list_insert_sort(list_t *list, list_node_t *node, int offset) {}
+/**
+ *  @brief  升序插入结点
+ *  @param  list  链表
+ *  @param  node  要插入的结点
+ *  @param  offset  要比较的字段和结点字段之间的偏移量
+ */
+void list_insert_sort(list_t *list, list_node_t *node, int offset) {
+    kassert(node->prev == NULL && node->next == NULL);
+
+    list_node_t *anchor = &list->tail;
+    int key = element_node_key(node, offset);
+
+    for (list_node_t *ptr = list->head.next; ptr != &list->tail;
+         ptr = ptr->next) {
+        int compare = element_node_key(ptr, offset);
+        if (compare > key) {
+            anchor = ptr;
+            break;
+        }
+    }
+
+    list_insert_before(anchor, node);
+}
 
 void list_test() {
     list_t list;
