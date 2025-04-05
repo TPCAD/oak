@@ -3,7 +3,8 @@
 /**
  *  isr_entry_table 来自 handler.S，记录了每个 ISR 的入口地址。
  */
-extern u32 isr_entry_table[ISR_SIZE];
+extern u32 isr_table[ISR_SIZE];
+extern void syscall_isr();
 
 gate_desc_t idt[IDT_SIZE];
 u16 idt_limit = sizeof(idt) - 1;
@@ -26,7 +27,9 @@ void set_idt_entry(u32 index, u32 offset, u16 seg_selector, u8 dpl) {
  */
 void idt_init() {
     for (int i = 0; i < ISR_SIZE; i++) {
-        set_idt_entry(i, isr_entry_table[i], 0x08, 0);
+        set_idt_entry(i, isr_table[i], 0x08, 0);
     }
     handler_init();
+
+    set_idt_entry(0x80, (u32)syscall_isr, 0x08, 3);
 }

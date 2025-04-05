@@ -124,8 +124,8 @@ isr_template 0x2f # RESERVED
 
 # 记录 ISR 的入口地址，方便初始化 IDT
 .section .data
-.global isr_entry_table
-isr_entry_table:
+.global isr_table
+isr_table:
     .long isr0x00
     .long isr0x01
     .long isr0x02
