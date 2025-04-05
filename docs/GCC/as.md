@@ -31,6 +31,31 @@ movb $0x12, %al
 
 如果不带后缀，那么编译器会根据目标寄存器进行推断。
 
+### 标签
+
+标签的作用相当于 C 中的函数名或变量名。
+
+```assembly
+# 定义一个名为 `message` 的变量
+message:
+    .asciz "Hello World!"
+
+# 定义名为 `_add` 的函数
+_add:
+    movl 4(%esp), %eax
+    addl 8(%esp), %eax
+    ret
+
+# 调用函数
+call _add
+```
+
+标签的本质是地址。`call _add` 其实就是跳转到 `_add` 所代表的地址。
+
+如果想获得标签的地址，可以使用 `$`。如 `movl $_add, %eax` 表示将 `_add` 所代表的地址加载到 `%eax`。这类似 C 中的「取地址」操作，`&_add`。
+
+某些情况下 `$label` 和 `label` 的作用是一样的，如 `.long _add` 和 `.long $_add` 都表示将 `_add` 代表的地址存储在当前内存位置。
+
 ### 常用寄存器
 
 #### 通用寄存器（General-Purpose Register）
