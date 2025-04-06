@@ -156,7 +156,7 @@ void task_yield() { task_schedule(); }
  *  @param  blist  阻塞链表
  *  @param  state  阻塞状态
  *
- *  若阻塞任务是当前运行任务则进行调度
+ *  将任务更改为指定状态，并加入指定队列。若阻塞任务是当前运行任务则进行调度
  */
 void task_block(task_t *task, list_t *blist, task_state_t state) {
     kassert(!cpu_get_intr_state());
