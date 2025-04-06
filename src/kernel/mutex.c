@@ -63,3 +63,49 @@ void mutex_unlock(mutex_t *mutex) {
 
     cpu_set_intr_state(intr);
 }
+
+/**
+ *  @brief  初始化互斥锁
+ *  @param  lock  互斥锁指针
+ */
+void lock_init(lock_t *lock) {
+    lock->holder = NULL;
+    lock->repeat = 0;
+    mutex_init(&lock->mutex);
+}
+
+/**
+ *  @brief  对互斥锁上锁
+ *  @param  lock  互斥锁指针
+ */
+void lock_acquire(lock_t *lock) {
+    task_t *curr_task = task_current_running();
+
+    if (lock->holder != curr_task) {
+        mutex_lock(&lock->mutex);
+        lock->holder = curr_task;
+        kassert(lock->repeat == 0);
+        lock->repeat = 1;
+    } else {
+        lock->repeat++;
+    }
+}
+
+/**
+ *  @brief  释放互斥锁
+ *  @param  lock  互斥锁指针
+ */
+void lock_release(lock_t *lock) {
+    task_t *curr_task = task_current_running();
+    kassert(lock->holder == curr_task);
+
+    if (lock->repeat > 1) {
+        lock->repeat--;
+        return;
+    }
+
+    kassert(lock->repeat == 1);
+    lock->holder = NULL;
+    lock->repeat = 0;
+    mutex_unlock(&lock->mutex);
+}
