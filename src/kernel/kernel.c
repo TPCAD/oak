@@ -9,7 +9,7 @@ extern void tty_init();
 extern void pmm_init(u32 mem_upper_lim);
 extern void pic_init();
 extern void clock_init();
-extern void keyboard_init();
+extern void kbd_init();
 extern void task_init();
 extern void paging_init();
 extern void syscall_init();
@@ -39,7 +39,7 @@ void kernel_init() {
     paging_init();
     pic_init();
     clock_init();
-    keyboard_init();
+    kbd_init();
     task_init();
     syscall_init();
 }

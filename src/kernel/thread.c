@@ -19,7 +19,7 @@ void init_thread() {
     cpu_set_intr_state(true);
     u32 count = 0;
     while (true) {
-        KDEBUG("init task %d\n", count++);
+        // KDEBUG("init task %d\n", count++);
         sleep(1000);
     }
 }
@@ -29,7 +29,7 @@ u32 test_thread() {
 
     u32 count = 0;
     while (true) {
-        kprintf("test task %d\n", count++);
+        // kprintf("test task %d\n", count++);
         sleep(2000);
     }
 }
