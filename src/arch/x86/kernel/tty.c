@@ -1,3 +1,4 @@
+#include "oak/cpu.h"
 #include <oak/tty.h>
 #include <oak/types.h>
 #include <oak/vga.h>
@@ -90,6 +91,7 @@ void tty_set_theme(vga_attributes fg, vga_attributes bg) {
  *  @param  count  要写入的字符数量
  */
 void tty_write_str(char *buf, u32 count) {
+    bool intr = cpu_diable_intr();
     char ch = 0;
     while (count--) {
         ch = *buf++;
@@ -133,6 +135,8 @@ void tty_write_str(char *buf, u32 count) {
             break;
         }
     }
+
+    cpu_set_intr_state(intr);
 }
 
 /**
