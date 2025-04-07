@@ -13,10 +13,13 @@ extern void kbd_init();
 extern void task_init();
 extern void paging_init();
 extern void syscall_init();
+extern void tss_init();
 
 extern mem_info_t mem_info;
 
 void kernel_init() {
+    tss_init();
+
     tty_init();
 
     pmm_init(MEMORY_BASE + (mem_info).max_zone_size);
