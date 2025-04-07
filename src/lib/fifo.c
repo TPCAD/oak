@@ -74,8 +74,13 @@ void fifo_push(fifo_t *fifo, char byte) {
  */
 char fifo_pop(fifo_t *fifo) {
     kassert(!fifo_is_empty(fifo));
-    char byte = fifo->buf[fifo->head];
-    fifo->head = fifo_next(fifo, fifo->head);
+    char byte = 0;
+    if (fifo->size == 1) {
+        byte = fifo->buf[fifo->head];
+    } else {
+        byte = fifo->buf[fifo->head];
+        fifo->head = fifo_next(fifo, fifo->head);
+    }
     fifo->size--;
     return byte;
 }
@@ -98,4 +103,7 @@ void fifo_test() {
     }
 
     kassert(fifo_size(&fifo) == 1);
+    kassert(fifo.head == fifo.tail);
+    fifo_pop(&fifo);
+    kassert(fifo.head == fifo.tail);
 }
