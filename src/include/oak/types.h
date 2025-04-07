@@ -24,4 +24,11 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned long long u64;
 
+typedef i32 fd_t;
+typedef enum std_fd_t {
+    stdin,
+    stdout,
+    stderr,
+} std_fd_t;
+
 #endif // !OAK_TYPES_H

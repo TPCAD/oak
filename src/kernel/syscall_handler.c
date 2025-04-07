@@ -1,5 +1,7 @@
 #include "oak/interrupt/idt.h"
 #include "oak/task.h"
+#include "oak/tty.h"
+#include "oak/types.h"
 #include <oak/debug/kassert.h>
 #include <oak/syscall.h>
 
@@ -31,6 +33,15 @@ static u32 test_syscall() {
     return 255;
 }
 
+i32 syscall_write(fd_t fd, char *buf, u32 len) {
+    if (fd == stdout || fd == stderr) {
+        return tty_write_str(buf, len);
+    }
+
+    kpanic("[intr] Not implemented file descriptor\n");
+    return 0;
+}
+
 extern void task_yield();
 extern void task_sleep(u32 ms);
 
@@ -42,4 +53,5 @@ void syscall_init() {
     syscall_table[SYS_NR_TEST] = test_syscall;
     syscall_table[SYS_NR_YIELD] = task_yield;
     syscall_table[SYS_NR_SLEEP] = task_sleep;
+    syscall_table[SYS_NR_WRITE] = syscall_write;
 }
