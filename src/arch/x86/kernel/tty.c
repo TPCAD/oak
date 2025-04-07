@@ -90,10 +90,11 @@ void tty_set_theme(vga_attributes fg, vga_attributes bg) {
  *  @param  buf  字符串指针
  *  @param  count  要写入的字符数量
  */
-void tty_write_str(char *buf, u32 count) {
+i32 tty_write_str(char *buf, u32 count) {
     bool intr = cpu_diable_intr();
     char ch = 0;
-    while (count--) {
+    i32 nr = 0;
+    while (nr++ < count) {
         ch = *buf++;
         switch (ch) {
         case ASCII_NUL:
@@ -137,6 +138,7 @@ void tty_write_str(char *buf, u32 count) {
     }
 
     cpu_set_intr_state(intr);
+    return nr;
 }
 
 /**
