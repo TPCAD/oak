@@ -51,8 +51,9 @@ void paging_init() {
 
         // 初始化页目录项
         page_entry_t *page_dir_entry = &page_dir_addr[page_dir_idx];
+        // TODO: kernel memory protection
         entry_init(page_dir_entry, IDX((u32)page_tbl_addr),
-                   PG_ATTR_PW); // 初始化页表项
+                   PG_ATTR_PWU); // 初始化页表项
         for (u32 page_tbl_idx = 0; page_tbl_idx < 1024;
              page_tbl_idx++, index++) {
             if (index == 0) {
@@ -60,7 +61,8 @@ void paging_init() {
             }
 
             page_entry_t *page_tbl_entry = &page_tbl_addr[page_tbl_idx];
-            entry_init(page_tbl_entry, index, PG_ATTR_PW);
+            // TODO: kernel memory protection
+            entry_init(page_tbl_entry, index, PG_ATTR_PWU);
 
             // 将内核占用的页标记为已占用
             // pmm_mark_page_occupied(index);
@@ -83,4 +85,5 @@ void page_fault_handler(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
     kassert(vector == 0xe);
     u32 missed_vaddr = get_cr2();
     KDEBUG("Fault address 0x%p\n", missed_vaddr);
+    kpanic("[mm] page fault\n");
 }
