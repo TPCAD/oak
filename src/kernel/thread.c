@@ -1,6 +1,7 @@
 #include "oak/debug/kdebug.h"
 #include <oak/cpu.h>
 #include <oak/kprintf.h>
+#include <oak/stdio.h>
 #include <oak/syscall.h>
 #include <oak/task.h>
 #include <oak/types.h>
@@ -20,9 +21,9 @@ void user_init_thread() {
     u32 count = 0;
     while (true) {
         BMB;
-        asm volatile("in $0x92, %ax\n");
-        // kprintf("test task %d\n", count++);
-        // sleep(2000);
+        // asm volatile("in $0x92, %ax\n");
+        printf("init task %d\n", count++);
+        sleep(2000);
     }
 }
 
