@@ -1,7 +1,8 @@
 #ifndef OAK_TYPES_H
 #define OAK_TYPES_H
 
-#define __pack __attribute__((packed))
+#define __packed __attribute__((packed))
+#define __inline __attribute__((always_inline))
 
 #define EOF -1
 #define EOS '\0'

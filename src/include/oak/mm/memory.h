@@ -71,13 +71,13 @@ typedef struct ards_t {
     u64 base;
     u64 size;
     u32 type;
-} __pack ards_t;
+} __packed ards_t;
 
 typedef struct mem_info_t {
     u32 ards_count;
     ards_t *ards_arr;
     u32 max_zone_base;
     u32 max_zone_size;
-} __pack mem_info_t;
+} __packed mem_info_t;
 
 #endif // !OAK_MM_MEMORY_H
