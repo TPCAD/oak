@@ -15,12 +15,19 @@ void idle_thread() {
     }
 }
 
+extern u32 ps2kbd_read(char *buf, u32 count);
+
 void init_thread() {
     cpu_set_intr_state(true);
     u32 count = 0;
+    char ch = 0;
     while (true) {
+        bool intr = cpu_diable_intr();
+        ps2kbd_read(&ch, 1);
+        kprintf("%c", ch);
+        cpu_set_intr_state(intr);
         // KDEBUG("init task %d\n", count++);
-        sleep(1000);
+        // sleep(1000);
     }
 }
 

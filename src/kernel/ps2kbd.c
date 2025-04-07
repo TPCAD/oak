@@ -1,8 +1,12 @@
 #include "oak/debug/kassert.h"
 #include "oak/debug/kdebug.h"
+#include "oak/fifo.h"
 #include "oak/interrupt/idt.h"
 #include "oak/interrupt/pic.h"
 #include "oak/io.h"
+#include "oak/mutex.h"
+#include "oak/task.h"
+#include "oak/types.h"
 
 #define PS2KBD_DATA_PORT 0x60
 #define PS2KBD_CTRL_PORT 0x64
@@ -217,6 +221,13 @@ static char keymap[][4] = {
     /* 0x5F */ {INV, INV, false, false}, // PrintScreen
 };
 
+static lock_t lock;
+static task_t *waiter;
+
+#define BUFFER_SIZE 64
+static char buf[BUFFER_SIZE];
+static fifo_t fifo;
+
 static bool capslock_state = false;
 static bool scrllock_state = false;
 static bool numlock_state = false;
@@ -272,7 +283,7 @@ void kbd_handler(u32 vector) {
     pic_send_eoi(vector);
 
     u16 scancode = inb(PS2KBD_DATA_PORT);
-    KDEBUG("keyboard input 0x%x\n", scancode);
+    // KDEBUG("keyboard input 0x%x\n", scancode);
     u8 ext = 2;
 
     // 扩展码，继续获取下一个扫描码
@@ -346,11 +357,37 @@ void kbd_handler(u32 vector) {
         return;
     }
 
-    KDEBUG("keyboard input %c\n", ch);
+    fifo_push(&fifo, ch);
+    if (waiter != NULL) {
+        task_unblock(waiter);
+        waiter = NULL;
+    }
+
+    // KDEBUG("keyboard input %c\n", ch);
     // KDEBUG("keyboard input 0x%x\n", scancode);
 }
 
+u32 ps2kbd_read(char *buf, u32 count) {
+    lock_acquire(&lock);
+    u32 nr = 0;
+    while (nr < count) {
+        // 若键盘输入队列为空则阻塞任务，等待键盘输入
+        while (fifo_is_empty(&fifo)) {
+            waiter = task_current_running();
+            task_block(waiter, NULL, TASK_WAITING);
+        }
+        // 读取键盘输入
+        buf[nr++] = fifo_pop(&fifo);
+    }
+    lock_release(&lock);
+    return nr;
+}
+
 void kbd_init() {
+    fifo_init(&fifo, buf, BUFFER_SIZE);
+    lock_init(&lock);
+    waiter = NULL;
+
     // TODO: init PS/2 controller(8042)
     capslock_state = false;
     scrllock_state = false;
