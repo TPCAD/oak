@@ -43,6 +43,38 @@ typedef struct task_frame_t {
     void (*eip)(void); // 函数指针
 } task_frame_t;
 
+// 特权级改变时的中断上下文
+typedef struct intr_context_t {
+    u32 vector;
+
+    // pusha 入栈的寄存器
+    u32 edi;
+    u32 esi;
+    u32 ebp;
+    u32 esp_dummy; // 因为 esp 会不断变化，所以 popa 会忽略压入的 esp
+    u32 ebx;
+    u32 edx;
+    u32 ecx;
+    u32 eax;
+
+    u32 gs;
+    u32 fs;
+    u32 es;
+    u32 ds;
+
+    u32 vector0;
+    u32 error;
+
+    // 中断入栈的寄存器
+    u32 eip;
+    u32 cs;
+    u32 eflags;
+
+    // 特权级改变时入栈 ss 和 esp
+    u32 esp;
+    u32 ss;
+} intr_context_t;
+
 typedef void *target_t;
 
 void task_schedule();

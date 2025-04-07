@@ -1,4 +1,5 @@
 #include "oak/cpu.h"
+#include "oak/gdt.h"
 #include "oak/list.h"
 #include "oak/mm/memory.h"
 #include "oak/mm/pmm.h"
@@ -11,6 +12,7 @@
 extern void task_switch(task_t *addr);
 extern u32 jiffies; // 全局时间片
 extern u32 jiffy;   // 时间片长度，单位 ms
+extern tss_t tss;
 
 /* 记录系统运行中的任务，最多存在 64 个任务 */
 #define NR_TASKS 64
@@ -64,6 +66,13 @@ static task_t *build_basic_task(target_t target, const char *name, u32 priority,
     task->magic = OAK_MAGIC;
 
     return task;
+}
+
+static void task_activate(task_t *task) {
+    kassert(task->magic == OAK_MAGIC);
+    if (task->uid != KERNEL_USER) {
+        tss.esp0 = (u32)task + PAGE_SIZE;
+    }
 }
 
 /**
@@ -120,6 +129,41 @@ static void build_temp_kernel_task() {
     temp_kernel_task->ticks = 1;
 }
 
+void switch_to_user_mode(target_t target) {
+    task_t *curr_task = task_current_running();
+    u32 kstack_addr = (u32)curr_task + PAGE_SIZE - sizeof(intr_context_t);
+    intr_context_t *intr_context = (intr_context_t *)kstack_addr;
+
+    intr_context->vector = 0x20;
+    intr_context->edi = 1;
+    intr_context->esi = 2;
+    intr_context->ebp = 3;
+    intr_context->esp_dummy = 4;
+    intr_context->ebx = 5;
+    intr_context->edx = 6;
+    intr_context->ecx = 7;
+    intr_context->eax = 8;
+
+    intr_context->gs = 0;
+    intr_context->fs = USER_DATA_SELECTOR;
+    intr_context->es = USER_DATA_SELECTOR;
+    intr_context->ds = USER_DATA_SELECTOR;
+
+    intr_context->vector0 = 0x20;
+    intr_context->error = OAK_MAGIC;
+
+    // TODO: 替换为用户态栈
+    u32 ustack_addr = (u32)pmm_alloc_kpage(1);
+    intr_context->eip = (u32)target;
+    intr_context->cs = USER_CODE_SELECTOR;
+    intr_context->eflags = (0 << 12 | 0b10 | 1 << 9);
+    intr_context->esp = ustack_addr + PAGE_SIZE;
+    intr_context->ss = USER_DATA_SELECTOR;
+
+    asm volatile("movl %0, %%esp\n"
+                 "jmp interrupt_exit\n" ::"m"(intr_context));
+}
+
 /**
  *  @brief  任务调度
  */
@@ -140,6 +184,7 @@ void task_schedule() {
         return;
     }
 
+    task_activate(found_task);
     task_switch(found_task);
 }
 

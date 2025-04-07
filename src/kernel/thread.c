@@ -2,6 +2,7 @@
 #include <oak/cpu.h>
 #include <oak/kprintf.h>
 #include <oak/syscall.h>
+#include <oak/task.h>
 #include <oak/types.h>
 
 void idle_thread() {
@@ -15,20 +16,25 @@ void idle_thread() {
     }
 }
 
-extern u32 ps2kbd_read(char *buf, u32 count);
-
-void init_thread() {
-    cpu_set_intr_state(true);
+void user_init_thread() {
     u32 count = 0;
-    char ch = 0;
     while (true) {
-        bool intr = cpu_diable_intr();
-        ps2kbd_read(&ch, 1);
-        kprintf("%c", ch);
-        cpu_set_intr_state(intr);
-        // KDEBUG("init task %d\n", count++);
-        // sleep(1000);
+        BMB;
+        asm volatile("in $0x92, %ax\n");
+        // kprintf("test task %d\n", count++);
+        // sleep(2000);
     }
+}
+
+extern void switch_to_user_mode(target_t target);
+void init_thread() {
+    // cpu_set_intr_state(true);
+
+    /* `switch_to_user_mode()` 有许多局部变量在栈内，为了防止其在执行过程修改这
+     * 些局部变量，需要留出足够的空间。
+     * */
+    char temp[100];
+    switch_to_user_mode(user_init_thread);
 }
 
 u32 test_thread() {

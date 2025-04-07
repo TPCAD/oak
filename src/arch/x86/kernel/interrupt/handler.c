@@ -75,6 +75,7 @@ void exception_handler(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
     }
 }
 
+extern void page_fault_handler();
 void handler_init() {
     for (u32 i = 0; i < EXCEPTION_SIZE; i++) {
         handler_table[i] = exception_handler;
@@ -83,4 +84,6 @@ void handler_init() {
     for (u32 i = EXCEPTION_SIZE; i < ISR_SIZE; i++) {
         handler_table[i] = default_handler;
     }
+    
+    handler_table[0xe]=page_fault_handler;
 }
