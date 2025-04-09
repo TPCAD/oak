@@ -99,7 +99,9 @@ void page_fault_handler(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
     kassert(missed_vaddr >= KERNEL_MEM_END && missed_vaddr < USER_STACK_BOTTOM);
     task_t *curr_task = task_current_running();
 
-    if (!PF_PRESENT(err_code) && (missed_vaddr >= USER_STACK_TOP)) {
+    if (!PF_PRESENT(err_code) &&
+            (missed_vaddr < (u32)curr_task->user_heap.brk) ||
+        (missed_vaddr >= USER_STACK_TOP)) {
         vmm_map_page((void *)missed_vaddr);
         return;
     }

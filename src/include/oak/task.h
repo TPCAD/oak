@@ -1,6 +1,7 @@
 #ifndef OAK_TASK_H
 #define OAK_TASK_H
 
+#include "oak/mm/dmm.h"
 #include <oak/list.h>
 #include <oak/types.h>
 
@@ -32,6 +33,7 @@ typedef struct task_t {
     u32 pid;
     // u32 ppid;
     u32 pde;
+    heap_context_t user_heap;
     u32 magic; // 魔数
 } task_t;
 

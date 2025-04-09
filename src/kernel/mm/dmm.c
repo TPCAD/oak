@@ -17,7 +17,10 @@
  * */
 #include "oak/debug/kassert.h"
 #include "oak/kprintf.h"
+#include "oak/mm/memory.h"
+#include "oak/mm/vmm.h"
 #include "oak/stdlib.h"
+#include "oak/task.h"
 #include "oak/types.h"
 #include <oak/mm/dmm.h>
 
@@ -107,6 +110,27 @@ void dmm_place_chunk(u8 *ptr, size_t size) {
     }
 
     dmm_coalesce_chunk(next_chunk);
+}
+
+// TODO: 只适用于修改页地址，后续会支持修改任意地址
+i32 dmm_brk(void *addr) {
+    u32 brk = (u32)addr;
+    ASSERT_PAGE(brk);
+    kassert(brk > KERNEL_MEM_END && brk < USER_STACK_TOP);
+
+    task_t *curr_task = task_current_running();
+    kassert(curr_task->uid != KERNEL_USER);
+
+    u32 old_brk = (u32)curr_task->user_heap.brk;
+
+    if (old_brk > brk) {
+        for (u32 page = brk; page < old_brk; page += PAGE_SIZE) {
+            vmm_unmap_page((void *)page);
+        }
+    }
+
+    curr_task->user_heap.brk = addr;
+    return 0;
 }
 
 void kheap_init() {

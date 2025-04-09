@@ -65,6 +65,10 @@ static task_t *build_basic_task(target_t target, const char *name, u32 priority,
     task->state = TASK_READY;
     task->uid = uid;
     task->pde = KERNEL_PAGE_DIR_ADDR;
+    // TODO: 用户堆内存管理
+    task->user_heap.start_addr = (void *)KERNEL_MEM_END;
+    task->user_heap.brk = (void *)KERNEL_MEM_END;
+    task->user_heap.max_addr = (void *)KERNEL_MEM_END;
     task->magic = OAK_MAGIC;
 
     return task;
