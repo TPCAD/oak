@@ -43,6 +43,9 @@ void flush_tlb(u32 vaddr) {
     asm volatile("invlpg (%0)" ::"r"(vaddr) : "memory");
 }
 
+u32 __inline cpu_get_cr3() { asm volatile("movl %cr3, %eax\n"); }
+u32 __inline cpu_get_cr2() { asm volatile("movl %cr2, %eax\n"); }
+
 /**
  *  @brief  写 cr3 寄存器
  *  @param  page_dir_addr  页目录地址
