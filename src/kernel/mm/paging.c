@@ -1,6 +1,7 @@
+#include "oak/mm/vmm.h"
+#include "oak/task.h"
 #include <oak/debug/kassert.h>
 #include <oak/debug/kdebug.h>
-#include <oak/mm/memory.h>
 #include <oak/mm/paging.h>
 #include <oak/mm/pmm.h>
 #include <oak/string.h>
@@ -78,12 +79,38 @@ void paging_init() {
     enable_paging();
 }
 
+/**
+ *  @brief  拷贝当前任务的页目录
+ *  @return  新的页目录的虚拟地址（内核地址）
+ */
+page_entry_t *paging_copy_pde() {
+    task_t *curr_task = task_current_running();
+    page_entry_t *page_dir_addr = pmm_alloc_kpage();
+    memcpy(page_dir_addr, (void *)curr_task->pde, PAGE_SIZE);
+
+    page_dir_addr[1023] = PDE(page_dir_addr, PG_ATTR_PWU | PG_CACHE_DISABLE);
+
+    return page_dir_addr;
+}
+
+#define PF_PRESENT(err) ((err) & 0x1)
+#define PF_WRITE(err) ((err) & 0x2)
+#define PF_USER(err) ((err) & 0x4)
+
 void page_fault_handler(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
                         u32 edx, u32 ecx, u32 eax, u32 gs, u32 fs, u32 es,
                         u32 ds, u32 vector0, u32 err_code, u32 eip, u32 cs,
                         u32 eflags) {
     kassert(vector == 0xe);
     u32 missed_vaddr = get_cr2();
-    KDEBUG("Fault address 0x%p\n", missed_vaddr);
-    kpanic("[mm] page fault\n");
+    // KDEBUG("Fault address 0x%p\n", missed_vaddr);
+    kassert(missed_vaddr >= KERNEL_MEM_END && missed_vaddr < USER_STACK_BOTTOM);
+    task_t *curr_task = task_current_running();
+
+    if (!PF_PRESENT(err_code) && (missed_vaddr >= USER_STACK_TOP)) {
+        vmm_map_page((void *)missed_vaddr);
+        return;
+    }
+
+    kpanic("[mm] Page fault. Fault address 0x%p\n", missed_vaddr);
 }

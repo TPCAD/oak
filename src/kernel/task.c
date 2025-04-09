@@ -2,6 +2,7 @@
 #include "oak/gdt.h"
 #include "oak/list.h"
 #include "oak/mm/memory.h"
+#include "oak/mm/paging.h"
 #include "oak/mm/pmm.h"
 #include <oak/debug/kassert.h>
 #include <oak/mm/vmm.h>
@@ -63,6 +64,7 @@ static task_t *build_basic_task(target_t target, const char *name, u32 priority,
     task->jiffies = 0;
     task->state = TASK_READY;
     task->uid = uid;
+    task->pde = KERNEL_PAGE_DIR_ADDR;
     task->magic = OAK_MAGIC;
 
     return task;
@@ -70,6 +72,11 @@ static task_t *build_basic_task(target_t target, const char *name, u32 priority,
 
 static void task_activate(task_t *task) {
     kassert(task->magic == OAK_MAGIC);
+    // 切换 PDE
+    if (task->pde != cpu_get_cr3()) {
+        cpu_set_cr3(task->pde);
+    }
+    // 内核态切换至用户态时保存任务的内核栈到 TSS
     if (task->uid != KERNEL_USER) {
         tss.esp0 = (u32)task + PAGE_SIZE;
     }
@@ -131,6 +138,10 @@ static void build_temp_kernel_task() {
 
 void switch_to_user_mode(target_t target) {
     task_t *curr_task = task_current_running();
+
+    curr_task->pde = (u32)paging_copy_pde();
+    cpu_set_cr3(curr_task->pde);
+
     u32 kstack_addr = (u32)curr_task + PAGE_SIZE - sizeof(intr_context_t);
     intr_context_t *intr_context = (intr_context_t *)kstack_addr;
 
@@ -152,12 +163,10 @@ void switch_to_user_mode(target_t target) {
     intr_context->vector0 = 0x20;
     intr_context->error = OAK_MAGIC;
 
-    // TODO: 替换为用户态栈
-    u32 ustack_addr = (u32)pmm_alloc_kpage(1);
     intr_context->eip = (u32)target;
     intr_context->cs = USER_CODE_SELECTOR;
     intr_context->eflags = (0 << 12 | 0b10 | 1 << 9);
-    intr_context->esp = ustack_addr + PAGE_SIZE;
+    intr_context->esp = USER_STACK_BOTTOM;
     intr_context->ss = USER_DATA_SELECTOR;
 
     asm volatile("movl %0, %%esp\n"

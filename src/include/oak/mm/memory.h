@@ -13,6 +13,10 @@
 
 #define KERNEL_PAGE_DIR_ADDR 0x1000 // 内核页目录地址
 
+#define USER_STACK_BOTTOM 0x8000000 // 用户栈底 128MB
+#define USER_STACK_SIZE 0x200000    // 2MB
+#define USER_STACK_TOP (USER_STACK_BOTTOM - USER_STACK_SIZE)
+
 /**
  *  分页机制下，32 位地址中的高 10 位是页目录索引，中间 10 位是页表索引，低 12
  *  位是页内偏移。

@@ -22,8 +22,8 @@ void user_init_thread() {
     while (true) {
         BMB;
         // asm volatile("in $0x92, %ax\n");
-        // printf("init task %d\n", count++);
-        test();
+        printf("init task %d\n", count++);
+        // test();
         sleep(2000);
     }
 }
@@ -44,7 +44,8 @@ u32 test_thread() {
 
     u32 count = 0;
     while (true) {
-        // kprintf("test task %d\n", count++);
+        BMB;
+        kprintf("test task %d\n", count++);
         sleep(2000);
     }
 }
