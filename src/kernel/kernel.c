@@ -56,7 +56,7 @@ extern void kheap_test();
 
 void kernel_main() {
     kprintf("Hello Oak!\n");
-    // cpu_set_intr_state(true);
+    cpu_set_intr_state(true);
     // BMB;
     // asm volatile("movl $0, %eax\n"
     //              "int $0x80\n");
@@ -64,6 +64,6 @@ void kernel_main() {
     // vmm_test();
     // list_test();
     // fifo_test();
-    kheap_test();
+    // kheap_test();
     return;
 }

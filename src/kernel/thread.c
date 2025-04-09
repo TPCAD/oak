@@ -22,7 +22,8 @@ void user_init_thread() {
     while (true) {
         BMB;
         // asm volatile("in $0x92, %ax\n");
-        printf("init task %d\n", count++);
+        // printf("init task %d\n", count++);
+        test();
         sleep(2000);
     }
 }

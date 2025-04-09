@@ -1,4 +1,5 @@
 #include "oak/interrupt/idt.h"
+#include "oak/mm/vmm.h"
 #include "oak/task.h"
 #include "oak/tty.h"
 #include "oak/types.h"
@@ -23,13 +24,11 @@ task_t *task = NULL;
 static u32 test_syscall() {
     // KDEBUG("syscall test...\n");
 
-    if (!task) {
-        task = task_current_running();
-        task_block(task, NULL, TASK_BLOCKED);
-    } else {
-        task_unblock(task);
-        task = NULL;
-    }
+    char *ptr = NULL;
+    vmm_map_page((void *)0x1600000);
+    ptr = (char *)0x1600000;
+    ptr[3] = 0xaa;
+    vmm_unmap_page(ptr);
     return 255;
 }
 
