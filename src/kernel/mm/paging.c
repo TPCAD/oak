@@ -1,3 +1,4 @@
+#include "oak/cpu.h"
 #include "oak/mm/vmm.h"
 #include "oak/task.h"
 #include <oak/debug/kassert.h>
@@ -7,15 +8,6 @@
 #include <oak/string.h>
 
 static u32 KERNEL_PAGE_TABLE[] = {0x2000, 0x3000, 0x4000, 0x5000};
-
-static u32 get_cr2() { asm volatile("movl %cr2, %eax\n"); }
-
-static u32 get_cr3() { asm volatile("movl %cr3, %eax\n"); }
-
-static void set_cr3(u32 page_dir_addr) {
-    ASSERT_PAGE(page_dir_addr);
-    asm volatile("movl %%eax, %%cr3\n" ::"a"(page_dir_addr));
-}
 
 static void enable_paging() {
     asm volatile("movl %cr0, %eax\n"
@@ -75,7 +67,7 @@ void paging_init() {
     entry_init(last_page_dir_entry, IDX(KERNEL_PAGE_DIR_ADDR), PG_ATTR_PWU);
 
     // 开启分页
-    set_cr3((u32)page_dir_addr);
+    cpu_set_cr3((u32)page_dir_addr);
     enable_paging();
 }
 
@@ -102,7 +94,7 @@ void page_fault_handler(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
                         u32 ds, u32 vector0, u32 err_code, u32 eip, u32 cs,
                         u32 eflags) {
     kassert(vector == 0xe);
-    u32 missed_vaddr = get_cr2();
+    u32 missed_vaddr = cpu_get_cr2();
     // KDEBUG("Fault address 0x%p\n", missed_vaddr);
     kassert(missed_vaddr >= KERNEL_MEM_END && missed_vaddr < USER_STACK_BOTTOM);
     task_t *curr_task = task_current_running();
