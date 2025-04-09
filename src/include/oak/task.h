@@ -30,8 +30,8 @@ typedef struct task_t {
     char name[TASK_NAME_LEN];
     u32 uid;
     // u32 gid;
-    u32 pid;
-    // u32 ppid;
+    pid_t pid;
+    pid_t ppid;
     u32 pde;
     heap_context_t user_heap;
     u32 magic; // 魔数
@@ -89,5 +89,8 @@ void task_unblock(task_t *task);
 
 void task_sleep(u32 ms);
 void task_wakeup();
+
+pid_t task_getpid();
+pid_t task_getppid();
 
 #endif // !OAK_TASK_H

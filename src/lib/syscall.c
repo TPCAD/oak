@@ -80,4 +80,23 @@ i32 write(fd_t fd, char *buf, u32 len) {
     return _syscall3(SYS_NR_WRITE, fd, (u32)buf, len);
 }
 
+/**
+ *  @brief  45 号系统调用
+ *
+ *  修改段地址
+ */
 i32 brk(void *addr) { return _syscall1(SYS_NR_BRK, (u32)addr); }
+
+/**
+ *  @brief  20 号系统调用
+ *
+ *  获取当前任务 ID
+ */
+pid_t getpid() { return _syscall0(SYS_NR_GETPID); }
+
+/**
+ *  @brief  64 号系统调用
+ *
+ *  获取当前任务的父任务 ID
+ */
+pid_t getppid() { return _syscall0(SYS_NR_GETPPID); }

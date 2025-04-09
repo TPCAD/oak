@@ -1,6 +1,5 @@
 #include "oak/interrupt/idt.h"
 #include "oak/mm/vmm.h"
-#include "oak/task.h"
 #include "oak/tty.h"
 #include "oak/types.h"
 #include <oak/debug/kassert.h>
@@ -18,8 +17,6 @@ void syscall_check(u32 nr) {
 static void default_syscall() {
     kpanic("[intr] Syscall isn't implemented...\n");
 }
-
-task_t *task = NULL;
 
 static u32 test_syscall() {
     // KDEBUG("syscall test...\n");
@@ -44,6 +41,8 @@ i32 syscall_write(fd_t fd, char *buf, u32 len) {
 extern void task_yield();
 extern void task_sleep(u32 ms);
 extern i32 dmm_brk(void *addr);
+extern pid_t task_getpid();
+extern pid_t task_getppid();
 
 void syscall_init() {
     for (size_t i = 0; i < SYSCALL_SIZE; i++) {
@@ -55,4 +54,6 @@ void syscall_init() {
     syscall_table[SYS_NR_SLEEP] = task_sleep;
     syscall_table[SYS_NR_WRITE] = syscall_write;
     syscall_table[SYS_NR_BRK] = dmm_brk;
+    syscall_table[SYS_NR_GETPID] = task_getpid;
+    syscall_table[SYS_NR_GETPPID] = task_getppid;
 }

@@ -314,6 +314,24 @@ task_t *task_current_running() {
                  "andl $0xfffff000, %eax\n");
 }
 
+/**
+ *  @brief  获取任务 ID
+ *  @return  任务 ID
+ */
+pid_t task_getpid() {
+    task_t *curr_task = task_current_running();
+    return curr_task->pid;
+}
+
+/**
+ *  @brief  获取父任务 ID
+ *  @return  任务 ID
+ */
+pid_t task_getppid() {
+    task_t *curr_task = task_current_running();
+    return curr_task->ppid;
+}
+
 extern void idle_thread();
 extern void init_thread();
 extern u32 test_thread();

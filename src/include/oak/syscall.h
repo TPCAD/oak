@@ -51,4 +51,7 @@ void sleep(u32 ms);
 i32 write(fd_t fd, char *buf, u32 len);
 i32 brk(void *addr);
 
+pid_t getpid();
+pid_t getppid();
+
 #endif // !OAK_SYSCALL_H

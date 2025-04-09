@@ -22,11 +22,7 @@ void user_init_thread() {
     while (true) {
         BMB;
         // asm volatile("in $0x92, %ax\n");
-        char *ptr = (char *)0x1002000;
-        brk(ptr);
-        ptr -= 0x1000;
-        ptr[3] = 0xaa;
-        printf("init task %d\n", count++);
+        printf("init task %d %d %d\n", count++, getpid(), getppid());
         // test();
         sleep(2000);
     }
