@@ -1,4 +1,5 @@
 #include <oak/cpu.h>
+#include <oak/debug/kassert.h>
 
 /**
  *  @brief  清除 IF 位并返回清除前的值
@@ -40,4 +41,13 @@ void cpu_set_intr_state(bool state) {
  */
 void flush_tlb(u32 vaddr) {
     asm volatile("invlpg (%0)" ::"r"(vaddr) : "memory");
+}
+
+/**
+ *  @brief  写 cr3 寄存器
+ *  @param  page_dir_addr  页目录地址
+ */
+void cpu_set_cr3(u32 page_dir_addr) {
+    kassert((page_dir_addr & 0xfff) == 0);
+    asm volatile("movl %%eax, %%cr3\n" ::"a"(page_dir_addr));
 }
