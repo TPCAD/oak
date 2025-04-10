@@ -107,3 +107,10 @@ pid_t getppid() { return _syscall0(SYS_NR_GETPPID); }
  *  创建子进程
  */
 pid_t fork() { return _syscall0(SYS_NR_FORK); }
+
+/**
+ *  @brief  1 号系统调用
+ *
+ *  退出进程
+ */
+void exit(int status) { _syscall1(SYS_NR_EXIT, (u32)status); }

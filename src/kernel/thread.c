@@ -26,6 +26,7 @@ void user_init_thread() {
             printf("parent task %d %d %d %d\n", pid, getpid(), getppid(),
                    count++);
             sleep(2000);
+            exit(0);
         } else {
             printf("child task %d %d %d %d\n", pid, getpid(), getppid(),
                    count++);

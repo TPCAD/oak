@@ -34,7 +34,8 @@ typedef struct task_t {
     pid_t ppid;
     u32 pde;
     heap_context_t user_heap;
-    u32 magic; // 魔数
+    int status; // 进程特殊状态，退出状态码
+    u32 magic;  // 魔数
 } task_t;
 
 typedef struct task_frame_t {
@@ -94,5 +95,7 @@ pid_t task_getpid();
 pid_t task_getppid();
 
 pid_t task_fork();
+
+void task_exit(int status);
 
 #endif // !OAK_TASK_H

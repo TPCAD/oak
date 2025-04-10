@@ -44,6 +44,7 @@ extern i32 dmm_brk(void *addr);
 extern pid_t task_getpid();
 extern pid_t task_getppid();
 extern pid_t task_fork();
+extern void task_exit(int status);
 
 void syscall_init() {
     for (size_t i = 0; i < SYSCALL_SIZE; i++) {
@@ -58,4 +59,5 @@ void syscall_init() {
     syscall_table[SYS_NR_GETPID] = task_getpid;
     syscall_table[SYS_NR_GETPPID] = task_getppid;
     syscall_table[SYS_NR_FORK] = task_fork;
+    syscall_table[SYS_NR_EXIT] = task_exit;
 }

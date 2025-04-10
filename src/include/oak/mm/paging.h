@@ -7,4 +7,6 @@ void paging_init();
 
 page_entry_t *paging_copy_pde();
 
+void paging_free_pde();
+
 #endif // !OAK_MM_PAGING_H

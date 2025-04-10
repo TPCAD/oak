@@ -56,4 +56,6 @@ pid_t getppid();
 
 pid_t fork();
 
+void exit(int status);
+
 #endif // !OAK_SYSCALL_H

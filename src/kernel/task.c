@@ -380,6 +380,36 @@ pid_t task_fork() {
     return child_task->pid;
 }
 
+/**
+ *  @brief  退出进程
+ *  @param  status  进程状态码
+ */
+void task_exit(int status) {
+    task_t *curr_task = task_current_running();
+
+    // 当前进程必须是正在运行的进程
+    kassert(curr_task->node.next == NULL && curr_task->node.prev == NULL &&
+            curr_task->state == TASK_RUNNING);
+
+    curr_task->state = TASK_DIED;
+    curr_task->status = status;
+
+    paging_free_pde();
+
+    for (size_t i = 0; i < NR_TASKS; i++) {
+        task_t *child_task = task_table[i];
+        if (!child_task) {
+            continue;
+        }
+        if (child_task->ppid != curr_task->pid) {
+            continue;
+        }
+        child_task->ppid = curr_task->ppid;
+    }
+
+    task_schedule();
+}
+
 extern void idle_thread();
 extern void init_thread();
 extern u32 test_thread();

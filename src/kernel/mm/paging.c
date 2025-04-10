@@ -139,6 +139,41 @@ page_entry_t *paging_copy_pde() {
     return page_dir_addr;
 }
 
+/**
+ *  @brief  释放当前页目录
+ */
+void paging_free_pde() {
+    task_t *curr_task = task_current_running();
+    kassert(curr_task->uid != KERNEL_USER);
+
+    page_entry_t *page_dir_addr = (page_entry_t *)PD_BASE_VADDR;
+
+    for (size_t page_dir_idx = (sizeof(KERNEL_PAGE_TABLE) / 4);
+         page_dir_idx < 1023; page_dir_idx++) {
+        page_entry_t *page_dir_entry = &page_dir_addr[page_dir_idx];
+        if (!PG_IS_PRESENT(*page_dir_entry)) {
+            continue;
+        }
+
+        page_entry_t *page_tbl_addr = (page_entry_t *)PT_VADDR(page_dir_idx);
+
+        for (size_t page_tbl_idx = 0; page_tbl_idx < 1024; page_tbl_idx++) {
+            page_entry_t *page_tbl_entry = &page_tbl_addr[page_tbl_idx];
+            if (!PG_IS_PRESENT(*page_tbl_entry)) {
+                continue;
+            }
+            kassert(pmm_page_ref_status(IDX(*page_tbl_entry)));
+            pmm_free_page((void *)*page_tbl_entry);
+            // vmm_unmap_page((void *)*page_tbl_entry);
+        }
+
+        pmm_free_page((void *)*page_dir_entry);
+        // vmm_unmap_page((void *)*page_dir_entry);
+    }
+
+    pmm_free_kpage((void *)curr_task->pde);
+}
+
 #define PF_PRESENT(err) ((err) & 0x1)
 #define PF_WRITE(err) ((err) & 0x2)
 #define PF_USER(err) ((err) & 0x4)
