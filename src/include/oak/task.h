@@ -93,4 +93,6 @@ void task_wakeup();
 pid_t task_getpid();
 pid_t task_getppid();
 
+pid_t task_fork();
+
 #endif // !OAK_TASK_H

@@ -4,6 +4,7 @@
 #include "oak/mm/memory.h"
 #include "oak/mm/paging.h"
 #include "oak/mm/pmm.h"
+#include "oak/types.h"
 #include <oak/debug/kassert.h>
 #include <oak/mm/vmm.h>
 #include <oak/oak.h>
@@ -14,6 +15,7 @@ extern void task_switch(task_t *addr);
 extern u32 jiffies; // 全局时间片
 extern u32 jiffy;   // 时间片长度，单位 ms
 extern tss_t tss;
+extern void interrupt_exit();
 
 /* 记录系统运行中的任务，最多存在 64 个任务 */
 #define NR_TASKS 64
@@ -330,6 +332,52 @@ pid_t task_getpid() {
 pid_t task_getppid() {
     task_t *curr_task = task_current_running();
     return curr_task->ppid;
+}
+
+/**
+ *  @brief  创建子进程
+ *  @return  父进程返回子进程 PID，子进程返回 0
+ */
+pid_t task_fork() {
+    task_t *curr_task = task_current_running();
+
+    // 当前进程必须是正在运行的进程
+    kassert(curr_task->node.next == NULL && curr_task->node.prev == NULL &&
+            curr_task->state == TASK_RUNNING);
+
+    task_t *child_task = find_free_task();
+    pid_t child_pid = child_task->pid;
+
+    // 拷贝当前任务到新任务
+    memcpy(child_task, curr_task, PAGE_SIZE);
+
+    child_task->pid = child_pid;
+    child_task->ppid = curr_task->pid;
+    child_task->ticks = child_task->priority;
+    child_task->state = TASK_READY;
+
+    // 拷贝页目录
+    child_task->pde = (u32)paging_copy_pde();
+
+    // 构造子进程内核栈
+    u32 addr = (u32)child_task + PAGE_SIZE;
+    addr -= sizeof(intr_context_t);
+    intr_context_t *intr_cont = (intr_context_t *)addr;
+    intr_cont->eax = 0; // 子进程的返回值
+
+    addr -= sizeof(task_frame_t);
+    task_frame_t *tframe = (task_frame_t *)addr;
+    tframe->ebp = 0xaa55aa55;
+    tframe->ebx = 0xaa55aa55;
+    tframe->esi = 0xaa55aa55;
+    tframe->edi = 0xaa55aa55;
+
+    tframe->eip = interrupt_exit;
+
+    child_task->statck_addr = (u32 *)tframe;
+
+    // 父进程返回值
+    return child_task->pid;
 }
 
 extern void idle_thread();

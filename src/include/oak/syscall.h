@@ -54,4 +54,6 @@ i32 brk(void *addr);
 pid_t getpid();
 pid_t getppid();
 
+pid_t fork();
+
 #endif // !OAK_SYSCALL_H

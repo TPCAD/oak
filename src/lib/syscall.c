@@ -100,3 +100,10 @@ pid_t getpid() { return _syscall0(SYS_NR_GETPID); }
  *  获取当前任务的父任务 ID
  */
 pid_t getppid() { return _syscall0(SYS_NR_GETPPID); }
+
+/**
+ *  @brief  2 号系统调用
+ *
+ *  创建子进程
+ */
+pid_t fork() { return _syscall0(SYS_NR_FORK); }
