@@ -74,6 +74,25 @@ void pmm_mark_chunk_occupied(u32 ppn, u32 count) {
 }
 
 /**
+ *  @brief  获取指定物理页的引用计数
+ *  @param  ppn  物理页号
+ *  @return  引用计数
+ */
+u32 pmm_page_ref_status(u32 ppn) { return pm_map[ppn]; }
+
+/**
+ *  @brief  增加一个指定物理页的引用计数
+ *  @param  ppn  物理页号
+ */
+void pmm_inc_page_ref(u32 ppn) { pm_map[ppn]++; }
+
+/**
+ *  @brief  减少一个指定物理页的引用计数
+ *  @param  ppn  物理页号
+ */
+void pmm_dec_page_ref(u32 ppn) { pm_map[ppn]--; }
+
+/**
  *  @brief  初始化物理内存数组
  *  @param  mem_upper_lim  物理内存最大地址
  *

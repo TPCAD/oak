@@ -12,6 +12,11 @@ void pmm_mark_page_occupied(u32 ppn);
 void pmm_mark_chunk_free(u32 ppn, u32 count);
 void pmm_mark_chunk_occupied(u32 ppn, u32 count);
 
+u32 pmm_page_ref_status(u32 ppn);
+
+void pmm_inc_page_ref(u32 ppn);
+void pmm_dec_page_ref(u32 ppn);
+
 void *pmm_alloc_page();
 int pmm_free_page(void *page_addr);
 
