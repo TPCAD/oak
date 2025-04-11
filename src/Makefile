@@ -72,11 +72,13 @@ $(BUILD)/kernel.iso: $(BUILD_KERNEL)/kernel.bin $(UTILS_DIR)/grub.cfg
 $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	$(BUILD_BOOT)/loader.bin \
 	$(BUILD_KERNEL)/system.bin \
-	$(BUILD_KERNEL)/system.map
+	$(BUILD_KERNEL)/system.map \
+	$(UTILS_DIR)/master.sfdisk
 	qemu-img create $@ 16M
 	dd bs=512 count=1 conv=notrunc if=$(BUILD_BOOT)/boot.bin of=$@
 	dd bs=512 count=4 seek=2 conv=notrunc if=$(BUILD_BOOT)/loader.bin of=$@
 	dd bs=512 count=200 seek=10 conv=notrunc if=$(BUILD_KERNEL)/system.bin of=$@
+	sfdisk $@ < $(UTILS_DIR)/master.sfdisk
 
 $(BUILD)/slave.img:
 	qemu-img create $@ 32M

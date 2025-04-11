@@ -68,6 +68,13 @@
 
 ide_ctrl_t controllers[IDE_CTRL_NR];
 
+typedef enum PART_FS {
+    PART_FS_FAT12 = 1,    // FAT12
+    PART_FS_EXTENDED = 5, // 扩展分区
+    PART_FS_MINIX = 0x80, // minux
+    PART_FS_LINUX = 0x83, // linux
+} PART_FS;
+
 // 识别命令返回的数据结构，只使用 total_lba 字段
 typedef struct ide_params_t {
     u16 config;                 // 0 General configuration bits
@@ -225,6 +232,14 @@ static void ide_pio_write_sector(ide_disk_t *disk, u16 *buf) {
     for (size_t i = 0; i < (SECTOR_SIZE / 2); i++) {
         outw(disk->ctrl->iobase + IDE_DATA, buf[i]);
     }
+}
+
+static int ide_pio_part_read(ide_part_t *part, void *buf, u8 count, u32 lba) {
+    return ide_pio_read(part->disk, buf, count, part->start + lba);
+}
+
+static int ide_pio_part_write(ide_part_t *part, void *buf, u8 count, u32 lba) {
+    return ide_pio_write(part->disk, buf, count, part->start + lba);
 }
 
 /**
@@ -385,6 +400,59 @@ int ide_pio_write(ide_disk_t *disk, void *buf, u8 count, u32 lba) {
     return 0;
 }
 
+static void ide_part_init(ide_disk_t *disk, u16 *buf) {
+    // 磁盘不可用
+    if (!disk->total_lba) {
+        return;
+    }
+
+    // 读主引导扇区
+    ide_pio_read(disk, buf, 1, 0);
+
+    boot_sector_t *boot_sec = (boot_sector_t *)buf;
+
+    for (size_t i = 0; i < IDE_PART_NR; i++) {
+        part_entry_t *entry = &boot_sec->entry[i];
+        ide_part_t *part = &disk->parts[i];
+        if (!entry->count) {
+            continue;
+        }
+
+        sprintf(part->name, "%s%d", disk->name, i + 1);
+
+        KDEBUG("part %s \n", part->name);
+        KDEBUG("    bootable %d\n", entry->bootable);
+        KDEBUG("    start %d\n", entry->start);
+        KDEBUG("    count %d\n", entry->count);
+        KDEBUG("    system 0x%x\n", entry->system);
+
+        part->disk = disk;
+        part->count = entry->count;
+        part->system = entry->system;
+        part->start = entry->start;
+
+        // 不支持扩展分区，仅展示信息
+        if (entry->system == PART_FS_EXTENDED) {
+            KDEBUG("Unsupported extended partition!!!\n");
+
+            boot_sector_t *eboot = (boot_sector_t *)(buf + SECTOR_SIZE);
+            ide_pio_read(disk, (void *)eboot, 1, entry->start);
+
+            for (size_t j = 0; j < IDE_PART_NR; j++) {
+                part_entry_t *eentry = &eboot->entry[j];
+                if (!eentry->count) {
+                    continue;
+                }
+                KDEBUG("part %d extend %d \n", i, j);
+                KDEBUG("    bootable %d\n", eentry->bootable);
+                KDEBUG("    start %d\n", eentry->start);
+                KDEBUG("    count %d\n", eentry->count);
+                KDEBUG("    system 0x%x\n", eentry->system);
+            }
+        }
+    }
+}
+
 /**
  *  @brief  初始化 controllers 数组
  */
@@ -423,6 +491,7 @@ static void ide_ctrl_init() {
             }
             u16 *buf = (u16 *)pmm_alloc_kpage();
             ide_identify_disk(disk, buf);
+            ide_part_init(disk, buf);
             pmm_free_kpage(buf);
         }
     }
