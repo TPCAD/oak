@@ -374,7 +374,7 @@ u32 ps2kbd_read(char *buf, u32 count) {
         // 若键盘输入队列为空则阻塞任务，等待键盘输入
         while (fifo_is_empty(&fifo)) {
             waiter = task_current_running();
-            task_block(waiter, NULL, TASK_WAITING);
+            task_block(waiter, NULL, TASK_BLOCKED);
         }
         // 读取键盘输入
         buf[nr++] = fifo_pop(&fifo);
