@@ -43,3 +43,8 @@ void itoa(int input, char *buffer) {
     // 反转字符串
     reverse(buffer);
 }
+
+// BCD 码与十进制整数互转
+// BCD 码是一种将十进制数的每一位单独用 4 位二进制来表示的编码方式
+u8 bcd_to_bin(u8 value) { return (value & 0xf) + (value >> 4) * 10; }
+u8 bin_to_bcd(u8 value) { return (value / 10) * 0x10 + (value % 10); }
