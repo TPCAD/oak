@@ -5,23 +5,33 @@
 #include <oak/stdlib.h>
 #include <oak/string.h>
 #include <oak/tty.h>
+#include <oak/vdevice.h>
 
 void kassert_failure(char *exp, char *file, char *base, int line) {
-    tty_write_str("\n-> assert(", 11);
-    tty_write_str(exp, strlen(exp));
-    tty_write_str(") failed!", 9);
+    vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, "\n-> assert(", 11, 0,
+                  0);
+    vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, exp, strlen(exp), 0,
+                  0);
 
-    tty_write_str("\n-> file: ", 10);
-    tty_write_str(file, strlen(file));
+    vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, ") failed!", 9, 0, 0);
 
-    tty_write_str("\n-> base: ", 10);
-    tty_write_str(base, strlen(base));
+    vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, "\n-> file: ", 10, 0,
+                  0);
+    vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, file, strlen(file), 0,
+                  0);
+
+    vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, "\n-> base: ", 10, 0,
+                  0);
+    vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, base, strlen(base), 0,
+                  0);
 
     char line_str[8];
     itoa(line, line_str);
-    tty_write_str("\n-> line: ", 10);
-    tty_write_str(line_str, strlen(line_str));
-    tty_write_str("\n", 1);
+    vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, "\n-> line: ", 10, 0,
+                  0);
+    vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, line_str,
+                  strlen(line_str), 0, 0);
+    vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, "\n", 1, 0, 0);
 
     while (true) {
     }
@@ -36,8 +46,9 @@ void kpanic(const char *fmt, ...) {
     int i = vsprintf(buf, fmt, vlist);
     va_end(vlist);
 
-    tty_write_str("[kernel] Panic\n", 15);
-    tty_write_str(buf, i);
+    vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, "[kernel] Panic\n",
+                  15, 0, 0);
+    vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, buf, i, 0, 0);
 
     while (true) {
     }

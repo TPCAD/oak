@@ -2,6 +2,7 @@
 #include <oak/stdarg.h>
 #include <oak/stdio.h>
 #include <oak/tty.h>
+#include <oak/vdevice.h>
 
 static char buf[1024];
 
@@ -12,6 +13,6 @@ int kprintf(const char *fmt, ...) {
     int i = vsprintf(buf, fmt, vlist);
     va_end(vlist);
 
-    tty_write_str(buf, i);
+    vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, buf, i, 0, 0);
     return i;
 }

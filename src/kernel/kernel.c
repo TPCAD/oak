@@ -17,12 +17,14 @@ extern void syscall_init();
 extern void tss_init();
 extern void kheap_init();
 extern void ide_init();
+extern void vdevice_init();
 
 extern mem_info_t mem_info;
 
 void kernel_init() {
     tss_init();
 
+    vdevice_init();
     tty_init();
 
     pmm_init(MEMORY_BASE + (mem_info).max_zone_size);

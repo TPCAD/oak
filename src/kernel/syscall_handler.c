@@ -1,12 +1,12 @@
-#include "oak/ide.h"
-#include "oak/interrupt/idt.h"
-#include "oak/kprintf.h"
-#include "oak/mm/pmm.h"
-#include "oak/tty.h"
-#include "oak/types.h"
 #include <oak/debug/kassert.h>
+#include <oak/ide.h>
+#include <oak/interrupt/idt.h>
+#include <oak/kprintf.h>
+#include <oak/mm/pmm.h>
 #include <oak/string.h>
 #include <oak/syscall.h>
+#include <oak/types.h>
+#include <oak/vdevice.h>
 
 #define SYSCALL_SIZE 256
 handler_t syscall_table[SYSCALL_SIZE];
@@ -41,7 +41,8 @@ static u32 test_syscall() {
 
 i32 syscall_write(fd_t fd, char *buf, u32 len) {
     if (fd == stdout || fd == stderr) {
-        return tty_write_str(buf, len);
+        return vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, buf, len,
+                             0, 0);
     }
 
     kpanic("[intr] Not implemented file descriptor\n");
