@@ -162,16 +162,14 @@ void paging_free_pde() {
             if (!PG_IS_PRESENT(*page_tbl_entry)) {
                 continue;
             }
-            kassert(pmm_page_ref_status(IDX(*page_tbl_entry)));
-            pmm_free_page((void *)*page_tbl_entry);
-            // vmm_unmap_page((void *)*page_tbl_entry);
+            kassert(pmm_page_ref_status(IDX(*page_tbl_addr)));
+            // pmm_free_page((void *)*page_tbl_entry);
+            vmm_unmap_page((void *)VADDR(page_dir_idx, page_tbl_idx, 0));
         }
 
-        pmm_free_page((void *)*page_dir_entry);
-        // vmm_unmap_page((void *)*page_dir_entry);
+        // pmm_free_page((void *)*page_dir_entry);
+        vmm_unmap_page((void *)page_dir_entry);
     }
-
-    pmm_free_kpage((void *)curr_task->pde);
 }
 
 #define PF_PRESENT(err) ((err) & 0x1)
