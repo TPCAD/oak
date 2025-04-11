@@ -396,7 +396,7 @@ void task_exit(int status) {
 
     paging_free_pde();
 
-    for (size_t i = 0; i < NR_TASKS; i++) {
+    for (size_t i = 2; i < NR_TASKS; i++) {
         task_t *child_task = task_table[i];
         if (!child_task) {
             continue;
@@ -407,7 +407,66 @@ void task_exit(int status) {
         child_task->ppid = curr_task->ppid;
     }
 
+    // 唤醒正在等待子进程退出的父进程
+    task_t *parent_task = task_table[curr_task->ppid];
+    if (parent_task->state == TASK_WAITING &&
+        (parent_task->waitpid == -1 ||
+         parent_task->waitpid == curr_task->pid)) {
+        task_unblock(parent_task);
+    }
+
     task_schedule();
+}
+
+/**
+ *  @brief  等待指定子进程退出
+ *  @param  pid  子进程 ID
+ *  @param  status  子进程退出状态码指针
+ *  @return  return
+ */
+pid_t task_waitpid(pid_t pid, i32 *status) {
+    task_t *curr_task = task_current_running();
+    task_t *child_task = NULL;
+
+    while (true) {
+        bool found_child = false;
+        for (size_t i = 2; i < NR_TASKS; i++) {
+            task_t *ptr = task_table[i];
+            if (!ptr) {
+                continue;
+            }
+            if (ptr->ppid != curr_task->pid) {
+                continue;
+            }
+            if (ptr->pid != pid && pid != -1) {
+                continue;
+            }
+
+            if (ptr->state == TASK_DIED) {
+                child_task = ptr;
+                task_table[i] = NULL;
+                goto rollback;
+            }
+
+            found_child = true;
+        }
+        if (found_child) {
+            curr_task->waitpid = pid;
+            task_block(curr_task, NULL, TASK_WAITING);
+            continue;
+        }
+        break;
+    }
+
+    // 没有符合的子进程
+    return -1;
+
+rollback:
+    *status = child_task->status;
+    u32 ret = child_task->pid;
+    pmm_free_kpage((void*)child_task->pde);
+    pmm_free_kpage((void *)child_task);
+    return ret;
 }
 
 extern void idle_thread();

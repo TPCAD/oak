@@ -114,3 +114,12 @@ pid_t fork() { return _syscall0(SYS_NR_FORK); }
  *  退出进程
  */
 void exit(int status) { _syscall1(SYS_NR_EXIT, (u32)status); }
+
+/**
+ *  @brief  7 号系统调用
+ *
+ *  等待子进程退出
+ */
+pid_t waitpid(pid_t pid, i32 *status) {
+    _syscall2(SYS_NR_WAITPID, pid, (u32)status);
+}

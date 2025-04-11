@@ -19,18 +19,23 @@ void idle_thread() {
 
 void user_init_thread() {
     u32 count = 0;
+    int status = 0;
     pid_t pid = fork();
     while (true) {
         BMB;
         if (pid) {
             printf("parent task %d %d %d %d\n", pid, getpid(), getppid(),
                    count++);
-            sleep(2000);
-            exit(0);
+            pid_t child = waitpid(pid, &status);
+            printf("child exit status %d\n", status);
+            // sleep(2000);
         } else {
+            if (count == 1) {
+                exit(0);
+            }
             printf("child task %d %d %d %d\n", pid, getpid(), getppid(),
                    count++);
-            sleep(3000);
+            sleep(1000);
         }
 
         // asm volatile("in $0x92, %ax\n");
