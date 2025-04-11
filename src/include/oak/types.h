@@ -26,6 +26,8 @@ typedef unsigned long long u64;
 
 typedef i32 pid_t;
 
+typedef u32 time_t;
+
 typedef i32 fd_t;
 typedef enum std_fd_t {
     stdin,
