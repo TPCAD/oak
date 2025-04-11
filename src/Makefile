@@ -78,7 +78,10 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	dd bs=512 count=4 seek=2 conv=notrunc if=$(BUILD_BOOT)/loader.bin of=$@
 	dd bs=512 count=200 seek=10 conv=notrunc if=$(BUILD_KERNEL)/system.bin of=$@
 
-IMAGE:=$(BUILD)/master.img
+$(BUILD)/slave.img:
+	qemu-img create $@ 32M
+
+IMAGE:=$(BUILD)/master.img $(BUILD)/slave.img
 
 .PHONY: image
 image: $(IMAGE)
@@ -100,16 +103,22 @@ bochs-gdb: $(IMAGE)
 
 QEMU:= qemu-system-i386
 QEMU+= -m 32M
+QEMU+= -audiodev pa,id=hda
+QEMU+= -machine pcspk-audiodev=hda
+QEMU+= -drive file=$(BUILD)/master.img,if=ide,index=0,media=disk,format=raw
+QEMU+= -drive file=$(BUILD)/slave.img,if=ide,index=1,media=disk,format=raw
+
+QEMU_DISK:= -boot c
 
 QEMU_DEBUG:= -s -S
 
 .PHONY: qemu
 qemu: $(IMAGE)
-	$(QEMU) -boot c -hda $<
+	$(QEMU) $(QEMU_DISK)
 
 .PHONY: qemu-gdb
 qemu-gdb: $(IMAGE)
-	$(QEMU) $(QEMU_DEBUG) -boot c -hda $<
+	$(QEMU) $(QEMU_DISK) $(QEMU_DEBUG)
 
 .PHONY: clean
 clean:
