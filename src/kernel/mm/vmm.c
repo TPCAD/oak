@@ -61,6 +61,17 @@ u32 vmm_is_vaddr_exist(void *vaddr) {
  *  会直接将整个页表项清空。
  */
 void vmm_unmap_page(void *vaddr) {
+    // 要删除页目录项需要用到三级索引，而一般的地址只需要二级索引。而且页目录项
+    // 的虚拟地址并不需要经过一系列转换，可以直接使用。
+    if (((u32)vaddr & 0xfffff000) == 0xfffff000) {
+        u32 *addr = (u32 *)vaddr;
+        if (PG_IS_PRESENT(*addr) && !pmm_free_page((void *)*addr)) {
+            *addr = 0;
+            flush_tlb((u32)vaddr);
+        }
+        return;
+    }
+
     u32 page_dir_idx = DIDX(vaddr);
     u32 page_tbl_idx = TIDX(vaddr);
     page_entry_t *page_dir_vaddr = (page_entry_t *)PD_BASE_VADDR;
@@ -71,9 +82,9 @@ void vmm_unmap_page(void *vaddr) {
 
         if (PG_IS_PRESENT(page_tbl_entry) &&
             !pmm_free_page((void *)page_tbl_entry)) {
+            page_tbl_vaddr[page_tbl_idx] = 0;
             flush_tlb((u32)vaddr);
         }
-        page_tbl_vaddr[page_tbl_idx] = 0;
     }
 }
 
