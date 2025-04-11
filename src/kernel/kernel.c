@@ -16,6 +16,7 @@ extern void paging_init();
 extern void syscall_init();
 extern void tss_init();
 extern void kheap_init();
+extern void ide_init();
 
 extern mem_info_t mem_info;
 
@@ -49,6 +50,7 @@ void kernel_init() {
     kbd_init();
     task_init();
     syscall_init();
+    ide_init();
 }
 
 extern void vmm_test();

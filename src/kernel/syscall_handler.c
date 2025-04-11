@@ -1,8 +1,11 @@
+#include "oak/ide.h"
 #include "oak/interrupt/idt.h"
-#include "oak/mm/vmm.h"
+#include "oak/kprintf.h"
+#include "oak/mm/pmm.h"
 #include "oak/tty.h"
 #include "oak/types.h"
 #include <oak/debug/kassert.h>
+#include <oak/string.h>
 #include <oak/syscall.h>
 
 #define SYSCALL_SIZE 256
@@ -18,14 +21,21 @@ static void default_syscall() {
     kpanic("[intr] Syscall isn't implemented...\n");
 }
 
+extern ide_ctrl_t controllers[2];
 static u32 test_syscall() {
     // KDEBUG("syscall test...\n");
 
-    char *ptr = NULL;
-    vmm_map_page((void *)0x1600000);
-    ptr = (char *)0x1600000;
-    ptr[3] = 0xaa;
-    vmm_unmap_page(ptr);
+    u16 *buf = (u16 *)pmm_alloc_kpage();
+    kprintf("pio read buffer 0x%p\n", buf);
+    ide_disk_t *disk = &controllers[0].disks[0];
+    ide_pio_read(disk, buf, 4, 0);
+
+    memset(buf, 0x5a, 512);
+
+    ide_pio_write(disk, buf, 1, 1);
+    kprintf("pio write buffer 0x%p\n", buf);
+
+    pmm_free_kpage(buf);
     return 255;
 }
 

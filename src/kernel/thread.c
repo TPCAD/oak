@@ -19,6 +19,7 @@ void idle_thread() {
 
 void user_init_thread() {
     u32 count = 0;
+    test();
     while (true) {
         BMB;
 

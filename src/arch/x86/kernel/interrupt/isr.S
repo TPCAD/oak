@@ -102,9 +102,9 @@ isr_template 0x1d # RESERVED
 isr_template 0x1e # RESERVED
 isr_template 0x1f # RESERVED
 
-isr_template 0x20 # RESERVED
-isr_template 0x21 # RESERVED
-isr_template 0x22 # RESERVED
+isr_template 0x20 # CLOCK
+isr_template 0x21 # KEYBOARD
+isr_template 0x22 # CASCADE
 isr_template 0x23 # RESERVED
 
 isr_template 0x24 # RESERVED
@@ -119,8 +119,8 @@ isr_template 0x2b # RESERVED
 
 isr_template 0x2c # RESERVED
 isr_template 0x2d # RESERVED
-isr_template 0x2e # RESERVED
-isr_template 0x2f # RESERVED
+isr_template 0x2e # HARDDISK1 MASTER
+isr_template 0x2f # HARDDISK2 SLAVE
 
 # 记录 ISR 的入口地址，方便初始化 IDT
 .section .data
