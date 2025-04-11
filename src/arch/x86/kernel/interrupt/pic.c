@@ -24,7 +24,7 @@ void pic_set_intr_mask(u32 irq, bool enable) {
     if (irq < 8) {
         port = PIC_M_DATA;
     } else {
-        port = PIC_S_CTRL;
+        port = PIC_S_DATA;
         irq -= 8;
     }
 
