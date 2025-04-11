@@ -1,12 +1,12 @@
-#include "oak/debug/kassert.h"
-#include "oak/debug/kdebug.h"
-#include "oak/fifo.h"
-#include "oak/interrupt/idt.h"
-#include "oak/interrupt/pic.h"
-#include "oak/io.h"
-#include "oak/mutex.h"
-#include "oak/task.h"
-#include "oak/types.h"
+#include <oak/debug/kassert.h>
+#include <oak/fifo.h>
+#include <oak/interrupt/idt.h>
+#include <oak/interrupt/pic.h>
+#include <oak/io.h>
+#include <oak/mutex.h>
+#include <oak/task.h>
+#include <oak/types.h>
+#include <oak/vdevice.h>
 
 #define PS2KBD_DATA_PORT 0x60
 #define PS2KBD_CTRL_PORT 0x64
@@ -367,7 +367,7 @@ void kbd_handler(u32 vector) {
     // KDEBUG("keyboard input 0x%x\n", scancode);
 }
 
-u32 ps2kbd_read(char *buf, u32 count) {
+u32 ps2kbd_read(void *dev, char *buf, u32 count) {
     lock_acquire(&lock);
     u32 nr = 0;
     while (nr < count) {
@@ -398,4 +398,7 @@ void kbd_init() {
 
     idt_set_intr_handler(IRQ_KEYBOARD, kbd_handler);
     pic_set_intr_mask(IRQ_KEYBOARD, true);
+
+    vdevice_install(VDEV_CHAR, VDEV_KEYBOARD, NULL, "keyboard", 0, NULL,
+                    ps2kbd_read, NULL);
 }

@@ -36,6 +36,9 @@ static u32 test_syscall() {
     kprintf("pio write buffer 0x%p\n", buf);
 
     pmm_free_kpage(buf);
+    char ch = 0;
+    vdevice_read(vdevice_search(VDEV_KEYBOARD, 0)->dev, &ch, 1, 0, 0);
+    kprintf("%c\n", ch);
     return 255;
 }
 
