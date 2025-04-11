@@ -58,4 +58,6 @@ pid_t fork();
 void exit(int status);
 pid_t waitpid(pid_t pid, i32 *status);
 
+time_t time();
+
 #endif // !OAK_SYSCALL_H

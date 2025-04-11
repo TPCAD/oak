@@ -13,6 +13,10 @@ u32 volatile jiffies = 0;
 // 时间片长度，单位为 ms，改变量只是为了方便其他文件使用，这样不必引入多余头文件
 u32 jiffy = JIFFY;
 
+extern u32 startup_time;
+
+time_t syscall_time() { return startup_time + (jiffies * JIFFY) / 1000; }
+
 extern void task_wakeup();
 
 void clock_handler(u32 vector) {

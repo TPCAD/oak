@@ -121,5 +121,12 @@ void exit(int status) { _syscall1(SYS_NR_EXIT, (u32)status); }
  *  等待子进程退出
  */
 pid_t waitpid(pid_t pid, i32 *status) {
-    _syscall2(SYS_NR_WAITPID, pid, (u32)status);
+    return _syscall2(SYS_NR_WAITPID, pid, (u32)status);
 }
+
+/**
+ *  @brief  13 号系统调用
+ *
+ *  获取当前时间
+ */
+time_t time() { return _syscall0(SYS_NR_TIME); }
