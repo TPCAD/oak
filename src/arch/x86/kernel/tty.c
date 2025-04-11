@@ -1,7 +1,12 @@
-#include "oak/cpu.h"
+#include <oak/cpu.h>
 #include <oak/tty.h>
 #include <oak/types.h>
+#include <oak/vdevice.h>
 #include <oak/vga.h>
+
+void tty_set_theme(vga_attributes fg, vga_attributes bg);
+void tty_scroll_up();
+void tty_clear(u32 addr);
 
 u32 tty_screen_addr = 0;
 u32 tty_cursor_addr = 0;
@@ -90,7 +95,7 @@ void tty_set_theme(vga_attributes fg, vga_attributes bg) {
  *  @param  buf  字符串指针
  *  @param  count  要写入的字符数量
  */
-i32 tty_write_str(char *buf, u32 count) {
+i32 tty_write_str(void *dev, char *buf, u32 count) {
     bool intr = cpu_diable_intr();
     char ch = 0;
     i32 nr = 0;
@@ -161,4 +166,7 @@ void tty_init() {
     tty_cursor_addr = VGA_TEXT_MEM_BASE;
     tty_column = 0;
     tty_row = 0;
+
+    vdevice_install(VDEV_CHAR, VDEV_CONSOLE, NULL, "tty", 0, NULL, NULL,
+                    tty_write_str);
 }

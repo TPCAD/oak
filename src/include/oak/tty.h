@@ -14,12 +14,4 @@
 #define ASCII_CR 0x0d  // \r
 #define ASCII_DEL 0x7f
 
-void tty_set_theme(vga_attributes fg, vga_attributes bg);
-// void tty_write_char(char chr);
-i32 tty_write_str(char *buf, u32 count);
-void tty_scroll_up();
-void tty_clear(u32 addr);
-
-void tty_init();
-
 #endif // !OAK_CONSOLE_H
