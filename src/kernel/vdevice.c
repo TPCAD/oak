@@ -52,7 +52,7 @@ int vdevice_ioctl(u32 dev, int cmd, void *args, int flags) {
  */
 int vdevice_read(u32 dev, void *buf, size_t count, u32 idx, int flags) {
     vdevice_t *vdev = vdevice_get(dev);
-    if (vdev->ioctl) {
+    if (vdev->read) {
         return vdev->read(vdev->ptr, buf, count, idx, flags);
     }
     KDEBUG("read of virtual device %d is not implemented yet...\n", dev);
@@ -70,7 +70,7 @@ int vdevice_read(u32 dev, void *buf, size_t count, u32 idx, int flags) {
  */
 int vdevice_write(u32 dev, void *buf, size_t count, u32 idx, int flags) {
     vdevice_t *vdev = vdevice_get(dev);
-    if (vdev->ioctl) {
+    if (vdev->write) {
         return vdev->write(vdev->ptr, buf, count, idx, flags);
     }
     KDEBUG("write of virtual device %d is not implemented yet...\n", dev);
