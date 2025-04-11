@@ -53,6 +53,25 @@ char *strcpy(char *dest, const char *src) {
     return dest;
 }
 
+char *strncpy(char *dest, const char *src, size_t count) {
+    size_t len = strlen(src);
+    if (dest < src) {
+        const unsigned char *firsts = (const unsigned char *)src;
+        unsigned char *firstd = (unsigned char *)dest;
+        while (len-- && firstd < (unsigned char *)(dest + count)) {
+            *firstd++ = *firsts++;
+        }
+    } else {
+        const unsigned char *lasts = (const unsigned char *)src + (len - 1);
+        unsigned char *lastd = (unsigned char *)dest + (len - 1);
+        // FIX: not implemented yet
+        while (len--) {
+            *lastd-- = *lasts--;
+        }
+    }
+    return dest;
+}
+
 char *strcat(char *dest, const char *src) {
     char *ptr = dest;
     while (*ptr != EOS) {
