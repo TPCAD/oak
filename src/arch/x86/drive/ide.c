@@ -1,3 +1,5 @@
+#include "oak/kprintf.h"
+#include "oak/mutex.h"
 #include <oak/cpu.h>
 #include <oak/debug/kassert.h>
 #include <oak/debug/kdebug.h>
@@ -65,6 +67,42 @@
 #define IDE_LBA_SLAVE 0b11110000  // 从盘 LBA
 
 ide_ctrl_t controllers[IDE_CTRL_NR];
+
+// 识别命令返回的数据结构，只使用 total_lba 字段
+typedef struct ide_params_t {
+    u16 config;                 // 0 General configuration bits
+    u16 cylinders;              // 01 cylinders
+    u16 RESERVED;               // 02
+    u16 heads;                  // 03 heads
+    u16 RESERVED[5 - 3];        // 05
+    u16 sectors;                // 06 sectors per track
+    u16 RESERVED[9 - 6];        // 09
+    u8 serial[20];              // 10 ~ 19 序列号
+    u16 RESERVED[22 - 19];      // 10 ~ 22
+    u8 firmware[8];             // 23 ~ 26 固件版本
+    u8 model[40];               // 27 ~ 46 模型数
+    u8 drq_sectors;             // 47 扇区数量
+    u8 RESERVED[3];             // 48
+    u16 capabilities;           // 49 能力
+    u16 RESERVED[59 - 49];      // 50 ~ 59
+    u32 total_lba;              // 60 ~ 61
+    u16 RESERVED;               // 62
+    u16 mdma_mode;              // 63
+    u8 RESERVED;                // 64
+    u8 pio_mode;                // 64
+    u16 RESERVED[79 - 64];      // 65 ~ 79 参见 ATA specification
+    u16 major_version;          // 80 主版本
+    u16 minor_version;          // 81 副版本
+    u16 commmand_sets[87 - 81]; // 82 ~ 87 支持的命令集
+    u16 RESERVED[118 - 87];     // 88 ~ 118
+    u16 support_settings;       // 119
+    u16 enable_settings;        // 120
+    u16 RESERVED[221 - 120];    // 221
+    u16 transport_major;        // 222
+    u16 transport_minor;        // 223
+    u16 RESERVED[254 - 223];    // 254
+    u16 integrity;              // checksum
+} __packed ide_params_t;
 
 void ide_handler(int vector) {
     pic_send_eoi(vector);
@@ -190,6 +228,69 @@ static void ide_pio_write_sector(ide_disk_t *disk, u16 *buf) {
 }
 
 /**
+ *  @brief  交换两个字符位置
+ *  @param  buf  字符串
+ *  @param  len  字符串长度
+ *
+ *  识别硬盘返回的内容是大端存储，需要对每两个字符进行交换以正常显示
+ */
+static void ide_swap_pairs(char *buf, u32 len) {
+    for (size_t i = 0; i < len; i += 2) {
+        register char ch = buf[i];
+        buf[i] = buf[i + 1];
+        buf[i + 1] = ch;
+    }
+    buf[len - 1] = '\0';
+}
+
+/**
+ *  @brief  识别硬盘参数
+ *  @param  disk  要识别的硬盘指针
+ *  @param  buf  缓冲区
+ *  @return  return
+ */
+static u32 ide_identify_disk(ide_disk_t *disk, u16 *buf) {
+    kprintf("identifing disk %s\n", disk->name);
+    lock_acquire(&disk->ctrl->lock);
+    ide_select_drive(disk);
+
+    // 发送识别命令
+    outb(disk->ctrl->iobase + IDE_COMMAND, IDE_CMD_IDENTIFY);
+
+    ide_busy_wait(disk->ctrl, IDE_SR_NULL);
+
+    ide_pio_read_sector(disk, buf);
+
+    ide_params_t *params = (ide_params_t *)buf;
+
+    KDEBUG("disk %s total lba %d\n", disk->name, params->total_lba);
+
+    u32 ret;
+    if (params->total_lba == 0) {
+        goto rollback;
+    }
+
+    ide_swap_pairs(params->serial, sizeof(params->serial));
+    KDEBUG("disk %s serial number %s\n", disk->name, params->serial);
+
+    ide_swap_pairs(params->firmware, sizeof(params->firmware));
+    KDEBUG("disk %s firmware version %s\n", disk->name, params->firmware);
+
+    ide_swap_pairs(params->model, sizeof(params->model));
+    KDEBUG("disk %s model number %s\n", disk->name, params->model);
+
+    disk->total_lba = params->total_lba;
+    disk->cylinders = params->cylinders;
+    disk->heads = params->heads;
+    disk->sectors = params->sectors;
+    ret = 0;
+
+rollback:
+    lock_release(&disk->ctrl->lock);
+    return ret;
+}
+
+/**
  *  @brief  以 PIO 方式读磁盘
  *  @param  disk  要读取的磁盘
  *  @param  buf  要读取的数据
@@ -293,6 +394,7 @@ static void ide_ctrl_init() {
         sprintf(ctrl->name, "ide%u", cidx); // 控制器名，e.g. ide0
         lock_init(&ctrl->lock);             // 控制器锁
         ctrl->selected_disk = NULL;         // 当前选择的磁盘
+        ctrl->waiter = NULL;
 
         // 寄存器基址
         if (cidx) // 从通道
@@ -302,6 +404,8 @@ static void ide_ctrl_init() {
         {
             ctrl->iobase = IDE_IOBASE_PRIMARY;
         }
+
+        ctrl->control = inb(ctrl->iobase + IDE_CONTROL);
 
         // 初始化挂载的磁盘
         for (size_t didx = 0; didx < IDE_DISK_NR; didx++) {
@@ -317,6 +421,9 @@ static void ide_ctrl_init() {
                 disk->master = true;
                 disk->selector = IDE_LBA_MASTER;
             }
+            u16 *buf = (u16 *)pmm_alloc_kpage();
+            ide_identify_disk(disk, buf);
+            pmm_free_kpage(buf);
         }
     }
 }

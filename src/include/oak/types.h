@@ -13,6 +13,10 @@
 #define true 1
 #define false 0
 
+#define CONCAT(x, y) x##y
+#define RESERVED_TOKEN(x, y) CONCAT(x, y)
+#define RESERVED RESERVED_TOKEN(reserved, __LINE__)
+
 typedef unsigned int size_t;
 typedef char i8;
 typedef short i16;
