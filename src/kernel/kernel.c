@@ -18,6 +18,7 @@ extern void tss_init();
 extern void kheap_init();
 extern void ide_init();
 extern void vdevice_init();
+extern void buffer_init();
 
 extern mem_info_t mem_info;
 
@@ -53,6 +54,7 @@ void kernel_init() {
     task_init();
     syscall_init();
     ide_init();
+    buffer_init();
 }
 
 extern void vmm_test();

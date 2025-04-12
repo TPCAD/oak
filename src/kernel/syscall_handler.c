@@ -1,3 +1,5 @@
+#include "oak/buffer.h"
+#include "oak/task.h"
 #include <oak/debug/kassert.h>
 #include <oak/ide.h>
 #include <oak/interrupt/idt.h>
@@ -25,19 +27,14 @@ extern ide_ctrl_t controllers[2];
 static u32 test_syscall() {
     // KDEBUG("syscall test...\n");
 
-    u16 *buf = (u16 *)pmm_alloc_kpage();
-    // kprintf("pio read buffer 0x%p\n", buf);
-    // ide_disk_t *disk = &controllers[0].disks[0];
-    // ide_pio_read(disk, buf, 4, 0);
+    buffer_t *buf = buffer_read(vdevice_search(VDEV_IDE_DISK, 0)->dev, 0);
+    char *data = buf->data + SECTOR_SIZE;
+    memset(data, task_current_running()->pid, SECTOR_SIZE);
+    buf->dirty = true;
+    buffer_write(buf);
 
-    memset(buf, task_current_running()->pid, 512);
+    buffer_release(buf);
 
-    // ide_pio_write(disk, buf, 1, 1);
-    kprintf("pio write buffer 0x%p\n", buf);
-    vdevice_request(vdevice_search(VDEV_IDE_PART, 0)->dev, buf, 1,
-                    task_current_running()->pid, 0, REQ_WRITE);
-
-    pmm_free_kpage(buf);
     return 255;
 }
 
