@@ -101,7 +101,7 @@ void dmm_place_chunk(u8 *ptr, size_t size) {
     if (!diff) {
         // 无剩余空间
         u32 next_tag = READ_TAG(next_chunk);
-        WRITE_TAG(next_chunk, next_tag & ~M_PREV_ALLOCATED);
+        WRITE_TAG(next_chunk, next_tag | M_PREV_ALLOCATED);
     } else {
         // 有剩余空间
         u32 next_tag = BUILD_TAG(diff, M_CURR_FREE | M_PREV_ALLOCATED);
