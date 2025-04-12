@@ -43,4 +43,7 @@ typedef struct heap_context_t {
 
 void kheap_init();
 
+void *kmalloc(size_t size);
+void kfree(void *ptr);
+
 #endif // !OAK_DMM_H
