@@ -19,7 +19,7 @@ void idle_thread() {
 
 void user_init_thread() {
     u32 count = 0;
-    test();
+    // test();
     while (true) {
         BMB;
 
@@ -43,11 +43,12 @@ void init_thread() {
 
 u32 test_thread() {
     cpu_set_intr_state(true);
-
+    test();
+    kprintf("test finished of task %d\n", getpid());
     u32 count = 0;
     while (true) {
         BMB;
-        kprintf("test task %d\n", count++);
+        // kprintf("test task %d\n", count++);
         sleep(1000);
     }
 }

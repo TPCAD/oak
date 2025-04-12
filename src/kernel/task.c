@@ -464,7 +464,7 @@ pid_t task_waitpid(pid_t pid, i32 *status) {
 rollback:
     *status = child_task->status;
     u32 ret = child_task->pid;
-    pmm_free_kpage((void*)child_task->pde);
+    pmm_free_kpage((void *)child_task->pde);
     pmm_free_kpage((void *)child_task);
     return ret;
 }
@@ -485,7 +485,9 @@ void task_init() {
 
     idle_task = build_basic_task(idle_thread, "idle", 1, KERNEL_USER);
     build_basic_task(init_thread, "init", 5, NORMAL_USER);
-    build_basic_task(test_thread, "testA", 5, NORMAL_USER);
+    build_basic_task(test_thread, "testA", 5, KERNEL_USER);
+    build_basic_task(test_thread, "testB", 5, KERNEL_USER);
+    build_basic_task(test_thread, "testC", 5, KERNEL_USER);
     // build_basic_task(thread_b, "testB", 5, NORMAL_USER);
     // build_basic_task(thread_c, "testC", 5, NORMAL_USER);
 }

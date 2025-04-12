@@ -1,5 +1,9 @@
+#include "oak/list.h"
+#include "oak/oak.h"
+#include "oak/task.h"
 #include <oak/debug/kassert.h>
 #include <oak/debug/kdebug.h>
+#include <oak/mm/dmm.h>
 #include <oak/string.h>
 #include <oak/types.h>
 #include <oak/vdevice.h>
@@ -45,8 +49,8 @@ int vdevice_ioctl(u32 dev, int cmd, void *args, int flags) {
  *  @brief  执行设备读函数
  *  @param  dev  设备号
  *  @param  buf  缓冲区
- *  @param  count
- *  @param  idx
+ *  @param  count  扇区数
+ *  @param  idx  起始扇区
  *  @param  flags  标志
  *  @return  设备读函数返回值
  */
@@ -63,8 +67,8 @@ int vdevice_read(u32 dev, void *buf, size_t count, u32 idx, int flags) {
  *  @brief  执行设备写函数
  *  @param  dev  设备号
  *  @param  buf  缓冲区
- *  @param  count
- *  @param  idx
+ *  @param  count  扇区数
+ *  @param  idx  起始扇区
  *  @param  flags  标志
  *  @return  设备读函数返回值
  */
@@ -75,6 +79,76 @@ int vdevice_write(u32 dev, void *buf, size_t count, u32 idx, int flags) {
     }
     KDEBUG("write of virtual device %d is not implemented yet...\n", dev);
     return -1;
+}
+
+/**
+ *  @brief  块设备请求
+ *  @param  dev  设备号
+ *  @param  buf  缓冲区
+ *  @param  count  扇区数
+ *  @param  idx  起始扇区
+ *  @param  flags  标志
+ *  @return  return
+ */
+void vdevice_request(u32 dev, void *buf, size_t count, u32 idx, int flags,
+                     u32 type) {
+    vdevice_t *vdev = vdevice_get(dev);
+    kassert(vdev->type == VDEV_BLOCK);
+
+    u32 offset = idx + vdevice_ioctl(vdev->dev, VDEV_CMD_SECTOR_START, 0, 0);
+
+    if (vdev->parent) {
+        vdev = vdevice_get(vdev->parent);
+    }
+
+    // 构建请求信息
+    block_request_t *req = kmalloc(sizeof(block_request_t));
+
+    req->dev = dev;
+    req->buf = buf;
+    req->count = count;
+    req->idx = offset;
+    req->flags = flags;
+    req->type = type;
+    req->task = NULL;
+
+    // 在加入结点前检查是否为空
+    bool empty = list_is_empty(&vdev->request_list);
+
+    // 将当前任务的请求加入请求链表
+    list_push(&vdev->request_list, &req->node);
+
+    // 请求链表不为空，阻塞当前任务
+    if (!empty) {
+        req->task = task_current_running();
+        task_block(req->task, NULL, TASK_BLOCKED);
+    }
+
+    // 请求链表为空，处理请求
+    switch (req->type) {
+    case REQ_READ:
+        vdevice_read(req->dev, req->buf, req->count, req->idx, req->flags);
+        break;
+    case REQ_WRITE:
+        vdevice_write(req->dev, req->buf, req->count, req->idx, req->flags);
+        break;
+    default:
+        kpanic("req type %d unknown!!!");
+        break;
+    }
+
+    // 从请求链表中删除结点
+    list_remove(&req->node);
+    kfree(req);
+
+    // 唤醒请求链表中的任务
+    if (!list_is_empty(&vdev->request_list)) {
+        // 先来先服务
+        block_request_t *nextreq =
+            element_entry(block_request_t, node, vdev->request_list.tail.prev);
+        kassert(nextreq->task->magic == OAK_MAGIC);
+        task_unblock(nextreq->task);
+    }
 }
 
 /**
@@ -96,6 +170,7 @@ u32 vdevice_install(int type, int subtype, void *ptr, char *name, u32 parent,
     vdev->subtype = subtype;
     vdev->ptr = ptr;
     strncpy(vdev->name, name, NAMELEN);
+    vdev->parent = parent;
     vdev->ioctl = ioctl;
     vdev->read = read;
     vdev->write = write;
@@ -154,5 +229,6 @@ void vdevice_init() {
         vdev->ioctl = NULL;
         vdev->read = NULL;
         vdev->write = NULL;
+        list_init(&vdev->request_list);
     }
 }

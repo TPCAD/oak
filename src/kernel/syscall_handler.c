@@ -26,19 +26,18 @@ static u32 test_syscall() {
     // KDEBUG("syscall test...\n");
 
     u16 *buf = (u16 *)pmm_alloc_kpage();
-    kprintf("pio read buffer 0x%p\n", buf);
-    ide_disk_t *disk = &controllers[0].disks[0];
-    ide_pio_read(disk, buf, 4, 0);
+    // kprintf("pio read buffer 0x%p\n", buf);
+    // ide_disk_t *disk = &controllers[0].disks[0];
+    // ide_pio_read(disk, buf, 4, 0);
 
-    memset(buf, 0x5a, 512);
+    memset(buf, task_current_running()->pid, 512);
 
-    ide_pio_write(disk, buf, 1, 1);
+    // ide_pio_write(disk, buf, 1, 1);
     kprintf("pio write buffer 0x%p\n", buf);
+    vdevice_request(vdevice_search(VDEV_IDE_PART, 0)->dev, buf, 1,
+                    task_current_running()->pid, 0, REQ_WRITE);
 
     pmm_free_kpage(buf);
-    char ch = 0;
-    vdevice_read(vdevice_search(VDEV_KEYBOARD, 0)->dev, &ch, 1, 0, 0);
-    kprintf("%c\n", ch);
     return 255;
 }
 

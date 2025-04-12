@@ -1,5 +1,3 @@
-#include "oak/kprintf.h"
-#include "oak/mutex.h"
 #include <oak/cpu.h>
 #include <oak/debug/kassert.h>
 #include <oak/debug/kdebug.h>
@@ -7,10 +5,13 @@
 #include <oak/interrupt/idt.h>
 #include <oak/interrupt/pic.h>
 #include <oak/io.h>
+#include <oak/kprintf.h>
 #include <oak/mm/pmm.h>
+#include <oak/mutex.h>
 #include <oak/stdio.h>
 #include <oak/string.h>
 #include <oak/task.h>
+#include <oak/vdevice.h>
 
 // IDE 寄存器基址
 #define IDE_IOBASE_PRIMARY 0x1F0   // 主通道基地址
@@ -234,14 +235,6 @@ static void ide_pio_write_sector(ide_disk_t *disk, u16 *buf) {
     }
 }
 
-static int ide_pio_part_read(ide_part_t *part, void *buf, u8 count, u32 lba) {
-    return ide_pio_read(part->disk, buf, count, part->start + lba);
-}
-
-static int ide_pio_part_write(ide_part_t *part, void *buf, u8 count, u32 lba) {
-    return ide_pio_write(part->disk, buf, count, part->start + lba);
-}
-
 /**
  *  @brief  交换两个字符位置
  *  @param  buf  字符串
@@ -303,6 +296,26 @@ static u32 ide_identify_disk(ide_disk_t *disk, u16 *buf) {
 rollback:
     lock_release(&disk->ctrl->lock);
     return ret;
+}
+
+int ide_pio_part_read(ide_part_t *part, void *buf, u8 count, u32 lba) {
+    return ide_pio_read(part->disk, buf, count, part->start + lba);
+}
+
+int ide_pio_part_write(ide_part_t *part, void *buf, u8 count, u32 lba) {
+    return ide_pio_write(part->disk, buf, count, part->start + lba);
+}
+
+int ide_pio_part_ioctrl(ide_part_t *part, int cmd, void *arg, int flags) {
+    switch (cmd) {
+    case VDEV_CMD_SECTOR_START:
+        return part->start;
+    case VDEV_CMD_SECTOR_COUNT:
+        return part->count;
+    default:
+        kpanic("[kernel] Unrecognized virtual device command %d...\n");
+        break;
+    }
 }
 
 /**
@@ -400,6 +413,27 @@ int ide_pio_write(ide_disk_t *disk, void *buf, u8 count, u32 lba) {
     return 0;
 }
 
+/**
+ *  @brief  控制磁盘
+ *  @param  disk  要写入的磁盘
+ *  @param  cmd  控制命令
+ *  @param  args  控制命令参数
+ *  @param  flags  标志
+ *  @return  return
+ */
+int ide_pio_ioctrl(ide_disk_t *disk, int cmd, void *args, int flags) {
+    switch (cmd) {
+    case VDEV_CMD_SECTOR_START:
+        return 0;
+    case VDEV_CMD_SECTOR_COUNT:
+        return disk->total_lba;
+    default:
+        kpanic("[kernel] Unrecognized virtual device command %d...\n");
+        break;
+    }
+    return -1; // no need
+}
+
 static void ide_part_init(ide_disk_t *disk, u16 *buf) {
     // 磁盘不可用
     if (!disk->total_lba) {
@@ -457,6 +491,7 @@ static void ide_part_init(ide_disk_t *disk, u16 *buf) {
  *  @brief  初始化 controllers 数组
  */
 static void ide_ctrl_init() {
+    u16 *buf = (u16 *)pmm_alloc_kpage();
     for (size_t cidx = 0; cidx < IDE_CTRL_NR; cidx++) {
         ide_ctrl_t *ctrl = &controllers[cidx];
         sprintf(ctrl->name, "ide%u", cidx); // 控制器名，e.g. ide0
@@ -489,16 +524,42 @@ static void ide_ctrl_init() {
                 disk->master = true;
                 disk->selector = IDE_LBA_MASTER;
             }
-            u16 *buf = (u16 *)pmm_alloc_kpage();
             ide_identify_disk(disk, buf);
             ide_part_init(disk, buf);
-            pmm_free_kpage(buf);
+        }
+    }
+    pmm_free_kpage(buf);
+}
+
+static void ide_install() {
+    for (size_t cidx = 0; cidx < IDE_CTRL_NR; cidx++) {
+        ide_ctrl_t *ctrl = &controllers[cidx];
+        for (size_t didx = 0; didx < IDE_DISK_NR; didx++) {
+            ide_disk_t *disk = &ctrl->disks[didx];
+            if (!disk->total_lba) {
+                continue;
+            }
+            u32 dev =
+                vdevice_install(VDEV_BLOCK, VDEV_IDE_DISK, disk, disk->name, 0,
+                                ide_pio_ioctrl, ide_pio_read, ide_pio_write);
+
+            for (size_t i = 0; i < IDE_PART_NR; i++) {
+                ide_part_t *part = &disk->parts[i];
+                if (!part->count) {
+                    continue;
+                }
+                vdevice_install(VDEV_BLOCK, VDEV_IDE_PART, part, part->name,
+                                dev, ide_pio_part_ioctrl, ide_pio_part_read,
+                                ide_pio_part_write);
+            }
         }
     }
 }
 
 void ide_init() {
     ide_ctrl_init();
+
+    ide_install();
 
     idt_set_intr_handler(IRQ_HARDDISK, ide_handler);
     idt_set_intr_handler(IRQ_HARDDISK2, ide_handler);
