@@ -72,7 +72,7 @@ void *dmm_grow_kheap(size_t size) {
     // 加上的 TAG_SIZE 是尾标签的大小
     void *next = curr_brk + ROUNDUP(size + TAG_SIZE, ALIGN_SIZE);
 
-    if (next >= kernel_heap.max_addr || next < curr_brk) {
+    if (next > kernel_heap.max_addr || next < curr_brk) {
         return NULL;
     }
 
