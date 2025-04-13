@@ -15,6 +15,16 @@
 
 #define BLOCK_BITS (BLOCK_SIZE * 8) // 块位图比特数
 
+#define BLOCK_INODES (BLOCK_SIZE / sizeof(inode_t))    // 块内 inode 数量
+#define BLOCK_DENTRIES (BLOCK_SIZE / sizeof(dentry_t)) // 块内 dentry 数量
+// 间接块对应的数据块是一个索引数组，一个数据块可以有 512 个索引
+#define BLOCK_INDEXES (BLOCK_SIZE / sizeof(u16)) // 块内索引数
+
+#define DIREC_BLOCKS 7 // 直接块数量
+#define INDIRECT1_BLOCKS BLOCK_INDEXES
+#define INDIRECT2_BLOCKS (INDIRECT1_BLOCKS * INDIRECT1_BLOCKS)
+#define TOTAL_BLOCKS (DIREC_BLOCKS + INDIRECT1_BLOCKS + INDIRECT2_BLOCKS)
+
 typedef struct inode_t {
     u16 mode;    // 文件类型和属性（rwx）
     u16 uid;     // 用户 id（文件拥有者标识符）
@@ -24,6 +34,18 @@ typedef struct inode_t {
     u8 nlinks;   // 链接数（多少个文件目录项指向该 inode）
     u16 zone[9]; // 直接（0-6）、间接（7）或双重间接（8）逻辑块号
 } inode_t;
+
+typedef struct inode_info_t {
+    inode_t *inode;
+    struct buffer_t *buf;
+    u32 dev;
+    u32 idx;      // inode 号
+    u32 count;    // 引用计数
+    time_t atime; // 访问时间
+    time_t ctime; // 修改时间
+    list_node_t node;
+    u32 mount;
+} inode_info_t;
 
 typedef struct super_block_t {
     u16 inodes;        // 节点数
@@ -42,9 +64,9 @@ typedef struct super_block_info_t {
     struct buffer_t *imaps[IMAP_NR];
     struct buffer_t *zmaps[ZMAP_NR];
     int dev;
-    list_t inode_list; // 使用中的 inode
-    inode_t *iroot;    // 根目录 inode
-    inode_t *imount;
+    list_t inode_list;   // 使用中的 inode
+    inode_info_t *iroot; // 根目录 inode
+    inode_info_t *imount;
 } sblk_info_t;
 
 // 文件目录项结构
@@ -60,5 +82,10 @@ void inode_free_bit(u32 dev, u32 idx);
 
 u32 block_alloc_bit(u32 dev);
 void block_free_bit(u32 dev, u32 idx);
+
+inode_info_t *inode_search(u32 dev, u32 nr);
+void inode_free(inode_info_t *inode);
+
+u32 inode_calc_block(inode_info_t *inode, u32 zone_idx, bool create);
 
 #endif // !OAK_MINIX_H

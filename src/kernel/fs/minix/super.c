@@ -92,21 +92,17 @@ static void mount_root() {
 
     root = parse_super_block(vdev->dev);
 
-    // buffer_t* inode_buf = buffer_read(vdev->dev,
-    // 2+root->sblk->imap_blocks+root->sblk->zmap_blocks); inode_t* inode =
-    // (inode_t*)inode_buf->data;
-    //
-    // buffer_t* zone_buf = buffer_read(vdev->dev, inode->zone[0]);
+    root->iroot = inode_search(vdev->dev, 1);
+    root->imount = inode_search(vdev->dev, 1);
 
-    vdev = vdevice_search(VDEV_IDE_PART, 1);
-    kassert(vdev);
-    sblk_info_t *sb = parse_super_block(vdev->dev);
+    u32 idx = 0;
+    inode_info_t *inode = inode_search(vdev->dev, 1);
 
-    u32 idx = inode_alloc_bit(sb->dev);
-    inode_free_bit(sb->dev, idx);
+    idx = inode_calc_block(inode, 3, true);
+    idx = inode_calc_block(inode, 7 + 7, true);
+    idx = inode_calc_block(inode, 7 + 512 * 3 + 510, true);
 
-    idx = block_alloc_bit(vdev->dev);
-    block_free_bit(sb->dev, idx);
+    inode_free(inode);
 }
 
 void super_init() {
