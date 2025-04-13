@@ -228,13 +228,15 @@ void buffer_release(buffer_t *buf) {
     buf->count--;
     kassert(buf->count >= 0);
 
-    if (!buf->count) {
-        if (buf->free_node.next) {
-            list_remove(&buf->free_node);
-        }
-        // 引用为 0，加入空闲链表
-        list_push(&free_list, &buf->free_node);
+    if (buf->count) {
+        return;
     }
+
+    if (buf->free_node.next) {
+        list_remove(&buf->free_node);
+    }
+    // 引用为 0，加入空闲链表
+    list_push(&free_list, &buf->free_node);
 
     if (buf->dirty) {
         buffer_write(buf);
