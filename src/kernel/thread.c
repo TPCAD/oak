@@ -43,9 +43,9 @@ void init_thread() {
 
 u32 test_thread() {
     cpu_set_intr_state(true);
-    kprintf("test started of task %d\n", getpid());
-    test();
-    kprintf("test finished of task %d\n", getpid());
+    // kprintf("test started of task %d\n", getpid());
+    // test();
+    // kprintf("test finished of task %d\n", getpid());
     u32 count = 0;
     while (true) {
         BMB;
