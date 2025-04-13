@@ -104,7 +104,7 @@ void vdevice_request(u32 dev, void *buf, size_t count, u32 idx, int flags,
     // 构建请求信息
     block_request_t *req = kmalloc(sizeof(block_request_t));
 
-    req->dev = dev;
+    req->dev = vdev->dev;
     req->buf = buf;
     req->count = count;
     req->idx = offset;
