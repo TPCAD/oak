@@ -1,4 +1,5 @@
 #include "oak/cpu.h"
+#include "oak/fs/minix.h"
 #include "oak/gdt.h"
 #include "oak/list.h"
 #include "oak/mm/memory.h"
@@ -71,6 +72,8 @@ static task_t *build_basic_task(target_t target, const char *name, u32 priority,
     task->user_heap.start_addr = (void *)KERNEL_MEM_END;
     task->user_heap.brk = (void *)KERNEL_MEM_END;
     task->user_heap.max_addr = (void *)KERNEL_MEM_END;
+    task->iroot = inode_get_root_inode();
+    task->ipwd = inode_get_root_inode();
     task->magic = OAK_MAGIC;
 
     return task;
