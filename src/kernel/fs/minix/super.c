@@ -1,7 +1,6 @@
 #include "oak/buffer.h"
 #include "oak/debug/kassert.h"
 #include "oak/debug/kdebug.h"
-#include "oak/kprintf.h"
 #include "oak/list.h"
 #include "oak/vdevice.h"
 #include <oak/fs/minix.h>
@@ -28,7 +27,7 @@ static sblk_info_t *search_free_super_block() {
  *  @param  dev  设备号
  *  @return  超级块信息
  */
-static sblk_info_t *search_super_block(u32 dev) {
+sblk_info_t *search_super_block(u32 dev) {
     for (size_t i = 0; i < SUPER_NR; i++) {
         sblk_info_t *sb = &super_table[i];
         if (sb->dev == dev) {
@@ -92,6 +91,22 @@ static void mount_root() {
     kassert(vdev);
 
     root = parse_super_block(vdev->dev);
+
+    // buffer_t* inode_buf = buffer_read(vdev->dev,
+    // 2+root->sblk->imap_blocks+root->sblk->zmap_blocks); inode_t* inode =
+    // (inode_t*)inode_buf->data;
+    //
+    // buffer_t* zone_buf = buffer_read(vdev->dev, inode->zone[0]);
+
+    vdev = vdevice_search(VDEV_IDE_PART, 1);
+    kassert(vdev);
+    sblk_info_t *sb = parse_super_block(vdev->dev);
+
+    u32 idx = inode_alloc_bit(sb->dev);
+    inode_free_bit(sb->dev, idx);
+
+    idx = block_alloc_bit(vdev->dev);
+    block_free_bit(sb->dev, idx);
 }
 
 void super_init() {

@@ -13,6 +13,8 @@
 #define IMAP_NR 8 // inode 块位图块数最大值
 #define ZMAP_NR 8 // 逻辑块位图块数最大值
 
+#define BLOCK_BITS (BLOCK_SIZE * 8) // 块位图比特数
+
 typedef struct inode_t {
     u16 mode;    // 文件类型和属性（rwx）
     u16 uid;     // 用户 id（文件拥有者标识符）
@@ -50,5 +52,13 @@ typedef struct dentry_t {
     u16 nr;              // inode 索引
     char name[NAME_LEN]; // 文件名
 } dentry_t;
+
+sblk_info_t *search_super_block(u32 dev);
+
+u32 inode_alloc_bit(u32 dev);
+void inode_free_bit(u32 dev, u32 idx);
+
+u32 block_alloc_bit(u32 dev);
+void block_free_bit(u32 dev, u32 idx);
 
 #endif // !OAK_MINIX_H
