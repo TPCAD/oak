@@ -11,14 +11,13 @@
  * @a buffer_data 指针指示最新可用数据区的位置，初始置于
  * KERNEL_BUFFER_ADDR + KERNEL_BUFFER_SIZE - BLOCK_SIZE。
  * */
-#include "oak/debug/kassert.h"
-#include "oak/kprintf.h"
-#include "oak/list.h"
-#include "oak/mm/memory.h"
-#include "oak/mutex.h"
-#include "oak/task.h"
-#include "oak/vdevice.h"
 #include <oak/buffer.h>
+#include <oak/debug/kassert.h>
+#include <oak/list.h>
+#include <oak/mm/memory.h>
+#include <oak/mutex.h>
+#include <oak/task.h>
+#include <oak/vdevice.h>
 
 #define HASH_COUNT 31
 
@@ -31,9 +30,11 @@ static buffer_t *buffer_ptr = (buffer_t *)KERNEL_BUFFER_ADDR;
 static void *buffer_data =
     (void *)(KERNEL_BUFFER_ADDR + KERNEL_BUFFER_SIZE - BLOCK_SIZE);
 
-static list_t free_list;              // 空闲链表，已被初始化但空闲的 buffer_t
-static list_t wait_list;              // 请求可用缓冲区的进程链表
-static list_t hash_table[HASH_COUNT]; // 哈希表
+static list_t free_list; // 空闲链表，已被初始化但空闲的 buffer_t
+static list_t wait_list; // 请求可用缓冲区的进程链表
+/* 哈希表中存放的 buffer 都是有效的，也就是说 buffer 的内容与硬盘相同，可以直接
+ * 使用。获取 buffer 时也是优先从哈希表中寻找。*/
+static list_t hash_table[HASH_COUNT];
 
 /**
  *  @brief  计算哈希值
@@ -140,7 +141,6 @@ static buffer_t *search_free_buffer() {
         // 内存不足，查看是否有空闲的 buffer
         if (!list_is_empty(&free_list)) {
             buf = element_entry(buffer_t, free_node, list_popback(&free_list));
-            // TODO: 是否需要从哈希表中删除
             hash_remove(buf);
             buf->valid = false;
             return buf;
@@ -160,6 +160,7 @@ static buffer_t *search_free_buffer() {
 buffer_t *search_block(u32 dev, u32 block) {
     buffer_t *buf = hash_search(dev, block);
     if (buf) {
+        kassert(buf->valid);
         return buf;
     }
 
