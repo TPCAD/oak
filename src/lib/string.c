@@ -13,7 +13,7 @@ int strcmp(const char *lhs, const char *rhs) {
         lhs++;
         rhs++;
     }
-    return *lhs < *rhs ? -1 : 1;
+    return (unsigned char)*lhs - (unsigned char)*rhs;
 }
 
 char *strchr(const char *str, int ch) {
