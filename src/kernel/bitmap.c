@@ -7,12 +7,13 @@
  *  @param  map  bitmap_t
  *  @param  buf  位图数组
  *  @param  size  数组大小
- *  @param  offset  偏移量，对位图的操作会从偏移量之后开始
+ *  @param  offset  偏移量，位图内部操作实际使用的索引会减去偏移量
  */
-void bitmap_create(bitmap_t *map, u8 *buf, u32 size, u32 offset) {
+void bitmap_create(bitmap_t *map, u8 *buf, u32 size, u32 offset, bool high) {
     map->buf = buf;
     map->size = size;
     map->offset = offset;
+    map->high = high;
 }
 
 /**
@@ -22,13 +23,13 @@ void bitmap_create(bitmap_t *map, u8 *buf, u32 size, u32 offset) {
  *  @param  size  数组大小
  *  @param  offset  偏移量，对位图的操作会从偏移量之后开始
  */
-void bitmap_init(bitmap_t *map, u8 *buf, u32 size, u32 offset) {
+void bitmap_init(bitmap_t *map, u8 *buf, u32 size, u32 offset, bool high) {
     memset(buf, 0, size);
-    bitmap_create(map, buf, size, offset);
+    bitmap_create(map, buf, size, offset, high);
 }
 
 /**
- *  @brief  检查指定是否已设置
+ *  @brief  检查指定位是否已设置
  *  @param  map  bitmap_t
  *  @param  idx  位索引
  *  @return  布尔值
@@ -42,7 +43,9 @@ bool bitmap_is_set(bitmap_t *map, u32 idx) {
 
     kassert(byte_offset < map->size);
 
-    return map->buf[byte_offset] & (0x80 >> bit_offset);
+    u8 mask = map->high ? (0x80 >> bit_offset) : (0x01 << bit_offset);
+
+    return map->buf[byte_offset] & mask;
 }
 
 void bitmap_set_bit(bitmap_t *map, u32 idx, bool value) {
@@ -51,7 +54,7 @@ void bitmap_set_bit(bitmap_t *map, u32 idx, bool value) {
     u32 off_idx = idx - map->offset;
     u32 byte_offset = off_idx / 8;
     u32 bit_offset = off_idx % 8;
-    u32 mask = 0x80 >> bit_offset;
+    u8 mask = map->high ? (0x80 >> bit_offset) : (0x01 << bit_offset);
 
     kassert(byte_offset < map->size);
 
@@ -73,11 +76,13 @@ void bitmap_set_bits(bitmap_t *map, u32 idx, u32 count, bool value) {
     if (value) {
         map->buf[byte_offset] |=
             (((1U << marked_bits_in_1st_byte) - 1)
-             << (8 - bit_offset - marked_bits_in_1st_byte));
+             << (map->high ? (8 - bit_offset - marked_bits_in_1st_byte)
+                           : bit_offset));
     } else {
         map->buf[byte_offset] &=
             ~(((1U << marked_bits_in_1st_byte) - 1)
-              << (8 - bit_offset - marked_bits_in_1st_byte));
+              << (map->high ? (8 - bit_offset - marked_bits_in_1st_byte)
+                            : bit_offset));
     }
 
     byte_offset++;
@@ -89,18 +94,19 @@ void bitmap_set_bits(bitmap_t *map, u32 idx, u32 count, bool value) {
         map->buf[byte_offset] = value;
     }
 
-    u32 remaining_bits = (count + bit_offset) % 8;
+    u32 remaining_bits =
+        (count + bit_offset < 8) ? 0 : (count + bit_offset) % 8;
     if (value) {
-        map->buf[byte_offset] |=
-            (((1U << remaining_bits) - 1) << (8 - remaining_bits));
+        map->buf[byte_offset] |= (((1U << remaining_bits) - 1)
+                                  << (map->high ? (8 - remaining_bits) : 0));
     } else {
-        map->buf[byte_offset] &=
-            ~(((1U << remaining_bits) - 1) << (8 - remaining_bits));
+        map->buf[byte_offset] &= ~(((1U << remaining_bits) - 1)
+                                   << (map->high ? (8 - remaining_bits) : 0));
     }
 }
 
 u32 bitmap_find_bits(bitmap_t *map, u32 count) {
-    u32 start = 0;
+    u32 start = -1;
     u32 left_bits = map->size * 8;
     u32 next_bit = 0;
     u32 temp_count = 0;
@@ -120,8 +126,8 @@ u32 bitmap_find_bits(bitmap_t *map, u32 count) {
         }
     }
 
-    if (start == 0) {
-        return 0;
+    if (start == -1) {
+        return -1;
     }
 
     // left_bits = count;
@@ -141,7 +147,7 @@ void bitmap_test() {
     u8 bits[LEN];
     bitmap_t map;
     int count = 10;
-    bitmap_init(&map, bits, LEN, OFFSET);
+    bitmap_init(&map, bits, LEN, OFFSET, true);
 
     bitmap_set_bit(&map, 10, true);
     kassert(bits[0] == 0b00000100);
