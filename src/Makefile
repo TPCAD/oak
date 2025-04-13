@@ -122,13 +122,13 @@ umount0: /dev/loop0
 	-sudo losetup -d $<
 
 .PHONY: mount1
-mount0: $(BUILD)/slave.img
+mount1: $(BUILD)/slave.img
 	sudo losetup /dev/loop0 --partscan $<
 	sudo mount /dev/loop0p1 /mnt
 	sudo chown $(USER) /mnt
 
 .PHONY: umount1
-umount0: /dev/loop0
+umount1: /dev/loop0
 	-sudo umount /mnt
 	-sudo losetup -d $<
 
