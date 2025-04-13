@@ -88,4 +88,6 @@ void inode_free(inode_info_t *inode);
 
 u32 inode_calc_block(inode_info_t *inode, u32 zone_idx, bool create);
 
+inode_info_t *inode_get_root_inode();
+
 #endif // !OAK_MINIX_H
