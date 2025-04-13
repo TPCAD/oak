@@ -78,10 +78,59 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	dd bs=512 count=1 conv=notrunc if=$(BUILD_BOOT)/boot.bin of=$@
 	dd bs=512 count=4 seek=2 conv=notrunc if=$(BUILD_BOOT)/loader.bin of=$@
 	dd bs=512 count=200 seek=10 conv=notrunc if=$(BUILD_KERNEL)/system.bin of=$@
+	# 硬盘分区
 	sfdisk $@ < $(UTILS_DIR)/master.sfdisk
+	# 挂载磁盘镜像文件，自动识别分区
+	sudo losetup /dev/loop0 --partscan $@
+	# 在硬盘分区创建 minix 文件系统
+	sudo mkfs.minix -1 -n 14 /dev/loop0p1
+	# 挂载分区
+	sudo mount /dev/loop0p1 /mnt
+	# 切换用户
+	sudo chown $(USER) /mnt
+	# 创建文件
+	mkdir -p /mnt/bin
+	mkdir -p /mnt/dev
+	mkdir -p /mnt/mnt
+	echo "hello oak from root directory!" > /mnt/hello.txt
+	# 卸载镜像文件
+	sudo umount /mnt
+	sudo losetup -d /dev/loop0
 
 $(BUILD)/slave.img:
 	qemu-img create $@ 32M
+	sfdisk $@ < $(UTILS_DIR)/master.sfdisk
+	sudo losetup /dev/loop0 --partscan $@
+	sudo mkfs.minix -1 -n 14 /dev/loop0p1
+	sudo mount /dev/loop0p1 /mnt
+	sudo chown $(USER) /mnt
+	mkdir -p /mnt/home
+	echo "slave home directory file!" > /mnt/home/hello.txt
+	echo "slave root directory file!" > /mnt/hello.txt
+	sudo umount /mnt
+	sudo losetup -d /dev/loop0
+
+.PHONY: mount0
+mount0: $(BUILD)/master.img
+	sudo losetup /dev/loop0 --partscan $<
+	sudo mount /dev/loop0p1 /mnt
+	sudo chown $(USER) /mnt
+
+.PHONY: umount0
+umount0: /dev/loop0
+	-sudo umount /mnt
+	-sudo losetup -d $<
+
+.PHONY: mount1
+mount0: $(BUILD)/slave.img
+	sudo losetup /dev/loop0 --partscan $<
+	sudo mount /dev/loop0p1 /mnt
+	sudo chown $(USER) /mnt
+
+.PHONY: umount1
+umount0: /dev/loop0
+	-sudo umount /mnt
+	-sudo losetup -d $<
 
 IMAGE:=$(BUILD)/master.img $(BUILD)/slave.img
 
