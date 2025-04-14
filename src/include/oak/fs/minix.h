@@ -100,5 +100,6 @@ inode_t *named(char *pathname, char **next);
 
 int inode_read(inode_t *inode, char *buf, u32 len, i32 offset);
 int inode_write(inode_t *inode, char *buf, u32 len, i32 offset);
+void inode_truncate(inode_t *inode);
 
 #endif // !OAK_MINIX_H

@@ -310,17 +310,7 @@ inode_t *namei(char *pathname) {
 
 void dir_test() {
     inode_t *inode = namei("/home/../hello.txt");
-
-    char *buf = (char *)pmm_alloc_kpage();
-    int i = inode_read(inode, buf, 1024, 0);
-
-    KDEBUG("content: %s\n", buf);
-
-    memset(buf, 'A', PAGE_SIZE);
-    inode_write(inode, buf, PAGE_SIZE, 0);
-    KDEBUG("write 1024 bytes\n");
-
-    memset(buf, 'B', PAGE_SIZE);
-    inode_write(inode, buf, PAGE_SIZE, PAGE_SIZE);
-    KDEBUG("write 1024 bytes\n");
+    inode_truncate(inode);
+    inode_free(inode);
+    KDEBUG("delete inode\n");
 }

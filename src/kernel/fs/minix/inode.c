@@ -321,6 +321,60 @@ reckon:
 }
 
 /**
+ *  @brief  将 inode 的所有数据块对应的位图位置 0
+ *  @param  inode  inode 指针
+ *  @param  array  zone 数组
+ *  @param  index  zone 数组索引
+ *  @param  level
+ */
+static void inode_blk_free(inode_t *inode, u16 *array, int index, int level) {
+    if (!array[index]) {
+        return;
+    }
+
+    if (!level) {
+        block_free_bit(inode->dev, array[index]);
+        return;
+    }
+
+    buffer_t *buf = buffer_read(inode->dev, array[index]);
+    for (size_t i = 0; i < BLOCK_INDEXES; i++) {
+        inode_blk_free(inode, (u16 *)buf->data, i, level - 1);
+    }
+    buffer_release(buf);
+    block_free_bit(inode->dev, array[index]);
+}
+
+/**
+ *  @brief  释放 inode 的所有数据块
+ *  @param  inode  inode 指针
+ */
+void inode_truncate(inode_t *inode) {
+    if (!ISFILE(inode->inode->mode) && !ISDIR(inode->inode->mode)) {
+        return;
+    }
+
+    // 释放直接块
+    for (size_t i = 0; i < DIREC_BLOCKS; i++) {
+        inode_blk_free(inode, inode->inode->zone, i, 0);
+        inode->inode->zone[i] = 0;
+    }
+
+    // 释放一级间接块
+    inode_blk_free(inode, inode->inode->zone, DIREC_BLOCKS, 1);
+    inode->inode->zone[DIREC_BLOCKS] = 0;
+
+    // 释放二级间接块
+    inode_blk_free(inode, inode->inode->zone, DIREC_BLOCKS + 1, 2);
+    inode->inode->zone[DIREC_BLOCKS + 1] = 0;
+
+    inode->inode->size = 0;
+    inode->buf->dirty = true;
+    inode->inode->mtime = time();
+    buffer_write(inode->buf);
+}
+
+/**
  *  @brief  从逻辑块位图分配一位
  *  @param  dev  设备号
  *  @return  磁盘块索引
