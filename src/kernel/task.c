@@ -5,6 +5,7 @@
 #include "oak/mm/memory.h"
 #include "oak/mm/paging.h"
 #include "oak/mm/pmm.h"
+#include "oak/syscall.h"
 #include "oak/types.h"
 #include <oak/debug/kassert.h>
 #include <oak/mm/vmm.h>
@@ -75,6 +76,9 @@ static task_t *build_basic_task(target_t target, const char *name, u32 priority,
     task->user_heap.max_addr = (void *)KERNEL_MEM_END;
     task->iroot = inode_get_root_inode();
     task->ipwd = inode_get_root_inode();
+    task->ipwd->count += 2;
+    task->pwd = (void *)pmm_alloc_kpage();
+    strcpy(task->pwd, "/");
     task->umask = 0022; // 对应 0755
     task->magic = OAK_MAGIC;
 
@@ -364,6 +368,20 @@ pid_t task_fork() {
     // 拷贝页目录
     child_task->pde = (u32)paging_copy_pde();
 
+    child_task->pwd = (char *)pmm_alloc_kpage();
+    strncpy(child_task->pwd, curr_task->pwd, PAGE_SIZE);
+
+    curr_task->ipwd->count++;
+    curr_task->iroot->count++;
+
+    // 文件引用加 1
+    for (size_t i = 0; i <= TASK_FILE_NR; i++) {
+        file_t *file = child_task->files[i];
+        if (file) {
+            file->count++;
+        }
+    }
+
     // 构造子进程内核栈
     u32 addr = (u32)child_task + PAGE_SIZE;
     addr -= sizeof(intr_context_t);
@@ -400,6 +418,18 @@ void task_exit(int status) {
     curr_task->status = status;
 
     paging_free_pde();
+
+    pmm_free_kpage((void *)curr_task->pwd);
+    inode_free(curr_task->ipwd);
+    inode_free(curr_task->iroot);
+
+    // 关闭文件
+    for (size_t i = 0; i <= TASK_FILE_NR; i++) {
+        file_t *file = curr_task->files[i];
+        if (file) {
+            close(i);
+        }
+    }
 
     for (size_t i = 2; i < NR_TASKS; i++) {
         task_t *child_task = task_table[i];

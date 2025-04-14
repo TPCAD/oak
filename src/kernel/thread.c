@@ -26,7 +26,7 @@ void user_init_thread() {
     fd_t fd;
     int len = 0;
     fd = open("/hello.txt", O_RDWR, 0755);
-    // lseek(fd, 5, SEEK_END);
+    lseek(fd, 5, SEEK_END);
     len = write(fd, buf, sizeof(buf));
     close(fd);
 
