@@ -222,7 +222,7 @@ void buffer_write(buffer_t *buf) {
  *  @param  buffer_t 指针
  */
 void buffer_release(buffer_t *buf) {
-    if (buf) {
+    if (!buf) {
         return;
     }
 
