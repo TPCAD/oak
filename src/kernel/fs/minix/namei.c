@@ -3,7 +3,7 @@
 #include "oak/debug/kdebug.h"
 #include "oak/fs/minix.h"
 #include "oak/fs/stat.h"
-#include "oak/kprintf.h"
+#include "oak/mm/memory.h"
 #include "oak/task.h"
 #include "oak/types.h"
 #include <oak/string.h>
@@ -301,19 +301,21 @@ inode_t *namei(char *pathname) {
     return inode;
 }
 
-#include <oak/task.h>
+#include "oak/mm/pmm.h"
 
 void dir_test() {
-    char pathname[] = "/";
-    char *name = NULL;
-    inode_t *inode = named(pathname, &name);
-    inode_free(inode);
-    inode = namei("/home/hello.txt");
-    KDEBUG("find inode %d\n", inode->idx);
-    buffer_t *buf = buffer_read(inode->dev, inode->inode->zone[0]);
-    kprintf("%s\n", buf->data);
-    inode_free(inode);
-    inode = namei("/dev/");
-    KDEBUG("find inode %d\n", inode->idx);
-    inode_free(inode);
+    inode_t *inode = namei("/home/../hello.txt");
+
+    char *buf = (char *)pmm_alloc_kpage();
+    int i = inode_read(inode, buf, 1024, 0);
+
+    KDEBUG("content: %s\n", buf);
+
+    memset(buf, 'A', PAGE_SIZE);
+    inode_write(inode, buf, PAGE_SIZE, 0);
+    KDEBUG("write 1024 bytes\n");
+
+    memset(buf, 'B', PAGE_SIZE);
+    inode_write(inode, buf, PAGE_SIZE, PAGE_SIZE);
+    KDEBUG("write 1024 bytes\n");
 }

@@ -1,9 +1,13 @@
 #include "oak/bitmap.h"
 #include "oak/debug/kassert.h"
 #include "oak/debug/kdebug.h"
+#include "oak/fs/stat.h"
 #include "oak/list.h"
+#include "oak/types.h"
 #include <oak/buffer.h>
 #include <oak/fs/minix.h>
+#include <oak/stdlib.h>
+#include <oak/string.h>
 #include <oak/syscall.h>
 
 #define INODE_NR 64
@@ -127,6 +131,103 @@ void inode_free(inode_t *inode) {
     list_remove(&inode->node);
 
     free_inode(inode);
+}
+
+/**
+ *  @brief  读取 inode 对应的数据到缓存
+ *  @param  inode  要读取的 inode
+ *  @param  buf  缓存
+ *  @param  len  要读取的字节数
+ *  @param  offset  读取起始位置
+ *  @return  读取的字节数
+ */
+int inode_read(inode_t *inode, char *buf, u32 len, i32 offset) {
+    // 文件或目录
+    kassert(ISFILE(inode->inode->mode) || ISDIR(inode->inode->mode));
+
+    // 偏移量大于文件大小
+    if (offset >= inode->inode->size) {
+        return EOF;
+    }
+
+    u32 begin = offset;
+    u32 left = MIN(len, inode->inode->size - offset);
+    while (left) {
+        u32 nr = inode_calc_block(inode, offset / BLOCK_SIZE, false);
+        kassert(nr);
+        // 将文件块读入缓存
+        buffer_t *data_buf = buffer_read(inode->dev, nr);
+        // 文件块中的偏移量
+        u32 start = offset % BLOCK_SIZE;
+        // 在当前文件块中读取的字符数
+        u32 chars = MIN(BLOCK_SIZE - start, left);
+        // 更新偏移量和剩余字符数
+        offset += chars;
+        left -= chars;
+        // 文件块中的偏移指针
+        char *ptr = data_buf->data + start;
+        memcpy(buf, ptr, chars);
+        // 更新缓存位置
+        buf += chars;
+        // 释放文件块
+        buffer_release(data_buf);
+    }
+
+    inode->atime = time();
+    return offset - begin;
+}
+
+/**
+ *  @brief  写入缓存数据到对应的 inode
+ *  @param  inode  要写入的 inode
+ *  @param  buf  缓存
+ *  @param  len  要写入的字节数
+ *  @param  offset  写入起始位置
+ *  @return  写入的字节数
+ *
+ *  不允许写目录
+ */
+int inode_write(inode_t *inode, char *buf, u32 len, i32 offset) {
+    // 文件
+    kassert(ISFILE(inode->inode->mode));
+
+    u32 begin = offset;
+    u32 left = len;
+
+    while (left) {
+        // 不存在则创建
+        u32 nr = inode_calc_block(inode, offset / BLOCK_SIZE, true);
+
+        // 将文件块读入缓存
+        buffer_t *data_buf = buffer_read(inode->dev, nr);
+        data_buf->dirty = true;
+        // 文件块中的偏移量
+        u32 start = offset % BLOCK_SIZE;
+        // 文件块中的偏移指针
+        char *ptr = data_buf->data + start;
+        // 在当前文件块中读取的字符数
+        u32 chars = MIN(BLOCK_SIZE - start, left);
+        // 更新偏移量和剩余字符数
+        offset += chars;
+        left -= chars;
+
+        if (offset > inode->inode->size) {
+            inode->inode->size = offset;
+            inode->buf->dirty = true;
+        }
+
+        memcpy(ptr, buf, chars);
+
+        buf += chars;
+
+        buffer_release(data_buf);
+    }
+
+    inode->inode->mtime = time();
+    inode->atime = inode->inode->mtime;
+
+    buffer_write(inode->buf);
+    return offset - begin;
 }
 
 /**
