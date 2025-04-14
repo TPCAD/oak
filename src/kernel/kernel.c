@@ -54,13 +54,13 @@ void kernel_init() {
     clock_init();
     time_init();
     kbd_init();
-    task_init();
-    syscall_init();
     ide_init();
     buffer_init();
+    syscall_init();
     inode_init();
     super_init();
     file_init();
+    task_init();
 }
 
 extern void vmm_test();
