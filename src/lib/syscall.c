@@ -169,3 +169,28 @@ int link(char *oldname, char *newname) {
  *  删除链接
  */
 int unlink(char *filename) { return _syscall1(SYS_NR_UNLINK, (u32)filename); }
+
+/**
+ *  @brief  5 号系统调用
+ *
+ *  打开文件
+ */
+fd_t open(char *filename, int flags, int mode) {
+    return _syscall3(SYS_NR_OPEN, (u32)filename, (u32)flags, (u32)mode);
+}
+
+/**
+ *  @brief  8 号系统调用
+ *
+ *  创建并打开文件
+ */
+fd_t create(char *filename, int mode) {
+    return _syscall2(SYS_NR_CREAT, (u32)filename, (u32)mode);
+}
+
+/**
+ *  @brief  6 号系统调用
+ *
+ *  关闭文件
+ */
+void close(fd_t fd) { _syscall1(SYS_NR_CLOSE, (u32)fd); }

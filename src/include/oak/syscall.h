@@ -68,4 +68,8 @@ int rmdir(char *pathname);
 int link(char *oldname, char *newname);
 int unlink(char *filename);
 
+fd_t open(char *filename, int flags, int mode);
+fd_t creat(char *filename, int mode);
+void close(fd_t fd);
+
 #endif // !OAK_SYSCALL_H

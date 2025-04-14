@@ -1,4 +1,5 @@
 #include "oak/debug/kdebug.h"
+#include "oak/fs/minix.h"
 #include <oak/cpu.h>
 #include <oak/kprintf.h>
 #include <oak/stdio.h>
@@ -20,6 +21,10 @@ void idle_thread() {
 void user_init_thread() {
     u32 count = 0;
     // test();
+    printf("open file\n");
+    fd_t fd = open("/hello.txt", O_CREAT | O_RDWR, 0755);
+    close(fd);
+    printf("close file\n");
     while (true) {
         BMB;
 
@@ -44,7 +49,7 @@ void init_thread() {
 u32 test_thread() {
     cpu_set_intr_state(true);
     // kprintf("test started of task %d\n", getpid());
-    test();
+    // test();
     // kprintf("test finished of task %d\n", getpid());
 
     u32 count = 0;
