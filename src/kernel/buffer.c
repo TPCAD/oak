@@ -185,15 +185,18 @@ buffer_t *buffer_read(u32 dev, u32 block) {
     buffer_t *buf = search_block(dev, block);
     kassert(buf != NULL);
     if (buf->valid) {
-        buf->count++;
         return buf;
     }
 
-    vdevice_request(buf->dev, buf->data, BLOCK_SECS, buf->block * BLOCK_SECS, 0,
-                    REQ_READ);
+    lock_acquire(&buf->lock);
+    if (!buf->valid) {
+        vdevice_request(buf->dev, buf->data, BLOCK_SECS,
+                        buf->block * BLOCK_SECS, 0, REQ_READ);
+        buf->dirty = false;
+        buf->valid = true;
+    }
+    lock_release(&buf->lock);
 
-    buf->dirty = false;
-    buf->valid = true;
     return buf;
 }
 
@@ -225,11 +228,9 @@ void buffer_release(buffer_t *buf) {
     if (!buf) {
         return;
     }
-    if (buf->dirty)
-    {
+    if (buf->dirty) {
         buffer_write(buf);
     }
-    
 
     buf->count--;
     kassert(buf->count >= 0);
