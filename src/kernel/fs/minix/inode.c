@@ -35,7 +35,7 @@ static void free_inode(inode_t *inode) {
     inode->dev = -1;
 }
 
-inode_t *inode_get_root_inode() { return inode_table; }
+inode_t *inode_get_root_inode() { return (inode_t*)inode_table; }
 
 /**
  *  @brief  计算 inode 所在磁盘块号

@@ -212,3 +212,26 @@ void close(fd_t fd) { _syscall1(SYS_NR_CLOSE, (u32)fd); }
 int lseek(fd_t fd, i32 offset, int whence) {
     return _syscall3(SYS_NR_LSEEK, fd, offset, whence);
 }
+
+/**
+ *  @brief  183 号系统调用
+ *
+ *  获取当前工作目录
+ */
+char *getcwd(char *buf, size_t size) {
+    return (char *)_syscall2(SYS_NR_GETCWD, (u32)buf, (u32)size);
+}
+
+/**
+ *  @brief  12 号系统调用
+ *
+ *  修改进程工作目录
+ */
+int chdir(char *pathname) { return _syscall1(SYS_NR_CHDIR, (u32)pathname); }
+
+/**
+ *  @brief  19 号系统调用
+ *
+ *  修改进程根目录
+ */
+int chroot(char *pathname) { return _syscall1(SYS_NR_CHROOT, (u32)pathname); }

@@ -93,6 +93,7 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	mkdir -p /mnt/dev
 	mkdir -p /mnt/mnt
 	mkdir -p /mnt/home
+	mkdir -p /mnt/d1/d2/d3
 	echo "hello oak from root directory!" > /mnt/hello.txt
 	echo "hello oak from home directory!" > /mnt/home/hello.txt
 	# 卸载镜像文件

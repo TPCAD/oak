@@ -74,4 +74,8 @@ int read(fd_t fd, char *buf, int len);
 int write(fd_t fd, char *buf, int len);
 int lseek(fd_t fd, i32 offset, int whence);
 
+char *getcwd(char *buf, size_t size);
+int chdir(char *pathname);
+int chroot(char *pathname);
+
 #endif // !OAK_SYSCALL_H

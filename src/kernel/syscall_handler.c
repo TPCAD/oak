@@ -63,6 +63,10 @@ extern int file_read(fd_t fd, char *buf, int len);
 extern int file_write(fd_t fd, char *buf, int len);
 int file_lseek(fd_t fd, i32 offset, whence_t whence);
 
+int task_chdir(char *pathname);
+int task_chroot(char *pathname);
+char *task_getcwd(char *buf, size_t size);
+
 void syscall_init() {
     for (size_t i = 0; i < SYSCALL_SIZE; i++) {
         syscall_table[i] = default_syscall;
@@ -89,4 +93,7 @@ void syscall_init() {
     syscall_table[SYS_NR_CREAT] = file_create;
     syscall_table[SYS_NR_CLOSE] = file_close;
     syscall_table[SYS_NR_LSEEK] = file_lseek;
+    syscall_table[SYS_NR_CHDIR] = task_chdir;
+    syscall_table[SYS_NR_CHROOT] = task_chroot;
+    syscall_table[SYS_NR_GETCWD] = task_getcwd;
 }

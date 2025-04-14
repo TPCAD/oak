@@ -201,6 +201,64 @@ static char *strrsep(const char *str) {
 }
 
 /**
+ *  @brief  计算 @a pathname 的绝对路径
+ *  @return  return
+ */
+void abspath(char *pwd, const char *pathname) {
+    char *cur = NULL;
+    char *ptr = NULL;
+    if (IS_SEPARATOR(pathname[0])) {
+        cur = pwd + 1;
+        *cur = 0;
+        pathname++;
+    } else {
+        cur = strrsep(pwd) + 1;
+        *cur = 0;
+    }
+
+    while (pathname[0]) {
+        ptr = strsep(pathname);
+        if (!ptr) {
+            break;
+        }
+
+        int len = (ptr - pathname) + 1;
+        *ptr = '/';
+        if (!memcmp(pathname, "./", 2)) {
+            /* code */
+        } else if (!memcmp(pathname, "../", 3)) {
+            if (cur - 1 != pwd) {
+                *(cur - 1) = 0;
+                cur = strrsep(pwd) + 1;
+                *cur = 0;
+            }
+        } else {
+            strncpy(cur, pathname, len + 1);
+            cur += len;
+        }
+        pathname += len;
+    }
+
+    if (!pathname[0])
+        return;
+
+    if (!strcmp(pathname, "."))
+        return;
+
+    if (strcmp(pathname, "..")) {
+        strcpy(cur, pathname);
+        cur += strlen(pathname);
+        *cur = '/';
+        return;
+    }
+    if (cur - 1 != pwd) {
+        *(cur - 1) = 0;
+        cur = strrsep(pwd) + 1;
+        *cur = 0;
+    }
+}
+
+/**
  *  @brief  获取路径父目录的 inode
  *  @param  pathname  路径
  *  @param  next

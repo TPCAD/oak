@@ -1,5 +1,6 @@
 #include "oak/cpu.h"
 #include "oak/fs/minix.h"
+#include "oak/fs/stat.h"
 #include "oak/gdt.h"
 #include "oak/list.h"
 #include "oak/mm/memory.h"
@@ -529,6 +530,64 @@ void task_free_fd(task_t *task, fd_t fd) {
         return;
     kassert(fd < TASK_FILE_NR);
     task->files[fd] = NULL;
+}
+
+/**
+ *  @brief  获取进程当前工作目录
+ *  @return  return
+ */
+char *task_getcwd(char *buf, size_t size) {
+    task_t *curr_task = task_current_running();
+    strncpy(buf, curr_task->pwd, size);
+    return buf;
+}
+
+extern void abspath(char *pwd, const char *pathname);
+/**
+ *  @brief  更改进程工作目录
+ *  @param  pathname  目录路径
+ *  @return  return
+ */
+int task_chdir(char *pathname) {
+    task_t *curr_task = task_current_running();
+    inode_t *inode = namei(pathname);
+    if (!inode)
+        goto rollback;
+    if (!ISDIR(inode->inode->mode) || inode == curr_task->ipwd)
+        goto rollback;
+
+    abspath(curr_task->pwd, pathname);
+
+    inode_free(curr_task->ipwd);
+    curr_task->ipwd = inode;
+    return 0;
+
+rollback:
+    inode_free(inode);
+    return EOF;
+}
+
+/**
+ *  @brief  更改进程根目录
+ *  @param  pathname  目录路径
+ *  @return  return
+ */
+int task_chroot(char *pathname) {
+    task_t *curr_task = task_current_running();
+    inode_t *inode = namei(pathname);
+
+    if (!inode)
+        goto rollback;
+    if (!ISDIR(inode->inode->mode) || inode == curr_task->iroot)
+        goto rollback;
+
+    inode_free(curr_task->iroot);
+    curr_task->iroot = inode;
+    return 0;
+
+rollback:
+    inode_free(inode);
+    return EOF;
 }
 
 extern void idle_thread();
