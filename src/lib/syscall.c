@@ -72,11 +72,20 @@ void yield() { _syscall0(SYS_NR_YIELD); }
 void sleep(u32 ms) { _syscall1(SYS_NR_SLEEP, ms); }
 
 /**
+ *  @brief  3 号系统调用
+ *
+ *  向文件写入字符串
+ */
+int read(fd_t fd, char *buf, int len) {
+    return _syscall3(SYS_NR_READ, fd, (u32)buf, len);
+}
+
+/**
  *  @brief  4 号系统调用
  *
  *  向文件写入字符串
  */
-i32 write(fd_t fd, char *buf, u32 len) {
+int write(fd_t fd, char *buf, int len) {
     return _syscall3(SYS_NR_WRITE, fd, (u32)buf, len);
 }
 

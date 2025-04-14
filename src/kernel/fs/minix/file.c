@@ -1,3 +1,4 @@
+#include "oak/vdevice.h"
 #include <oak/debug/kassert.h>
 #include <oak/fs/minix.h>
 #include <oak/task.h>
@@ -91,6 +92,70 @@ void file_close(fd_t fd) {
     kassert(file->inode);
     file_free_table(file);
     task_free_fd(curr_task, fd);
+}
+
+/**
+ *  @brief  系统调用读文件
+ *  @param  fd  文件号
+ *  @param  buf  缓冲区
+ *  @param  count  读的字节数
+ *  @return  return
+ */
+int file_read(fd_t fd, char *buf, int count) {
+    if (fd == stdin) {
+        vdevice_t *device = vdevice_search(VDEV_KEYBOARD, 0);
+        return vdevice_read(device->dev, buf, count, 0, 0);
+    }
+
+    // 文件必须已打开
+    task_t *curr_task = task_current_running();
+    file_t *file = curr_task->files[fd];
+    kassert(file);
+    kassert(count > 0);
+
+    // 无写权限
+    if ((file->flags & O_ACCMODE) == O_WRONLY)
+        return EOF;
+
+    inode_t *inode = file->inode;
+    int len = inode_read(inode, buf, count, file->offset);
+    // 更新文件偏移值
+    if (len != EOF) {
+        file->offset += len;
+    }
+    return len;
+}
+
+/**
+ *  @brief  系统调用写文件
+ *  @param  fd  文件号
+ *  @param  buf  缓冲区
+ *  @param  count  写的字节数
+ *  @return  return
+ */
+int file_write(unsigned int fd, char *buf, int count) {
+    if (fd == stdout || fd == stderr) {
+        vdevice_t *device = vdevice_search(VDEV_CONSOLE, 0);
+        return vdevice_write(device->dev, buf, count, 0, 0);
+    }
+
+    task_t *curr_task = task_current_running();
+    file_t *file = curr_task->files[fd];
+    kassert(file);
+    kassert(count > 0);
+
+    // 文件只读
+    if ((file->flags & O_ACCMODE) == O_RDONLY)
+        return EOF;
+
+    inode_t *inode = file->inode;
+    int len = inode_write(inode, buf, count, file->offset);
+    // 更新文件偏移值
+    if (len != EOF) {
+        file->offset += len;
+    }
+
+    return len;
 }
 
 void file_init() {

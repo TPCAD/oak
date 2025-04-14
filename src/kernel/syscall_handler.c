@@ -41,16 +41,6 @@ static u32 test_syscall() {
     return 255;
 }
 
-i32 syscall_write(fd_t fd, char *buf, u32 len) {
-    if (fd == stdout || fd == stderr) {
-        return vdevice_write((vdevice_search(VDEV_CONSOLE, 0))->dev, buf, len,
-                             0, 0);
-    }
-
-    kpanic("[intr] Not implemented file descriptor\n");
-    return 0;
-}
-
 extern void task_yield();
 extern void task_sleep(u32 ms);
 extern i32 dmm_brk(void *addr);
@@ -69,6 +59,8 @@ extern int file_unlink(char *pathname);
 extern fd_t file_open(char *filename, int flags, int mode);
 extern fd_t file_create(char *filename, int mode);
 extern void file_close(fd_t fd);
+extern int file_read(fd_t fd, char *buf, int len);
+extern int file_write(fd_t fd, char *buf, int len);
 
 void syscall_init() {
     for (size_t i = 0; i < SYSCALL_SIZE; i++) {
@@ -78,7 +70,8 @@ void syscall_init() {
     syscall_table[SYS_NR_TEST] = test_syscall;
     syscall_table[SYS_NR_YIELD] = task_yield;
     syscall_table[SYS_NR_SLEEP] = task_sleep;
-    syscall_table[SYS_NR_WRITE] = syscall_write;
+    syscall_table[SYS_NR_WRITE] = file_write;
+    syscall_table[SYS_NR_READ] = file_read;
     syscall_table[SYS_NR_BRK] = dmm_brk;
     syscall_table[SYS_NR_GETPID] = task_getpid;
     syscall_table[SYS_NR_GETPPID] = task_getppid;

@@ -48,7 +48,6 @@ typedef enum syscall_t {
 u32 test();
 void yield();
 void sleep(u32 ms);
-i32 write(fd_t fd, char *buf, u32 len);
 i32 brk(void *addr);
 
 pid_t getpid();
@@ -71,5 +70,7 @@ int unlink(char *filename);
 fd_t open(char *filename, int flags, int mode);
 fd_t creat(char *filename, int mode);
 void close(fd_t fd);
+int read(fd_t fd, char *buf, int len);
+int write(fd_t fd, char *buf, int len);
 
 #endif // !OAK_SYSCALL_H
