@@ -185,6 +185,7 @@ buffer_t *buffer_read(u32 dev, u32 block) {
     buffer_t *buf = search_block(dev, block);
     kassert(buf != NULL);
     if (buf->valid) {
+        buf->count++;
         return buf;
     }
 
