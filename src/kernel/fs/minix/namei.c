@@ -274,6 +274,11 @@ failure:
     return NULL;
 }
 
+/**
+ *  @brief  获取路径的 inode
+ *  @param  pathname  路径
+ *  @return  路径 inode
+ */
 inode_t *namei(char *pathname) {
     char *next = NULL;
     // 寻找父目录 inode
