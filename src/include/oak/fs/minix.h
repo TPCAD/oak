@@ -25,6 +25,11 @@
 #define INDIRECT2_BLOCKS (INDIRECT1_BLOCKS * INDIRECT1_BLOCKS)
 #define TOTAL_BLOCKS (DIREC_BLOCKS + INDIRECT1_BLOCKS + INDIRECT2_BLOCKS)
 
+#define SEPARATOR1 '/'  // 目录分隔符 1
+#define SEPARATOR2 '\\' // 目录分隔符 2
+#define IS_SEPARATOR(c)                                                        \
+    ((c) == SEPARATOR1 || (c) == SEPARATOR2) // 字符是否位目录分隔符
+
 typedef struct inode_desc_t {
     u16 mode;    // 文件类型和属性（rwx）
     u16 uid;     // 用户 id（文件拥有者标识符）

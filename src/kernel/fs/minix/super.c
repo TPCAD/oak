@@ -95,14 +95,6 @@ static void mount_root() {
     root->iroot = inode_search(vdev->dev, 1);
     root->imount = inode_search(vdev->dev, 1);
 
-    u32 idx = 0;
-    inode_t *inode = inode_search(vdev->dev, 1);
-
-    idx = inode_calc_block(inode, 3, true);
-    idx = inode_calc_block(inode, 7 + 7, true);
-    idx = inode_calc_block(inode, 7 + 512 * 3 + 510, true);
-
-    inode_free(inode);
 }
 
 void super_init() {

@@ -23,17 +23,10 @@ static void default_syscall() {
     kpanic("[intr] Syscall isn't implemented...\n");
 }
 
-extern ide_ctrl_t controllers[2];
+extern void dir_test();
 static u32 test_syscall() {
     // KDEBUG("syscall test...\n");
-
-    buffer_t *buf = buffer_read(vdevice_search(VDEV_IDE_DISK, 0)->dev, 0);
-    char *data = buf->data + SECTOR_SIZE;
-    memset(data, task_current_running()->pid, SECTOR_SIZE);
-    buf->dirty = true;
-    buffer_write(buf);
-
-    buffer_release(buf);
+    dir_test();
 
     return 255;
 }

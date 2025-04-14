@@ -113,6 +113,10 @@ void inode_free(inode_t *inode) {
         return;
     }
 
+    if (inode->buf->dirty) {
+        buffer_write(inode->buf);
+    }
+
     inode->count--;
     if (inode->count) {
         return;
