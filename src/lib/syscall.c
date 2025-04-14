@@ -153,3 +153,19 @@ int mkdir(char *pathname, int mode) {
  *  删除目录
  */
 int rmdir(char *pathname) { return _syscall1(SYS_NR_RMDIR, (u32)pathname); }
+
+/**
+ *  @brief  9 号系统调用
+ *
+ *  创建链接
+ */
+int link(char *oldname, char *newname) {
+    return _syscall2(SYS_NR_LINK, (u32)oldname, (u32)newname);
+}
+
+/**
+ *  @brief  10 号系统调用
+ *
+ *  删除链接
+ */
+int unlink(char *filename) { return _syscall1(SYS_NR_UNLINK, (u32)filename); }

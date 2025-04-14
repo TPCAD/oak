@@ -46,9 +46,9 @@ u32 test_thread() {
     // kprintf("test started of task %d\n", getpid());
     // test();
     // kprintf("test finished of task %d\n", getpid());
-    mkdir("/world.txt", 0755);
-    mkdir("/test", 0755);
-    rmdir("/test");
+    link("/hello.txt", "/world.txt");
+    unlink("/hello.txt");
+
     u32 count = 0;
     while (true) {
         BMB;

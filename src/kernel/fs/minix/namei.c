@@ -511,6 +511,134 @@ rollback:
     return ret;
 }
 
+/**
+ *  @brief  创建文件硬链接
+ *  @param  oldname  原文件路径
+ *  @param  newname  新文件路径
+ *  @return  return
+ */
+int file_link(char *oldname, char *newname) {
+    int ret = EOF;
+    buffer_t *buf = NULL;
+    inode_t *dir = NULL;
+    inode_t *inode = namei(oldname);
+    // 文件不存在
+    if (!inode)
+        goto rollback;
+
+    // 不支持链接目录
+    if (ISDIR(inode->inode->mode))
+        goto rollback;
+
+    char *next = NULL;
+    dir = named(newname, &next);
+    // 父目录不存在
+    if (!dir)
+        goto rollback;
+
+    // 文件名为空
+    if (!(*next))
+        goto rollback;
+
+    if (dir->dev != inode->dev)
+        goto rollback;
+
+    // 父目录无写权限
+    if (!permission(dir, P_WRITE))
+        goto rollback;
+
+    char *name = next;
+    dentry_t *entry;
+
+    // 在父目录 inode 寻找文件
+    buf = find_entry(&dir, name, &next, &entry);
+    if (buf) // 文件已存在
+        goto rollback;
+
+    // 创建新文件 dentry
+    buf = add_entry(dir, name, &entry);
+    entry->nr = inode->idx;
+    buf->dirty = true;
+
+    // inode 链接加 1
+    inode->inode->nlinks++;
+    inode->ctime = time();
+    inode->buf->dirty = true;
+    ret = 0;
+
+rollback:
+    buffer_release(buf);
+    inode_free(inode);
+    inode_free(dir);
+    return ret;
+}
+
+/**
+ *  @brief  删除文件硬链接
+ *  @param  filename  文件路径
+ *  @return  return
+ */
+int file_unlink(char *filename) {
+    int ret = EOF;
+    char *next = NULL;
+    inode_t *inode = NULL;
+    buffer_t *buf = NULL;
+    inode_t *dir = named(filename, &next);
+    // 父目录不存在
+    if (!dir)
+        goto rollback;
+
+    // 目录名为空
+    if (!(*next))
+        goto rollback;
+
+    // 父目录无写权限
+    if (!permission(dir, P_WRITE))
+        goto rollback;
+
+    char *name = next;
+    dentry_t *entry;
+    buf = find_entry(&dir, name, &next, &entry);
+    if (!buf) // 目录项不存在
+        goto rollback;
+
+    inode = inode_search(dir->dev, entry->nr);
+    if (ISDIR(inode->inode->mode))
+        goto rollback;
+
+    task_t *curr_task = task_current_running();
+    // 无删除权限或不是文件拥有者
+    if ((inode->inode->mode & ISVTX) && curr_task->uid != inode->inode->uid)
+        goto rollback;
+
+    // 待删除文件不存在
+    if (!inode->inode->nlinks) {
+        KDEBUG("deleting non exists file (%04x:%d)\n", inode->dev, inode->idx);
+    }
+
+    // 删除 dentry
+    entry->nr = 0;
+    buf->dirty = true;
+
+    // 减少硬链接
+    inode->inode->nlinks--;
+    inode->buf->dirty = true;
+
+    // 硬链接为 0，删除 inode
+    if (inode->inode->nlinks == 0) {
+        inode_truncate(inode);
+        inode_free_bit(inode->dev, inode->idx);
+    }
+
+    ret = 0;
+
+rollback:
+    buffer_release(buf);
+    inode_free(inode);
+    inode_free(dir);
+    return ret;
+}
+
 #include "oak/mm/pmm.h"
 
 void dir_test() {

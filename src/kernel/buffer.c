@@ -225,6 +225,11 @@ void buffer_release(buffer_t *buf) {
     if (!buf) {
         return;
     }
+    if (buf->dirty)
+    {
+        buffer_write(buf);
+    }
+    
 
     buf->count--;
     kassert(buf->count >= 0);

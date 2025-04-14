@@ -55,6 +55,9 @@ extern mode_t syscall_umask(mode_t mask);
 extern int dentry_remove(char *pathname);
 extern int dentry_create(char *pathname, int mode);
 
+int file_link(char *oldname, char *newname);
+int file_unlink(char *pathname);
+
 void syscall_init() {
     for (size_t i = 0; i < SYSCALL_SIZE; i++) {
         syscall_table[i] = default_syscall;
@@ -74,4 +77,6 @@ void syscall_init() {
     syscall_table[SYS_NR_UMASK] = syscall_umask;
     syscall_table[SYS_NR_MKDIR] = dentry_create;
     syscall_table[SYS_NR_RMDIR] = dentry_remove;
+    syscall_table[SYS_NR_LINK] = file_link;
+    syscall_table[SYS_NR_UNLINK] = file_unlink;
 }
