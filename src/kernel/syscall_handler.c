@@ -1,4 +1,5 @@
 #include "oak/buffer.h"
+#include "oak/fs/minix.h"
 #include "oak/task.h"
 #include <oak/debug/kassert.h>
 #include <oak/ide.h>
@@ -26,7 +27,16 @@ static void default_syscall() {
 extern void dir_test();
 static u32 test_syscall() {
     // KDEBUG("syscall test...\n");
-    dir_test();
+    inode_t *inode = inode_open("/world.txt", O_RDWR | O_CREAT, 0755);
+    kassert(inode);
+
+    char *buf = (char *)pmm_alloc_kpage();
+    int i = inode_read(inode, buf, 1024, 0);
+
+    memset(buf, 'A', 4096);
+    inode_write(inode, buf, 4096, 0);
+
+    inode_free(inode);
 
     return 255;
 }

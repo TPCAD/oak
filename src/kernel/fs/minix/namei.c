@@ -49,7 +49,7 @@ static bool match_name(const char *name, const char *entry_name, char **next) {
  *  @param  name  要寻找的文件/目录路径
  *  @param  next
  *  @param  result
- *  @return  找到的文件/目录的 buffer
+ *  @return  dir 目录包含该文件的逻辑块 buffer
  *
  *  查找 dir 目录下是否是 name 路径的一部分，若是则返回对应部分的 buffer，
  *  @a result 则返回对应的 dentry。
@@ -637,6 +637,89 @@ rollback:
     inode_free(inode);
     inode_free(dir);
     return ret;
+}
+
+/**
+ *  @brief  打开 inode
+ *  @param  pathname  路径
+ *  @param  flag  标志
+ *  @param  mode  创建文件的 mode
+ *  @return  要打开的 inode
+ *
+ *  获取对应 inode，并根据标志进行特殊处理
+ */
+inode_t *inode_open(char *pathname, int flag, int mode) {
+    inode_t *dir = NULL;
+    inode_t *inode = NULL;
+    buffer_t *buf = NULL;
+    dentry_t *entry = NULL;
+    char *next = NULL;
+    // 父目录 inode
+    dir = named(pathname, &next);
+    // 父目录不存在
+    if (!dir)
+        goto rollback;
+    // 文件名为空
+    if (!*next)
+        goto rollback;
+
+    if ((flag & O_TRUNC) && ((flag & O_ACCMODE) == O_RDONLY))
+        flag |= O_RDWR;
+
+    char *name = next;
+    // 寻找文件 dentry
+    buf = find_entry(&dir, name, &next, &entry);
+    // 文件 dentry 存在，获取 inode
+    if (buf) {
+        inode = inode_search(dir->dev, entry->nr);
+        goto makeup;
+    }
+
+    // 文件不存在，且不创建
+    if (!(flag & O_CREAT))
+        goto rollback;
+    // 父目录无写权限
+    if (!permission(dir, P_WRITE))
+        goto rollback;
+
+    // 文件不存在，创建新 dentry
+    buf = add_entry(dir, name, &entry);
+    entry->nr = inode_alloc_bit(dir->dev);
+    inode = inode_search(dir->dev, entry->nr);
+
+    task_t *curr_task = task_current_running();
+
+    mode &= (0777 & ~curr_task->umask);
+    mode |= IFREG;
+
+    inode->inode->uid = curr_task->uid;
+    inode->inode->gid = curr_task->gid;
+    inode->inode->mode = mode;
+    inode->inode->mtime = time();
+    inode->inode->size = 0;
+    inode->inode->nlinks = 1;
+    inode->buf->dirty = true;
+
+makeup:
+    // inode 是文件或权限不足
+    if (ISDIR(inode->inode->mode) || !permission(inode, flag & O_ACCMODE))
+        goto rollback;
+
+    inode->atime = time();
+
+    // 有截断标志，释放所有数据块
+    if (flag & O_TRUNC)
+        inode_truncate(inode);
+
+    buffer_release(buf);
+    inode_free(dir);
+    return inode;
+
+rollback:
+    buffer_release(buf);
+    inode_free(dir);
+    inode_free(inode);
+    return NULL;
 }
 
 #include "oak/mm/pmm.h"
