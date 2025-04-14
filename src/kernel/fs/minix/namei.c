@@ -1,7 +1,10 @@
 #include "oak/buffer.h"
 #include "oak/debug/kassert.h"
+#include "oak/debug/kdebug.h"
 #include "oak/fs/minix.h"
 #include "oak/fs/stat.h"
+#include "oak/kprintf.h"
+#include "oak/task.h"
 #include "oak/types.h"
 #include <oak/string.h>
 #include <oak/syscall.h>
@@ -133,57 +136,184 @@ static buffer_t *add_entry(inode_t *dir, const char *name, dentry_t **result) {
     };
 }
 
+#define P_EXEC IXOTH
+#define P_READ IROTH
+#define P_WRITE IWOTH
+
+static bool permission(inode_t *inode, u16 mask) {
+    u16 mode = inode->inode->mode;
+    // 硬链接为 0，文件已被删除
+    if (!inode->inode->nlinks)
+        return false;
+
+    // root 用户
+    task_t *curr_task = task_current_running();
+    if (curr_task->uid == KERNEL_USER)
+        return true;
+
+    if (curr_task->uid == inode->inode->uid) {
+        mode >>= 6; // 文件拥有者
+    } else if (curr_task->gid == inode->inode->gid) {
+        mode >>= 3; // 相同用户组
+    }
+
+    // 比较权限
+    if ((mode & mask & 0b111) == mask) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ *  @brief  获取路径第一个分隔符
+ *  @param  str  路径
+ *  @return  指向第一个分隔符的指针
+ */
+static char *strsep(const char *str) {
+    char *ptr = (char *)str;
+    while (true) {
+        if (IS_SEPARATOR(*ptr)) {
+            return ptr;
+        }
+        if (*ptr++ == EOS) {
+            return NULL;
+        }
+    }
+}
+
+/**
+ *  @brief  获取路径最后一个分隔符
+ *  @param  str  路径
+ *  @return  指向最后一个分隔符的指针
+ */
+static char *strrsep(const char *str) {
+    char *last = NULL;
+    char *ptr = (char *)str;
+    while (true) {
+        if (IS_SEPARATOR(*ptr)) {
+            last = ptr;
+        }
+        // 检验是否是最后一个分隔符
+        if (*ptr++ == EOS) {
+            return last;
+        }
+    }
+}
+
+/**
+ *  @brief  获取路径父目录的 inode
+ *  @param  pathname  路径
+ *  @param  next
+ *  @return  父目录 inode
+ */
+inode_t *named(char *pathname, char **next) {
+    inode_t *inode = NULL;
+    task_t *curr_task = task_current_running();
+    char *left = pathname;
+
+    // 跳过根目录
+    if (IS_SEPARATOR(left[0])) {
+        inode = curr_task->iroot;
+        left++;
+    } else if (left[0]) {
+        inode = curr_task->ipwd;
+    } else {
+        return NULL;
+    }
+
+    inode->count++;
+    *next = left;
+
+    // 路径只有一层，根目录或进程工作目录
+    if (!*left) {
+        return inode;
+    }
+
+    char *right = strrsep(left);
+    // 已经没有一个分隔符，当前 inode 就是父目录 inode
+    // right < left ?
+    if (!right || right < left) {
+        return inode;
+    }
+
+    // basename
+    right++;
+    *next = left;
+    dentry_t *entry = NULL;
+    buffer_t *buf = NULL;
+    while (true) {
+        buffer_release(buf);
+
+        // 逐层寻找目录
+        buf = find_entry(&inode, left, next, &entry);
+        if (!buf) {
+            goto failure;
+        }
+
+        u32 dev = inode->dev;
+        inode_free(inode);
+        inode = inode_search(dev, entry->nr);
+        // 不是目录或没有执行权限
+        if (!ISDIR(inode->inode->mode) || !permission(inode, P_EXEC)) {
+            goto failure;
+        }
+        // 找到最后一层
+        if (right == *next) {
+            goto success;
+        }
+        left = *next;
+    }
+
+success:
+    buffer_release(buf);
+    return inode;
+
+failure:
+    buffer_release(buf);
+    inode_free(inode);
+    return NULL;
+}
+
+inode_t *namei(char *pathname) {
+    char *next = NULL;
+    // 寻找父目录 inode
+    inode_t *dir = named(pathname, &next);
+    if (!dir) {
+        return NULL;
+    }
+    // pathname 是目录路径
+    if (!(*next)) {
+        return dir;
+    }
+
+    char *name = next;
+    dentry_t *entry = NULL;
+    // 在父目录 inode 中寻找文件
+    buffer_t *buf = find_entry(&dir, name, &next, &entry);
+    // 文件不存在
+    if (!buf) {
+        inode_free(dir);
+        return NULL;
+    }
+
+    inode_t *inode = inode_search(dir->dev, entry->nr);
+    inode_free(dir);
+    return inode;
+}
+
 #include <oak/task.h>
 
 void dir_test() {
-    task_t *task = task_current_running();
-    inode_t *inode = task->iroot;
-    inode->count++;
-    char *next = NULL;
-    dentry_t *entry = NULL;
-    buffer_t *buf = NULL;
-
-    buf = find_entry(&inode, "hello.txt", &next, &entry);
-    u32 nr = entry->nr;
-    buffer_release(buf);
-
-    buf = add_entry(inode, "world.txt", &entry);
-    entry->nr = nr;
-
-    inode_t *hello = inode_search(inode->dev, nr);
-    hello->inode->nlinks++;
-    hello->buf->dirty = true;
-
+    char pathname[] = "/";
+    char *name = NULL;
+    inode_t *inode = named(pathname, &name);
     inode_free(inode);
-    inode_free(hello);
-    buffer_release(buf);
-
-    // char pathname[] = "/d1/d2/d3/d4";
-    //
-    // u32 dev = inode->dev;
-    // char *name = pathname;
-    // buf = find_entry(&inode, name, &next, &entry);
-    // buffer_release(buf);
-    //
-    // inode_free(inode);
-    // inode = inode_search(dev, entry->nr);
-    //
-    // name = next;
-    // buf = find_entry(&inode, name, &next, &entry);
-    // buffer_release(buf);
-    //
-    // inode_free(inode);
-    // inode = inode_search(dev, entry->nr);
-    //
-    // name = next;
-    // buf = find_entry(&inode, name, &next, &entry);
-    // buffer_release(buf);
-    //
-    // inode_free(inode);
-    // inode = inode_search(dev, entry->nr);
-    //
-    // name = next;
-    // buf = find_entry(&inode, name, &next, &entry);
-    // buffer_release(buf);
-    // inode_free(inode);
+    inode = namei("/home/hello.txt");
+    KDEBUG("find inode %d\n", inode->idx);
+    buffer_t *buf = buffer_read(inode->dev, inode->inode->zone[0]);
+    kprintf("%s\n", buf->data);
+    inode_free(inode);
+    inode = namei("/dev/");
+    KDEBUG("find inode %d\n", inode->idx);
+    inode_free(inode);
 }

@@ -92,7 +92,9 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	mkdir -p /mnt/bin
 	mkdir -p /mnt/dev
 	mkdir -p /mnt/mnt
+	mkdir -p /mnt/home
 	echo "hello oak from root directory!" > /mnt/hello.txt
+	echo "hello oak from home directory!" > /mnt/home/hello.txt
 	# 卸载镜像文件
 	sudo umount /mnt
 	sudo losetup -d /dev/loop0
