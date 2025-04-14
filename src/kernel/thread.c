@@ -43,6 +43,8 @@ void init_thread() {
 
 u32 test_thread() {
     cpu_set_intr_state(true);
+    mode_t mode = umask(0002);
+    kprintf("mode %o\n", mode);
     // kprintf("test started of task %d\n", getpid());
     // test();
     // kprintf("test finished of task %d\n", getpid());

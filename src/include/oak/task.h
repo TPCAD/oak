@@ -29,7 +29,7 @@ typedef struct task_t {
     u32 jiffies;
     char name[TASK_NAME_LEN];
     u32 uid;
-    // u32 gid;
+    u32 gid;
     pid_t pid;
     pid_t ppid;
     u32 pde;
@@ -38,6 +38,7 @@ typedef struct task_t {
     pid_t waitpid;
     struct inode_t *ipwd;  // 进程当前目录 inode program work dir
     struct inode_t *iroot; // 进程根目录
+    u16 umask;             // 进程用户权限
     u32 magic;             // 魔数
 } task_t;
 

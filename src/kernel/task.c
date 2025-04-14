@@ -67,6 +67,7 @@ static task_t *build_basic_task(target_t target, const char *name, u32 priority,
     task->jiffies = 0;
     task->state = TASK_READY;
     task->uid = uid;
+    task->gid = 0;
     task->pde = KERNEL_PAGE_DIR_ADDR;
     // TODO: 用户堆内存管理
     task->user_heap.start_addr = (void *)KERNEL_MEM_END;
@@ -74,6 +75,7 @@ static task_t *build_basic_task(target_t target, const char *name, u32 priority,
     task->user_heap.max_addr = (void *)KERNEL_MEM_END;
     task->iroot = inode_get_root_inode();
     task->ipwd = inode_get_root_inode();
+    task->umask = 0022; // 对应 0755
     task->magic = OAK_MAGIC;
 
     return task;
@@ -488,9 +490,9 @@ void task_init() {
 
     idle_task = build_basic_task(idle_thread, "idle", 1, KERNEL_USER);
     build_basic_task(init_thread, "init", 5, NORMAL_USER);
-    build_basic_task(test_thread, "testA", 5, KERNEL_USER);
-    build_basic_task(test_thread, "testB", 5, KERNEL_USER);
-    build_basic_task(test_thread, "testC", 5, KERNEL_USER);
+    build_basic_task(test_thread, "testA", 5, NORMAL_USER);
+    // build_basic_task(test_thread, "testB", 5, KERNEL_USER);
+    // build_basic_task(test_thread, "testC", 5, KERNEL_USER);
     // build_basic_task(thread_b, "testB", 5, NORMAL_USER);
     // build_basic_task(thread_c, "testC", 5, NORMAL_USER);
 }

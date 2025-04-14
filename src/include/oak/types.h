@@ -32,6 +32,8 @@ typedef i32 pid_t;
 
 typedef u32 time_t;
 
+typedef u16 mode_t;
+
 typedef i32 fd_t;
 typedef enum std_fd_t {
     stdin,

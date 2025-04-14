@@ -60,4 +60,6 @@ pid_t waitpid(pid_t pid, i32 *status);
 
 time_t time();
 
+mode_t umask(mode_t mask);
+
 #endif // !OAK_SYSCALL_H

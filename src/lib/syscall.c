@@ -130,3 +130,10 @@ pid_t waitpid(pid_t pid, i32 *status) {
  *  获取当前时间
  */
 time_t time() { return _syscall0(SYS_NR_TIME); }
+
+/**
+ *  @brief  60 号系统调用
+ *
+ *  获取文件权限掩码
+ */
+mode_t umask(mode_t mask) { return _syscall1(SYS_NR_UMASK, (u32)mask); }
