@@ -158,6 +158,45 @@ int file_write(unsigned int fd, char *buf, int count) {
     return len;
 }
 
+/**
+ *  @brief  设置文件偏移位置
+ *  @param  fd  文件号
+ *  @param  offset  偏移量
+ *  @param  whence  偏移起始位置
+ *  @return  文件偏移位置
+ */
+int file_lseek(fd_t fd, i32 offset, whence_t whence) {
+    kassert(fd < TASK_FILE_NR);
+
+    task_t *curr_task = task_current_running();
+    file_t *file = curr_task->files[fd];
+
+    kassert(file);
+    kassert(file->inode);
+
+    switch (whence) {
+    case SEEK_SET:
+        // 直接设置偏移
+        kassert(offset >= 0);
+        file->offset = offset;
+        break;
+    case SEEK_CUR:
+        // 从当前位置开始偏移
+        kassert(file->offset + offset >= 0);
+        file->offset += offset;
+        break;
+    case SEEK_END:
+        // 从结束位置开始偏移
+        kassert(file->inode->inode->size + offset >= 0);
+        file->offset = file->inode->inode->size + offset;
+        break;
+    default:
+        kpanic("[fs] whence not defined !!!");
+        break;
+    }
+    return file->offset;
+}
+
 void file_init() {
     for (size_t i = 0; i < FILE_NR; i++) {
         file_t *file = &file_table[i];

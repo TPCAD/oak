@@ -203,3 +203,12 @@ fd_t create(char *filename, int mode) {
  *  关闭文件
  */
 void close(fd_t fd) { _syscall1(SYS_NR_CLOSE, (u32)fd); }
+
+/**
+ *  @brief  19 号系统调用
+ *
+ *  设置文件偏移位置
+ */
+int lseek(fd_t fd, i32 offset, int whence) {
+    return _syscall3(SYS_NR_LSEEK, fd, offset, whence);
+}

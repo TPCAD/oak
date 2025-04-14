@@ -61,6 +61,7 @@ extern fd_t file_create(char *filename, int mode);
 extern void file_close(fd_t fd);
 extern int file_read(fd_t fd, char *buf, int len);
 extern int file_write(fd_t fd, char *buf, int len);
+int file_lseek(fd_t fd, i32 offset, whence_t whence);
 
 void syscall_init() {
     for (size_t i = 0; i < SYSCALL_SIZE; i++) {
@@ -87,4 +88,5 @@ void syscall_init() {
     syscall_table[SYS_NR_OPEN] = file_open;
     syscall_table[SYS_NR_CREAT] = file_create;
     syscall_table[SYS_NR_CLOSE] = file_close;
+    syscall_table[SYS_NR_LSEEK] = file_lseek;
 }

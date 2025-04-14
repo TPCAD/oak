@@ -3,6 +3,7 @@
 #include <oak/cpu.h>
 #include <oak/kprintf.h>
 #include <oak/stdio.h>
+#include <oak/string.h>
 #include <oak/syscall.h>
 #include <oak/task.h>
 #include <oak/types.h>
@@ -20,15 +21,13 @@ void idle_thread() {
 
 void user_init_thread() {
     char buf[256];
+    memset(buf, 'A', sizeof(buf));
+
     fd_t fd;
     int len = 0;
     fd = open("/hello.txt", O_RDWR, 0755);
-    len = read(fd, buf, sizeof(buf));
-    printf("hello.txt content: %s length %d\n", buf, len);
-    close(fd);
-
-    fd = open("/world.txt", O_CREAT | O_RDWR, 0755);
-    len = write(fd, buf, len);
+    // lseek(fd, 5, SEEK_END);
+    len = write(fd, buf, sizeof(buf));
     close(fd);
 
     while (true) {
