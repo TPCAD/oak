@@ -36,9 +36,9 @@ typedef struct task_t {
     heap_context_t user_heap;
     int status; // 进程特殊状态，退出状态码
     pid_t waitpid;
-    struct inode_info_t *ipwd;  // 进程当前目录 inode program work dir
-    struct inode_info_t *iroot; // 进程根目录
-    u32 magic;                  // 魔数
+    struct inode_t *ipwd;  // 进程当前目录 inode program work dir
+    struct inode_t *iroot; // 进程根目录
+    u32 magic;             // 魔数
 } task_t;
 
 typedef struct task_frame_t {

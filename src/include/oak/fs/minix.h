@@ -15,8 +15,8 @@
 
 #define BLOCK_BITS (BLOCK_SIZE * 8) // 块位图比特数
 
-#define BLOCK_INODES (BLOCK_SIZE / sizeof(inode_t))    // 块内 inode 数量
-#define BLOCK_DENTRIES (BLOCK_SIZE / sizeof(dentry_t)) // 块内 dentry 数量
+#define BLOCK_INODES (BLOCK_SIZE / sizeof(inode_desc_t)) // 块内 inode 数量
+#define BLOCK_DENTRIES (BLOCK_SIZE / sizeof(dentry_t))   // 块内 dentry 数量
 // 间接块对应的数据块是一个索引数组，一个数据块可以有 512 个索引
 #define BLOCK_INDEXES (BLOCK_SIZE / sizeof(u16)) // 块内索引数
 
@@ -25,7 +25,7 @@
 #define INDIRECT2_BLOCKS (INDIRECT1_BLOCKS * INDIRECT1_BLOCKS)
 #define TOTAL_BLOCKS (DIREC_BLOCKS + INDIRECT1_BLOCKS + INDIRECT2_BLOCKS)
 
-typedef struct inode_t {
+typedef struct inode_desc_t {
     u16 mode;    // 文件类型和属性（rwx）
     u16 uid;     // 用户 id（文件拥有者标识符）
     u32 size;    // 文件大小（字节数）
@@ -33,10 +33,10 @@ typedef struct inode_t {
     u8 gid;      // 组 id(文件拥有者所在的组)
     u8 nlinks;   // 链接数（多少个文件目录项指向该 inode）
     u16 zone[9]; // 直接（0-6）、间接（7）或双重间接（8）逻辑块号
-} inode_t;
+} inode_desc_t;
 
-typedef struct inode_info_t {
-    inode_t *inode;
+typedef struct inode_t {
+    inode_desc_t *inode;
     struct buffer_t *buf;
     u32 dev;
     u32 idx;      // inode 号
@@ -45,9 +45,9 @@ typedef struct inode_info_t {
     time_t ctime; // 修改时间
     list_node_t node;
     u32 mount;
-} inode_info_t;
+} inode_t;
 
-typedef struct super_block_t {
+typedef struct sblk_desc_t {
     u16 inodes;        // 节点数
     u16 zones;         // 逻辑块数
     u16 imap_blocks;   // inode 位图所占用的数据块数
@@ -56,18 +56,18 @@ typedef struct super_block_t {
     u16 log_zone_size; // log2(每逻辑块数据块数)
     u32 max_size;      // 文件最大长度
     u16 magic;         // 文件系统魔数
-} super_block_t;
+} sblk_desc_t;
 
-typedef struct super_block_info_t {
-    super_block_t *sblk;
+typedef struct super_block_t {
+    sblk_desc_t *sblk;
     struct buffer_t *buf;
     struct buffer_t *imaps[IMAP_NR];
     struct buffer_t *zmaps[ZMAP_NR];
     int dev;
-    list_t inode_list;   // 使用中的 inode
-    inode_info_t *iroot; // 根目录 inode
-    inode_info_t *imount;
-} sblk_info_t;
+    list_t inode_list; // 使用中的 inode
+    inode_t *iroot;    // 根目录 inode
+    inode_t *imount;
+} super_block_t;
 
 // 文件目录项结构
 typedef struct dentry_t {
@@ -75,7 +75,7 @@ typedef struct dentry_t {
     char name[NAME_LEN]; // 文件名
 } dentry_t;
 
-sblk_info_t *search_super_block(u32 dev);
+super_block_t *search_super_block(u32 dev);
 
 u32 inode_alloc_bit(u32 dev);
 void inode_free_bit(u32 dev, u32 idx);
@@ -83,11 +83,11 @@ void inode_free_bit(u32 dev, u32 idx);
 u32 block_alloc_bit(u32 dev);
 void block_free_bit(u32 dev, u32 idx);
 
-inode_info_t *inode_search(u32 dev, u32 nr);
-void inode_free(inode_info_t *inode);
+inode_t *inode_search(u32 dev, u32 nr);
+void inode_free(inode_t *inode);
 
-u32 inode_calc_block(inode_info_t *inode, u32 zone_idx, bool create);
+u32 inode_calc_block(inode_t *inode, u32 zone_idx, bool create);
 
-inode_info_t *inode_get_root_inode();
+inode_t *inode_get_root_inode();
 
 #endif // !OAK_MINIX_H

@@ -8,12 +8,12 @@
 
 #define SUPER_NR 16
 
-static sblk_info_t super_table[SUPER_NR]; // 超级块表
-static sblk_info_t *root;                 // 根文件系统
+static super_block_t super_table[SUPER_NR]; // 超级块表
+static super_block_t *root;                 // 根文件系统
 
-static sblk_info_t *search_free_super_block() {
+static super_block_t *search_free_super_block() {
     for (size_t i = 0; i < SUPER_NR; i++) {
-        sblk_info_t *sb = &super_table[i];
+        super_block_t *sb = &super_table[i];
         if (sb->dev == -1) {
             return sb;
         }
@@ -27,9 +27,9 @@ static sblk_info_t *search_free_super_block() {
  *  @param  dev  设备号
  *  @return  超级块信息
  */
-sblk_info_t *search_super_block(u32 dev) {
+super_block_t *search_super_block(u32 dev) {
     for (size_t i = 0; i < SUPER_NR; i++) {
-        sblk_info_t *sb = &super_table[i];
+        super_block_t *sb = &super_table[i];
         if (sb->dev == dev) {
             return sb;
         }
@@ -42,8 +42,8 @@ sblk_info_t *search_super_block(u32 dev) {
  *  @param  dev  设备号
  *  @return  超级块信息
  */
-sblk_info_t *parse_super_block(u32 dev) {
-    sblk_info_t *sb = search_super_block(dev);
+super_block_t *parse_super_block(u32 dev) {
+    super_block_t *sb = search_super_block(dev);
     if (sb) {
         return sb;
     }
@@ -52,7 +52,7 @@ sblk_info_t *parse_super_block(u32 dev) {
 
     buffer_t *buf = buffer_read(dev, 1);
     sb->buf = buf;
-    sb->sblk = (super_block_t *)buf->data;
+    sb->sblk = (sblk_desc_t *)buf->data;
     sb->dev = dev;
 
     kassert(sb->sblk->magic == MINIX1_MAGIC);
@@ -96,7 +96,7 @@ static void mount_root() {
     root->imount = inode_search(vdev->dev, 1);
 
     u32 idx = 0;
-    inode_info_t *inode = inode_search(vdev->dev, 1);
+    inode_t *inode = inode_search(vdev->dev, 1);
 
     idx = inode_calc_block(inode, 3, true);
     idx = inode_calc_block(inode, 7 + 7, true);
@@ -107,7 +107,7 @@ static void mount_root() {
 
 void super_init() {
     for (size_t i = 0; i < SUPER_NR; i++) {
-        sblk_info_t *sb = &super_table[i];
+        super_block_t *sb = &super_table[i];
         sb->dev = -1;
         sb->sblk = NULL;
         sb->buf = NULL;

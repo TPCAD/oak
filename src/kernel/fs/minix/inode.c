@@ -8,15 +8,15 @@
 
 #define INODE_NR 64
 // 系统当前读取到内存的所有 inode（来自不同磁盘）
-static inode_info_t inode_table[INODE_NR];
+static inode_t inode_table[INODE_NR];
 
 /**
  *  @brief  从 inode 表中寻找空闲 inode
  *  @return  空闲 inode
  */
-static inode_info_t *search_free_inode() {
+static inode_t *search_free_inode() {
     for (size_t i = 0; i < INODE_NR; i++) {
-        inode_info_t *inode = &inode_table[i];
+        inode_t *inode = &inode_table[i];
         if (inode->dev == -1) {
             return inode;
         }
@@ -25,13 +25,13 @@ static inode_info_t *search_free_inode() {
     return NULL;
 }
 
-static void free_inode(inode_info_t *inode) {
+static void free_inode(inode_t *inode) {
     kassert(inode != inode_table);
     kassert(inode->count == 0);
     inode->dev = -1;
 }
 
-inode_info_t *inode_get_root_inode() { return inode_table; }
+inode_t *inode_get_root_inode() { return inode_table; }
 
 /**
  *  @brief  计算 inode 所在磁盘块号
@@ -39,7 +39,7 @@ inode_info_t *inode_get_root_inode() { return inode_table; }
  *  @param  nr  inode 号
  *  @return  磁盘块号
  */
-static inline u32 calc_inode_block(sblk_info_t *sb, u32 nr) {
+static inline u32 calc_inode_block(super_block_t *sb, u32 nr) {
     return 2 + sb->sblk->imap_blocks + sb->sblk->zmap_blocks +
            (nr - 1) / BLOCK_INODES;
 }
@@ -50,14 +50,14 @@ static inline u32 calc_inode_block(sblk_info_t *sb, u32 nr) {
  *  @param  nr  inode 号
  *  @return  inode 指针
  */
-static inode_info_t *search_inode(u32 dev, u32 nr) {
-    sblk_info_t *sb = search_super_block(dev);
+static inode_t *search_inode(u32 dev, u32 nr) {
+    super_block_t *sb = search_super_block(dev);
     kassert(sb);
     list_t *list = &sb->inode_list;
 
     for (list_node_t *node = list->head.next; node != &list->tail;
          node = node->next) {
-        inode_info_t *inode = element_entry(inode_info_t, node, node);
+        inode_t *inode = element_entry(inode_t, node, node);
         if (inode->idx == nr) {
             return inode;
         }
@@ -73,15 +73,15 @@ static inode_info_t *search_inode(u32 dev, u32 nr) {
  *
  *  优先从超级块的 inode 链表中寻找，若没有则读取硬盘。
  */
-inode_info_t *inode_search(u32 dev, u32 nr) {
-    inode_info_t *inode = search_inode(dev, nr);
+inode_t *inode_search(u32 dev, u32 nr) {
+    inode_t *inode = search_inode(dev, nr);
     if (inode) {
         inode->count++;
         inode->atime = time();
         return inode;
     }
 
-    sblk_info_t *sb = search_super_block(dev);
+    super_block_t *sb = search_super_block(dev);
     kassert(sb);
 
     kassert(nr <= sb->sblk->inodes);
@@ -96,7 +96,8 @@ inode_info_t *inode_search(u32 dev, u32 nr) {
     buffer_t *buf = buffer_read(inode->dev, block);
     inode->buf = buf;
 
-    inode->inode = &((inode_t *)buf->data)[(inode->idx - 1) % BLOCK_INODES];
+    inode->inode =
+        &((inode_desc_t *)buf->data)[(inode->idx - 1) % BLOCK_INODES];
     inode->ctime = inode->inode->mtime;
     inode->atime = time();
 
@@ -107,7 +108,7 @@ inode_info_t *inode_search(u32 dev, u32 nr) {
  *  @brief  释放内存中的 inode
  *  @param  inode  inode 指针
  */
-void inode_free(inode_info_t *inode) {
+void inode_free(inode_t *inode) {
     if (!inode) {
         return;
     }
@@ -131,7 +132,7 @@ void inode_free(inode_info_t *inode) {
  *  @param  create  是否创建该块
  *  @return  磁盘块号
  */
-u32 inode_calc_block(inode_info_t *inode, u32 zone_idx, bool create) {
+u32 inode_calc_block(inode_t *inode, u32 zone_idx, bool create) {
     kassert(zone_idx >= 0 && zone_idx < TOTAL_BLOCKS);
 
     u16 index = zone_idx;
@@ -220,7 +221,7 @@ reckon:
  *  @return  磁盘块索引
  */
 u32 block_alloc_bit(u32 dev) {
-    sblk_info_t *sb = search_super_block(dev);
+    super_block_t *sb = search_super_block(dev);
     kassert(sb);
 
     buffer_t *buf = NULL;
@@ -250,7 +251,7 @@ u32 block_alloc_bit(u32 dev) {
  *  @param  idx  磁盘索引
  */
 void block_free_bit(u32 dev, u32 idx) {
-    sblk_info_t *sb = search_super_block(dev);
+    super_block_t *sb = search_super_block(dev);
     kassert(sb);
     kassert(idx >= sb->sblk->firstdatazone);
     idx -= sb->sblk->firstdatazone - 1;
@@ -284,7 +285,7 @@ void block_free_bit(u32 dev, u32 idx) {
  *  @return  位图索引
  */
 u32 inode_alloc_bit(u32 dev) {
-    sblk_info_t *sb = search_super_block(dev);
+    super_block_t *sb = search_super_block(dev);
     kassert(sb);
 
     buffer_t *buf = NULL;
@@ -314,7 +315,7 @@ u32 inode_alloc_bit(u32 dev) {
  *  @param  idx  位图索引
  */
 void inode_free_bit(u32 dev, u32 idx) {
-    sblk_info_t *sb = search_super_block(dev);
+    super_block_t *sb = search_super_block(dev);
     kassert(sb);
     kassert(idx < sb->sblk->inodes);
 
@@ -342,7 +343,7 @@ void inode_free_bit(u32 dev, u32 idx) {
 
 void inode_init() {
     for (size_t i = 0; i < INODE_NR; i++) {
-        inode_info_t *inode = &inode_table[i];
+        inode_t *inode = &inode_table[i];
         inode->dev = -1;
     }
 }
