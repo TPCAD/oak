@@ -62,4 +62,7 @@ time_t time();
 
 mode_t umask(mode_t mask);
 
+int mkdir(char *pathname, int mode);
+int rmdir(char *pathname);
+
 #endif // !OAK_SYSCALL_H

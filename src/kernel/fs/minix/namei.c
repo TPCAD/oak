@@ -99,7 +99,7 @@ static buffer_t *add_entry(inode_t *dir, const char *name, dentry_t **result) {
     }
 
     // @a name 不能包括分隔符
-    for (size_t i = 0; i < NAME_LEN; i++) {
+    for (size_t i = 0; i < strlen(name); i++) {
         kassert(!IS_SEPARATOR(name[i]));
     }
 
@@ -304,6 +304,211 @@ inode_t *namei(char *pathname) {
     inode_t *inode = inode_search(dir->dev, entry->nr);
     inode_free(dir);
     return inode;
+}
+
+/**
+ *  @brief  创建目录
+ *  @param  pathname  目录路径
+ *  @param  mode  目录属性
+ */
+int dentry_create(char *pathname, int mode) {
+    char *next = NULL;
+    buffer_t *entry_buf = NULL;
+    inode_t *dir = named(pathname, &next);
+
+    // 父目录不存在
+    if (!dir)
+        goto rollback;
+
+    // 目录名为空
+    if (!*next)
+        goto rollback;
+
+    // 父目录无写权限
+    if (!permission(dir, P_WRITE))
+        goto rollback;
+
+    char *name = next;
+    dentry_t *entry;
+
+    // 在父目录 inode 寻找目录
+    entry_buf = find_entry(&dir, name, &next, &entry);
+    // 目录项已存在
+    if (entry_buf)
+        goto rollback;
+
+    // 创建新目录 dentry
+    entry_buf = add_entry(dir, name, &entry);
+    entry_buf->dirty = true;
+    entry->nr = inode_alloc_bit(dir->dev);
+
+    // 创建新目录的 inode
+    task_t *curr_task = task_current_running();
+    inode_t *inode = inode_search(dir->dev, entry->nr);
+    inode->buf->dirty = true;
+
+    inode->inode->gid = curr_task->gid;
+    inode->inode->uid = curr_task->uid;
+    inode->inode->mode = (mode & 0777 & ~curr_task->umask) | IFDIR;
+    inode->inode->size = sizeof(dentry_t) * 2; // '.' and '..'
+    inode->inode->mtime = time();
+    inode->inode->nlinks = 2; // '.' and self
+
+    dir->buf->dirty = true;
+    dir->inode->nlinks++; // '..'
+
+    // 为新目录写入默认子目录。'.' 和 '..'。
+    buffer_t *zone_buf =
+        buffer_read(inode->dev, inode_calc_block(inode, 0, true));
+    zone_buf->dirty = true;
+    entry = (dentry_t *)zone_buf->data;
+    strcpy(entry->name, ".");
+    entry->nr = inode->idx;
+
+    entry++;
+    strcpy(entry->name, "..");
+    entry->nr = dir->idx;
+
+    inode_free(inode);
+    inode_free(dir);
+
+    buffer_release(entry_buf);
+    buffer_release(zone_buf);
+    return 0;
+
+rollback:
+    buffer_release(entry_buf);
+    inode_free(dir);
+    return -1;
+}
+
+/**
+ *  @brief  检查目录是否为空
+ *  @param  inode  目录 inode
+ *  @return  为空则返回 1，不为空则返回 0
+ */
+static bool is_empty(inode_t *inode) {
+    kassert(ISDIR(inode->inode->mode));
+
+    // 空目录只有两个 dentry
+    int entries = inode->inode->size / sizeof(dentry_t);
+    if (entries < 2 || !inode->inode->zone[0]) {
+        KDEBUG("bad directory on dev %d\n", inode->dev);
+        return false;
+    }
+
+    u32 i = 0;
+    u32 block = 0;
+    buffer_t *buf = NULL;
+    dentry_t *entry;
+    int count = 0;
+
+    for (; i < entries; i++, entry++) {
+        if (!buf || (u32)entry >= (u32)buf->data + BLOCK_SIZE) {
+            buffer_release(buf);
+            block = inode_calc_block(inode, i / BLOCK_DENTRIES, false);
+            kassert(block);
+
+            buf = buffer_read(inode->dev, block);
+            entry = (dentry_t *)buf->data;
+        }
+        if (entry->nr)
+            count++;
+    };
+
+    buffer_release(buf);
+
+    if (count < 2) {
+        KDEBUG("bad directory on dev %d\n", inode->dev);
+        return false;
+    }
+
+    return count == 2;
+}
+
+/**
+ *  @brief  删除目录
+ *  @param  pathname  目录路径
+ *  @return  删除成功返回 0，删除失败返回 -1
+ */
+int dentry_remove(char *pathname) {
+    char *next = NULL;
+    buffer_t *entry_buf = NULL;
+    inode_t *dir = named(pathname, &next);
+    inode_t *inode = NULL;
+    int ret = EOF;
+
+    // 父目录不存在
+    if (!dir)
+        goto rollback;
+
+    // 目录名为空
+    if (!*next)
+        goto rollback;
+
+    // 父目录无写权限
+    if (!permission(dir, P_WRITE))
+        goto rollback;
+
+    char *name = next;
+    dentry_t *entry;
+
+    // 在父目录 inode 寻找待删除的目录
+    entry_buf = find_entry(&dir, name, &next, &entry);
+    // 目录项不存在
+    if (!entry_buf)
+        goto rollback;
+
+    inode = inode_search(dir->dev, entry->nr);
+    // FIX: No need. Remove this.
+    if (!inode)
+        goto rollback;
+
+    // FIX: No need. Remove this.
+    if (inode == dir)
+        goto rollback;
+
+    // 非目录
+    if (!ISDIR(inode->inode->mode))
+        goto rollback;
+
+    task_t *curr_task = task_current_running();
+    // 无删除权限或不是目录拥有者
+    if ((dir->inode->mode & ISVTX) && curr_task->uid != inode->inode->uid)
+        goto rollback;
+
+    // 当前 inode 还有引用
+    if (dir->dev != inode->dev || inode->count > 1)
+        goto rollback;
+
+    // 确保要删除的目录是空目录
+    if (!is_empty(inode))
+        goto rollback;
+    kassert(inode->inode->nlinks == 2);
+
+    // 删除 inode 数据块，位图对应位
+    inode_truncate(inode);
+    inode_free_bit(inode->dev, inode->idx);
+
+    inode->inode->nlinks = 0;
+    inode->buf->dirty = true;
+    inode->idx = 0;
+
+    dir->inode->nlinks--;
+    dir->ctime = dir->atime = dir->inode->mtime = time();
+    dir->buf->dirty = true;
+    kassert(dir->inode->nlinks > 0);
+
+    entry->nr = 0;
+    entry_buf->dirty = true;
+
+    ret = 0;
+
+rollback:
+    inode_free(inode);
+    inode_free(dir);
+    buffer_release(entry_buf);
+    return ret;
 }
 
 #include "oak/mm/pmm.h"

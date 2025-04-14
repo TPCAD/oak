@@ -137,3 +137,19 @@ time_t time() { return _syscall0(SYS_NR_TIME); }
  *  获取文件权限掩码
  */
 mode_t umask(mode_t mask) { return _syscall1(SYS_NR_UMASK, (u32)mask); }
+
+/**
+ *  @brief  39 号系统调用
+ *
+ *  创建目录
+ */
+int mkdir(char *pathname, int mode) {
+    return _syscall2(SYS_NR_MKDIR, (u32)pathname, (u32)mode);
+}
+
+/**
+ *  @brief  40 号系统调用
+ *
+ *  删除目录
+ */
+int rmdir(char *pathname) { return _syscall1(SYS_NR_RMDIR, (u32)pathname); }
