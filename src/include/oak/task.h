@@ -9,6 +9,7 @@
 #define NORMAL_USER 1000
 
 #define TASK_NAME_LEN 16
+#define TASK_FILE_NR 16 // 进程最大打开文件数
 
 typedef enum task_state_t {
     TASK_INIT,
@@ -36,10 +37,11 @@ typedef struct task_t {
     heap_context_t user_heap;
     int status; // 进程特殊状态，退出状态码
     pid_t waitpid;
-    struct inode_t *ipwd;  // 进程当前目录 inode program work dir
-    struct inode_t *iroot; // 进程根目录
-    u16 umask;             // 进程用户权限
-    u32 magic;             // 魔数
+    struct inode_t *ipwd;               // 进程当前目录 inode program work dir
+    struct inode_t *iroot;              // 进程根目录
+    u16 umask;                          // 进程用户权限
+    struct file_t *files[TASK_FILE_NR]; // 进程文件表
+    u32 magic;                          // 魔数
 } task_t;
 
 typedef struct task_frame_t {
@@ -103,5 +105,8 @@ pid_t task_fork();
 void task_exit(int status);
 
 pid_t task_waitpid(pid_t pid, i32 *status);
+
+fd_t task_find_fd(task_t *task);
+void task_free_fd(task_t *task, fd_t fd);
 
 #endif // !OAK_TASK_H

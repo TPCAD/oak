@@ -93,6 +93,14 @@ enum file_flag {
     O_NONBLOCK = 04000, // 非阻塞方式打开和操作文件
 };
 
+typedef struct file_t {
+    inode_t *inode; // 文件 inode
+    u32 count;      // 引用计数
+    i32 offset;     // 文件偏移
+    int flags;      // 文件标记
+    int mode;       // 文件模式
+} file_t;
+
 super_block_t *search_super_block(u32 dev);
 
 u32 inode_alloc_bit(u32 dev);
@@ -115,5 +123,8 @@ int inode_read(inode_t *inode, char *buf, u32 len, i32 offset);
 int inode_write(inode_t *inode, char *buf, u32 len, i32 offset);
 void inode_truncate(inode_t *inode);
 inode_t *inode_open(char *pathname, int flag, int mode);
+
+void file_free_table(file_t *file);
+file_t *file_search_table();
 
 #endif // !OAK_MINIX_H

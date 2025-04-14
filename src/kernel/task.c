@@ -474,6 +474,33 @@ rollback:
     return ret;
 }
 
+/**
+ *  @brief  寻找进程的空闲文件号
+ *  @param  task
+ *  @return  空闲文件号
+ */
+fd_t task_find_fd(task_t *task) {
+    fd_t i;
+    for (i = 3; i < TASK_FILE_NR; i++) {
+        if (!task->files[i])
+            break;
+    }
+    if (i == TASK_FILE_NR) {
+        kpanic("[task] Exceed task max open files.");
+    }
+    return i;
+}
+/**
+ *  @brief  释放进程打开的文件
+ *  @param  fd  文件号
+ */
+void task_free_fd(task_t *task, fd_t fd) {
+    if (fd < 3)
+        return;
+    kassert(fd < TASK_FILE_NR);
+    task->files[fd] = NULL;
+}
+
 extern void idle_thread();
 extern void init_thread();
 extern u32 test_thread();

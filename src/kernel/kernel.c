@@ -21,6 +21,7 @@ extern void vdevice_init();
 extern void buffer_init();
 extern void super_init();
 extern void inode_init();
+extern void file_init();
 
 extern mem_info_t mem_info;
 
@@ -59,6 +60,7 @@ void kernel_init() {
     buffer_init();
     inode_init();
     super_init();
+    file_init();
 }
 
 extern void vmm_test();
