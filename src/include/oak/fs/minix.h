@@ -95,4 +95,7 @@ u32 inode_calc_block(inode_t *inode, u32 zone_idx, bool create);
 
 inode_t *inode_get_root_inode();
 
+inode_t *namei(char *pathname);
+inode_t *named(char *pathname, char **next);
+
 #endif // !OAK_MINIX_H
