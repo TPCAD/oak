@@ -376,7 +376,7 @@ pid_t task_fork() {
     curr_task->iroot->count++;
 
     // 文件引用加 1
-    for (size_t i = 0; i <= TASK_FILE_NR; i++) {
+    for (size_t i = 0; i < TASK_FILE_NR; i++) {
         file_t *file = child_task->files[i];
         if (file) {
             file->count++;
@@ -425,7 +425,7 @@ void task_exit(int status) {
     inode_free(curr_task->iroot);
 
     // 关闭文件
-    for (size_t i = 0; i <= TASK_FILE_NR; i++) {
+    for (size_t i = 0; i < TASK_FILE_NR; i++) {
         file_t *file = curr_task->files[i];
         if (file) {
             close(i);

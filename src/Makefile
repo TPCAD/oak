@@ -7,12 +7,14 @@ ARCH_DIR:=$(SRC)/arch/$(ARCH)
 KERNEL_DIR:=$(SRC)/kernel
 BOOT_DIR:=$(ARCH_DIR)/boot
 LIB_DIR:=$(SRC)/lib
+BUILTIN_DIR:=$(SRC)/builtin
 UTILS_DIR:=$(SRC)/utils
 
 # build directories
 BUILD:=../build
 BUILD_BOOT:=$(BUILD)/boot
 BUILD_KERNEL:=$(BUILD)/kernel
+BUILD_BUILTIN:=$(BUILD)/builtin
 
 # compile/link arguments
 LDFLAGS:= -m elf_i386 \
@@ -42,7 +44,7 @@ $(BUILD_BOOT)/boot.bin: $(BUILD_BOOT)/boot.o
 $(BUILD_BOOT)/loader.bin: $(BUILD_BOOT)/loader.o
 	ld -o $@ --oformat binary -Ttext=0x1000 $<
 
-KERNEL_SRC:=$(shell find $(KERNEL_DIR) $(ARCH_DIR) $(LIB_DIR) -name "*.[cS]")
+KERNEL_SRC:=$(shell find $(KERNEL_DIR) $(ARCH_DIR) $(LIB_DIR) $(BUILTIN_DIR) -name "*.[cS]")
 OBJ:=$(patsubst ./%, $(BUILD)/%.o, $(KERNEL_SRC))
 
 $(BUILD)/%.c.o: %.c

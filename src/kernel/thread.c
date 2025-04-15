@@ -1,5 +1,4 @@
 #include "oak/debug/kdebug.h"
-#include "oak/fs/minix.h"
 #include <oak/cpu.h>
 #include <oak/kprintf.h>
 #include <oak/stdio.h>
@@ -19,18 +18,17 @@ void idle_thread() {
     }
 }
 
+extern int ash_main();
 void user_init_thread() {
-    char buf[256];
-    chroot("/d1");
-    chdir("/d2");
-    getcwd(buf, sizeof(buf));
-    printf("current work directory: %s\n", buf);
-
     while (true) {
-        char ch;
-        read(stdin, &ch, 1);
-        write(stdout, &ch, 1);
-        sleep(10);
+        i32 status = 0;
+        pid_t pid = fork();
+        if (pid) {
+            pid_t child = waitpid(pid, &status);
+            printf("wait pid %d status %d %d\n", child, status, time());
+        } else {
+            ash_main();
+        }
     }
 }
 
