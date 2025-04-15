@@ -9,6 +9,6 @@ int printf(const char *fmt, ...) {
     va_start(vlist, fmt);
     int i = vsprintf(buf, fmt, vlist);
     va_end(vlist);
-    write(stdout, buf, i);
+    write(STDOUT_FILENO, buf, i);
     return i;
 }

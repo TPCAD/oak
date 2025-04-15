@@ -36,9 +36,9 @@ typedef u16 mode_t;
 
 typedef i32 fd_t;
 typedef enum std_fd_t {
-    stdin,
-    stdout,
-    stderr,
+    STDIN_FILENO,
+    STDOUT_FILENO,
+    STDERR_FILENO,
 } std_fd_t;
 
 #endif // !OAK_TYPES_H

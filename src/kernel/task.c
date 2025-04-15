@@ -19,6 +19,7 @@ extern u32 jiffies; // 全局时间片
 extern u32 jiffy;   // 时间片长度，单位 ms
 extern tss_t tss;
 extern void interrupt_exit();
+extern file_t file_table[];
 
 /* 记录系统运行中的任务，最多存在 64 个任务 */
 #define NR_TASKS 64
@@ -81,6 +82,13 @@ static task_t *build_basic_task(target_t target, const char *name, u32 priority,
     task->pwd = (void *)pmm_alloc_kpage();
     strcpy(task->pwd, "/");
     task->umask = 0022; // 对应 0755
+    // 标准输入输出
+    task->files[STDIN_FILENO] = &file_table[STDIN_FILENO];
+    task->files[STDOUT_FILENO] = &file_table[STDOUT_FILENO];
+    task->files[STDERR_FILENO] = &file_table[STDERR_FILENO];
+    task->files[STDIN_FILENO]->count++;
+    task->files[STDOUT_FILENO]->count++;
+    task->files[STDERR_FILENO]->count++;
     task->magic = OAK_MAGIC;
 
     return task;

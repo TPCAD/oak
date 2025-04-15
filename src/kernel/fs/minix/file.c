@@ -104,23 +104,33 @@ void file_close(fd_t fd) {
  *  @return  return
  */
 int file_read(fd_t fd, char *buf, int count) {
-    if (fd == stdin) {
-        vdevice_t *device = vdevice_search(VDEV_KEYBOARD, 0);
-        return vdevice_read(device->dev, buf, count, 0, 0);
-    }
-
     // 文件必须已打开
     task_t *curr_task = task_current_running();
     file_t *file = curr_task->files[fd];
     kassert(file);
     kassert(count > 0);
+    int len = 0;
 
     // 无写权限
     if ((file->flags & O_ACCMODE) == O_WRONLY)
         return EOF;
 
     inode_t *inode = file->inode;
-    int len = inode_read(inode, buf, count, file->offset);
+    if (ISCHR(inode->inode->mode)) { // 字符设备
+        kassert(inode->inode->zone[0]);
+        len = vdevice_read(inode->inode->zone[0], buf, count, 0, 0);
+        return len;
+    } else if (ISBLK(inode->inode->mode)) { // 块设备
+        kassert(inode->inode->zone[0]);
+        // vdevice_t *device = vdevice_get(inode->inode->zone[0]);
+        kassert(file->offset % BLOCK_SIZE == 0);
+        kassert(count % BLOCK_SIZE == 0);
+        len = vdevice_read(inode->inode->zone[0], buf, count / BLOCK_SIZE,
+                           file->offset / BLOCK_SIZE, 0);
+        return len;
+    } else { // 普通文件
+        len = inode_read(inode, buf, count, file->offset);
+    }
     // 更新文件偏移值
     if (len != EOF) {
         file->offset += len;
@@ -136,11 +146,6 @@ int file_read(fd_t fd, char *buf, int count) {
  *  @return  return
  */
 int file_write(unsigned int fd, char *buf, int count) {
-    if (fd == stdout || fd == stderr) {
-        vdevice_t *device = vdevice_search(VDEV_CONSOLE, 0);
-        return vdevice_write(device->dev, buf, count, 0, 0);
-    }
-
     task_t *curr_task = task_current_running();
     file_t *file = curr_task->files[fd];
     kassert(file);
@@ -151,7 +156,24 @@ int file_write(unsigned int fd, char *buf, int count) {
         return EOF;
 
     inode_t *inode = file->inode;
-    int len = inode_write(inode, buf, count, file->offset);
+    kassert(inode);
+    int len = 0;
+    if (ISCHR(inode->inode->mode)) {
+        kassert(inode->inode->zone[0]);
+        // vdevice_t *vdevice = vdevice_get(inode->inode->zone[0]);
+        len = vdevice_write(inode->inode->zone[0], buf, count, 0, 0);
+        return len;
+    } else if (ISBLK(inode->inode->mode)) {
+        kassert(inode->inode->zone[0]);
+        // vdevice_t *vdevice = vdevice_get(inode->inode->zone[0]);
+        kassert(file->offset % BLOCK_SIZE == 0);
+        kassert(count % BLOCK_SIZE == 0);
+        len = vdevice_write(inode->inode->zone[0], buf, count / BLOCK_SIZE,
+                            file->offset / BLOCK_SIZE, 0);
+        return len;
+    } else {
+        len = inode_write(inode, buf, count, file->offset);
+    }
     // 更新文件偏移值
     if (len != EOF) {
         file->offset += len;
@@ -237,10 +259,39 @@ void devfile_init() {
         sprintf(name, "/dev/%s", device->name);
         mknod(name, IFBLK | 0600, device->dev);
     }
+
+    // 创建标准输入输出
+    link("/dev/console", "/dev/stdout");
+    link("/dev/console", "/dev/stderr");
+    link("/dev/keyboard", "/dev/stdin");
+
+    file_t *file;
+    inode_t *inode;
+    file = &file_table[STDIN_FILENO];
+    inode = namei("/dev/stdin");
+    file->inode = inode;
+    file->mode = inode->inode->mode;
+    file->flags = O_RDONLY;
+    file->offset = 0;
+
+    file = &file_table[STDOUT_FILENO];
+    inode = namei("/dev/stdout");
+    file->inode = inode;
+    file->mode = inode->inode->mode;
+    file->flags = O_WRONLY;
+    file->offset = 0;
+
+    file = &file_table[STDERR_FILENO];
+    inode = namei("/dev/stderr");
+    file->inode = inode;
+    file->mode = inode->inode->mode;
+    file->flags = O_WRONLY;
+    file->offset = 0;
 }
 
 void file_init() {
-    for (size_t i = 0; i < FILE_NR; i++) {
+    // 跳过标准输入输出
+    for (size_t i = 3; i < FILE_NR; i++) {
         file_t *file = &file_table[i];
         file->mode = 0;
         file->count = 0;
