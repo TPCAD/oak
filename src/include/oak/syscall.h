@@ -85,4 +85,6 @@ void clear();
 int stat(char *filename, stat_t *statbuf);
 int fstat(fd_t fd, stat_t *statbuf);
 
+int mknod(char *filename, int mode, int dev);
+
 #endif // !OAK_SYSCALL_H

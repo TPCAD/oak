@@ -269,3 +269,12 @@ int stat(char *filename, stat_t *statbuf) {
 int fstat(fd_t fd, stat_t *statbuf) {
     return _syscall2(SYS_NR_FSTAT, (u32)fd, (u32)statbuf);
 }
+
+/**
+ *  @brief  14 号系统调用
+ *
+ *  创建 inode
+ */
+int mknod(char *filename, int mode, int dev) {
+    return _syscall3(SYS_NR_MKNOD, (u32)filename, (u32)mode, (u32)dev);
+}

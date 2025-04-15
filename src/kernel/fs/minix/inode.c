@@ -3,6 +3,7 @@
 #include "oak/debug/kdebug.h"
 #include "oak/fs/stat.h"
 #include "oak/list.h"
+#include "oak/task.h"
 #include "oak/types.h"
 #include <oak/buffer.h>
 #include <oak/fs/minix.h>
@@ -35,7 +36,7 @@ static void free_inode(inode_t *inode) {
     inode->dev = -1;
 }
 
-inode_t *inode_get_root_inode() { return (inode_t*)inode_table; }
+inode_t *inode_get_root_inode() { return (inode_t *)inode_table; }
 
 /**
  *  @brief  计算 inode 所在磁盘块号
@@ -67,6 +68,23 @@ static inode_t *search_inode(u32 dev, u32 nr) {
         }
     }
     return NULL;
+}
+
+inode_t *build_inode(u32 dev, u32 nr) {
+    task_t *curr_task = task_current_running();
+    inode_t *inode = inode_search(dev, nr);
+    kassert(inode->inode->nlinks == 0);
+
+    inode->buf->dirty = true;
+
+    inode->inode->mode = 0777 & (~curr_task->umask);
+    inode->inode->uid = curr_task->uid;
+    inode->inode->size = 0;
+    inode->inode->mtime = inode->atime = time();
+    inode->inode->gid = curr_task->gid;
+    inode->inode->nlinks = 1;
+
+    return inode;
 }
 
 /**

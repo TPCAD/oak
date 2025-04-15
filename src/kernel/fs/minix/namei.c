@@ -403,15 +403,11 @@ int dentry_create(char *pathname, int mode) {
 
     // 创建新目录的 inode
     task_t *curr_task = task_current_running();
-    inode_t *inode = inode_search(dir->dev, entry->nr);
-    inode->buf->dirty = true;
+    inode_t *inode = build_inode(dir->dev, entry->nr);
 
-    inode->inode->gid = curr_task->gid;
-    inode->inode->uid = curr_task->uid;
     inode->inode->mode = (mode & 0777 & ~curr_task->umask) | IFDIR;
     inode->inode->size = sizeof(dentry_t) * 2; // '.' and '..'
-    inode->inode->mtime = time();
-    inode->inode->nlinks = 2; // '.' and self
+    inode->inode->nlinks = 2;                  // '.' and self
 
     dir->buf->dirty = true;
     dir->inode->nlinks++; // '..'
@@ -744,20 +740,13 @@ inode_t *inode_open(char *pathname, int flag, int mode) {
     // 文件不存在，创建新 dentry
     buf = add_entry(dir, name, &entry);
     entry->nr = inode_alloc_bit(dir->dev);
-    inode = inode_search(dir->dev, entry->nr);
+    inode = build_inode(dir->dev, entry->nr);
 
     task_t *curr_task = task_current_running();
 
     mode &= (0777 & ~curr_task->umask);
     mode |= IFREG;
-
-    inode->inode->uid = curr_task->uid;
-    inode->inode->gid = curr_task->gid;
     inode->inode->mode = mode;
-    inode->inode->mtime = time();
-    inode->inode->size = 0;
-    inode->inode->nlinks = 1;
-    inode->buf->dirty = true;
 
 makeup:
     if (!permission(inode, flag & O_ACCMODE)) {
@@ -783,6 +772,48 @@ rollback:
     inode_free(dir);
     inode_free(inode);
     return NULL;
+}
+
+int inode_build_devfile_node(char *filename, int mode, int dev) {
+    char *next = NULL;
+    inode_t *dir = NULL;
+    buffer_t *buf = NULL;
+    inode_t *inode = NULL;
+    int ret = EOF;
+
+    dir = named(filename, &next);
+    if (!dir)
+        goto rollback;
+
+    if (!(*next))
+        goto rollback;
+
+    if (!permission(dir, P_WRITE))
+        goto rollback;
+
+    char *name = next;
+    dentry_t *entry;
+    buf = find_entry(&dir, name, &next, &entry);
+    if (buf) // 目录项存在
+        goto rollback;
+
+    buf = add_entry(dir, name, &entry);
+    buf->dirty = true;
+    entry->nr = inode_alloc_bit(dir->dev);
+
+    inode = build_inode(dir->dev, entry->nr);
+
+    inode->inode->mode = mode;
+    if (ISBLK(mode) || ISCHR(mode))
+        inode->inode->zone[0] = dev;
+
+    ret = 0;
+
+rollback:
+    buffer_release(buf);
+    inode_free(inode);
+    inode_free(dir);
+    return ret;
 }
 
 #include "oak/mm/pmm.h"
