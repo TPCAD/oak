@@ -170,6 +170,7 @@ u32 vdevice_install(int type, int subtype, void *ptr, char *name, u32 parent,
     vdev->subtype = subtype;
     vdev->ptr = ptr;
     strncpy(vdev->name, name, NAMELEN);
+    vdev->name[strlen(name)] = '\0';
     vdev->parent = parent;
     vdev->ioctl = ioctl;
     vdev->read = read;
