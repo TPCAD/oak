@@ -127,7 +127,6 @@ int file_read(fd_t fd, char *buf, int count) {
         kassert(count % BLOCK_SIZE == 0);
         len = vdevice_read(inode->inode->zone[0], buf, count / BLOCK_SIZE,
                            file->offset / BLOCK_SIZE, 0);
-        return len;
     } else { // 普通文件
         len = inode_read(inode, buf, count, file->offset);
     }
