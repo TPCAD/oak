@@ -1,6 +1,7 @@
 #ifndef OAK_SYSCALL_H
 #define OAK_SYSCALL_H
 
+#include <oak/fs/stat.h>
 #include <oak/types.h>
 
 typedef enum syscall_t {
@@ -81,5 +82,7 @@ int chroot(char *pathname);
 int readdir(fd_t fd, void *dir, int count);
 
 void clear();
+int stat(char *filename, stat_t *statbuf);
+int fstat(fd_t fd, stat_t *statbuf);
 
 #endif // !OAK_SYSCALL_H

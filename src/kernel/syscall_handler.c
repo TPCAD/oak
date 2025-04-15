@@ -60,6 +60,9 @@ extern int file_readdir(fd_t fd, dentry_t *dir, u32 count);
 
 extern void tty_clear();
 
+extern int file_stat(char *filename, stat_t *statbuf);
+extern int file_fstat(fd_t fd, stat_t *statbuf);
+
 void syscall_init() {
     for (size_t i = 0; i < SYSCALL_SIZE; i++) {
         syscall_table[i] = default_syscall;
@@ -91,4 +94,6 @@ void syscall_init() {
     syscall_table[SYS_NR_GETCWD] = task_getcwd;
     syscall_table[SYS_NR_READDIR] = file_readdir;
     syscall_table[SYS_NR_CLEAR] = tty_clear;
+    syscall_table[SYS_NR_STAT] = file_stat;
+    syscall_table[SYS_NR_FSTAT] = file_fstat;
 }
