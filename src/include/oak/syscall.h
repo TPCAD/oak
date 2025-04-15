@@ -87,4 +87,7 @@ int fstat(fd_t fd, stat_t *statbuf);
 
 int mknod(char *filename, int mode, int dev);
 
+int mount(char *devname, char *dirname, int flags);
+int umount(char *target);
+
 #endif // !OAK_SYSCALL_H

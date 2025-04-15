@@ -70,6 +70,18 @@ static inode_t *search_inode(u32 dev, u32 nr) {
     return NULL;
 }
 
+static inode_t *fit_inode(inode_t *inode) {
+    if (!inode->mount)
+        return inode;
+
+    super_block_t *sb = search_super_block(inode->mount);
+    kassert(sb);
+    inode_free(inode);
+    inode = sb->iroot;
+    inode->count++;
+    return inode;
+}
+
 inode_t *build_inode(u32 dev, u32 nr) {
     task_t *curr_task = task_current_running();
     inode_t *inode = inode_search(dev, nr);
@@ -123,7 +135,7 @@ inode_t *inode_search(u32 dev, u32 nr) {
     inode->ctime = inode->inode->mtime;
     inode->atime = time();
 
-    return inode;
+    return fit_inode(inode);
 }
 
 /**

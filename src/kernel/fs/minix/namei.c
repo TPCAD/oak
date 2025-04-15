@@ -61,6 +61,14 @@ static buffer_t *find_entry(inode_t **dir, const char *name, char **next,
     // 保证 dir 是目录
     kassert(ISDIR((*dir)->inode->mode));
 
+    if (match_name(name, "..", next) && (*dir)->idx == 1) {
+        super_block_t *sb = search_super_block((*dir)->dev);
+        inode_t *inode = *dir;
+        (*dir) = sb->imount;
+        (*dir)->count++;
+        inode_free(inode);
+    }
+
     // dir 的子目录数量（子项不一定目录）
     u32 entries = (*dir)->inode->size / sizeof(dentry_t);
 

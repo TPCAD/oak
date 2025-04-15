@@ -69,6 +69,7 @@ typedef struct super_block_t {
     struct buffer_t *imaps[IMAP_NR];
     struct buffer_t *zmaps[ZMAP_NR];
     int dev;
+    u32 count;
     list_t inode_list; // 使用中的 inode
     inode_t *iroot;    // 根目录 inode
     inode_t *imount;

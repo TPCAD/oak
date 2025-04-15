@@ -65,6 +65,9 @@ extern int file_fstat(fd_t fd, stat_t *statbuf);
 
 extern int inode_build_devfile_node(char *filename, int mode, int dev);
 
+extern int super_mount(char *devname, char *dirname, int flags);
+extern int super_umount(char *target);
+
 void syscall_init() {
     for (size_t i = 0; i < SYSCALL_SIZE; i++) {
         syscall_table[i] = default_syscall;
@@ -99,4 +102,6 @@ void syscall_init() {
     syscall_table[SYS_NR_STAT] = file_stat;
     syscall_table[SYS_NR_FSTAT] = file_fstat;
     syscall_table[SYS_NR_MKNOD] = inode_build_devfile_node;
+    syscall_table[SYS_NR_MOUNT] = super_mount;
+    syscall_table[SYS_NR_UMOUNT] = super_umount;
 }

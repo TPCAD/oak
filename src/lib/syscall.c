@@ -278,3 +278,19 @@ int fstat(fd_t fd, stat_t *statbuf) {
 int mknod(char *filename, int mode, int dev) {
     return _syscall3(SYS_NR_MKNOD, (u32)filename, (u32)mode, (u32)dev);
 }
+
+/**
+ *  @brief  21 号系统调用
+ *
+ *  挂载设备
+ */
+int mount(char *devname, char *dirname, int flags) {
+    return _syscall3(SYS_NR_MOUNT, (u32)devname, (u32)dirname, (u32)flags);
+}
+
+/**
+ *  @brief  22 号系统调用
+ *
+ *  卸载设备
+ */
+int umount(char *target) { return _syscall1(SYS_NR_UMOUNT, (u32)target); }
