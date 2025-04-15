@@ -1,4 +1,5 @@
 #include "oak/buffer.h"
+#include "oak/debug/kdebug.h"
 #include "oak/fs/minix.h"
 #include "oak/task.h"
 #include <oak/debug/kassert.h>
@@ -24,20 +25,8 @@ static void default_syscall() {
     kpanic("[intr] Syscall isn't implemented...\n");
 }
 
-extern void dir_test();
 static u32 test_syscall() {
-    // KDEBUG("syscall test...\n");
-    inode_t *inode = inode_open("/world.txt", O_RDWR | O_CREAT, 0755);
-    kassert(inode);
-
-    char *buf = (char *)pmm_alloc_kpage();
-    int i = inode_read(inode, buf, 1024, 0);
-
-    memset(buf, 'A', 4096);
-    inode_write(inode, buf, 4096, 0);
-
-    inode_free(inode);
-
+    KDEBUG("syscall test...\n");
     return 255;
 }
 
@@ -61,11 +50,15 @@ extern fd_t file_create(char *filename, int mode);
 extern void file_close(fd_t fd);
 extern int file_read(fd_t fd, char *buf, int len);
 extern int file_write(fd_t fd, char *buf, int len);
-int file_lseek(fd_t fd, i32 offset, whence_t whence);
+extern int file_lseek(fd_t fd, i32 offset, whence_t whence);
 
-int task_chdir(char *pathname);
-int task_chroot(char *pathname);
-char *task_getcwd(char *buf, size_t size);
+extern int task_chdir(char *pathname);
+extern int task_chroot(char *pathname);
+extern char *task_getcwd(char *buf, size_t size);
+
+extern int file_readdir(fd_t fd, dentry_t *dir, u32 count);
+
+extern void tty_clear();
 
 void syscall_init() {
     for (size_t i = 0; i < SYSCALL_SIZE; i++) {
@@ -96,4 +89,6 @@ void syscall_init() {
     syscall_table[SYS_NR_CHDIR] = task_chdir;
     syscall_table[SYS_NR_CHROOT] = task_chroot;
     syscall_table[SYS_NR_GETCWD] = task_getcwd;
+    syscall_table[SYS_NR_READDIR] = file_readdir;
+    syscall_table[SYS_NR_CLEAR] = tty_clear;
 }

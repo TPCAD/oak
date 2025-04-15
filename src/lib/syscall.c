@@ -235,3 +235,19 @@ int chdir(char *pathname) { return _syscall1(SYS_NR_CHDIR, (u32)pathname); }
  *  修改进程根目录
  */
 int chroot(char *pathname) { return _syscall1(SYS_NR_CHROOT, (u32)pathname); }
+
+/**
+ *  @brief  89 号系统调用
+ *
+ *  读取目录
+ */
+int readdir(fd_t fd, void *dir, int count) {
+    return _syscall3(SYS_NR_READDIR, fd, (u32)dir, (u32)count);
+}
+
+/**
+ *  @brief  200 号系统调用
+ *
+ *  清空屏幕
+ */
+void clear() { _syscall0(SYS_NR_CLEAR); }

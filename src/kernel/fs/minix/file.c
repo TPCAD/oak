@@ -197,6 +197,15 @@ int file_lseek(fd_t fd, i32 offset, whence_t whence) {
     return file->offset;
 }
 
+/**
+ *  @brief  读取目录
+ *  @param  param  desc
+ *  @return  return
+ */
+int file_readdir(fd_t fd, dentry_t *dir, u32 count) {
+    return file_read(fd, (char *)dir, sizeof(dentry_t));
+}
+
 void file_init() {
     for (size_t i = 0; i < FILE_NR; i++) {
         file_t *file = &file_table[i];

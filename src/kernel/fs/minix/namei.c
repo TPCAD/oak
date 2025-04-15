@@ -169,7 +169,7 @@ static bool permission(inode_t *inode, u16 mask) {
  *  @param  str  路径
  *  @return  指向第一个分隔符的指针
  */
-static char *strsep(const char *str) {
+char *strsep(const char *str) {
     char *ptr = (char *)str;
     while (true) {
         if (IS_SEPARATOR(*ptr)) {
@@ -186,7 +186,7 @@ static char *strsep(const char *str) {
  *  @param  str  路径
  *  @return  指向最后一个分隔符的指针
  */
-static char *strrsep(const char *str) {
+char *strrsep(const char *str) {
     char *last = NULL;
     char *ptr = (char *)str;
     while (true) {
@@ -719,7 +719,7 @@ inode_t *inode_open(char *pathname, int flag, int mode) {
         goto rollback;
     // 文件名为空
     if (!*next)
-        goto rollback;
+        return dir;
 
     if ((flag & O_TRUNC) && ((flag & O_ACCMODE) == O_RDONLY))
         flag |= O_RDWR;
@@ -759,9 +759,13 @@ inode_t *inode_open(char *pathname, int flag, int mode) {
     inode->buf->dirty = true;
 
 makeup:
-    // inode 是文件或权限不足
-    if (ISDIR(inode->inode->mode) || !permission(inode, flag & O_ACCMODE))
+    if (!permission(inode, flag & O_ACCMODE)) {
         goto rollback;
+    }
+    // inode 是文件或权限不足
+    if (ISDIR(inode->inode->mode) && ((flag & O_ACCMODE) != O_RDONLY)) {
+        goto rollback;
+    }
 
     inode->atime = time();
 

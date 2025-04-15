@@ -78,4 +78,8 @@ char *getcwd(char *buf, size_t size);
 int chdir(char *pathname);
 int chroot(char *pathname);
 
+int readdir(fd_t fd, void *dir, int count);
+
+void clear();
+
 #endif // !OAK_SYSCALL_H
