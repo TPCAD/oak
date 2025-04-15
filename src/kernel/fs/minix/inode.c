@@ -70,6 +70,11 @@ static inode_t *search_inode(u32 dev, u32 nr) {
     return NULL;
 }
 
+/**
+ *  @brief  检查 inode 是否有挂载目录
+ *  @param  inode
+ *  @return  若有挂载目录则返回挂载的超级块
+ */
 static inode_t *fit_inode(inode_t *inode) {
     if (!inode->mount)
         return inode;
@@ -112,7 +117,7 @@ inode_t *inode_search(u32 dev, u32 nr) {
     if (inode) {
         inode->count++;
         inode->atime = time();
-        return inode;
+        return fit_inode(inode);
     }
 
     super_block_t *sb = search_super_block(dev);
@@ -135,7 +140,7 @@ inode_t *inode_search(u32 dev, u32 nr) {
     inode->ctime = inode->inode->mtime;
     inode->atime = time();
 
-    return fit_inode(inode);
+    return inode;
 }
 
 /**
