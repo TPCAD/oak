@@ -6,7 +6,7 @@
 
 void tty_set_theme(vga_attributes fg, vga_attributes bg);
 void tty_scroll_up();
-void tty_clear(u32 addr);
+void tty_clear();
 
 u32 tty_screen_addr = 0;
 u32 tty_cursor_addr = 0;
@@ -151,10 +151,9 @@ i32 tty_write_str(void *dev, char *buf, u32 count) {
  *
  *  清空当前屏幕
  */
-void tty_clear(u32 addr) {
-    vga_text_clear_screen(addr);
-    tty_screen_addr = addr;
-    tty_cursor_addr = addr;
+void tty_clear() {
+    vga_text_clear_screen(tty_screen_addr);
+    tty_cursor_addr = tty_screen_addr;
     tty_column = 0;
     tty_row = 0;
 }
