@@ -10,6 +10,7 @@
 #define ROUNDUP(v, k) (((v) + (k) - 1) & ~((k) - 1))
 
 void itoa(int input, char *buffer);
+int atoi(const char *str);
 
 u8 bcd_to_bin(u8 value);
 u8 bin_to_bcd(u8 value);

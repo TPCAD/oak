@@ -44,6 +44,26 @@ void itoa(int input, char *buffer) {
     reverse(buffer);
 }
 
+/**
+ *  @brief  将字符串转换为十进制数字
+ *  @param  str  字符串
+ *  @return  十进制数字
+ */
+int atoi(const char *str) {
+    if (str == NULL)
+        return 0;
+    bool sign = 1;
+    int result = 0;
+    if (*str == '-') {
+        sign = -1;
+        str++;
+    }
+    for (; *str; str++) {
+        result = result * 10 + (*str - '0');
+    }
+    return result;
+}
+
 // BCD 码与十进制整数互转
 // BCD 码是一种将十进制数的每一位单独用 4 位二进制来表示的编码方式
 u8 bcd_to_bin(u8 value) { return (value & 0xf) + (value >> 4) * 10; }
