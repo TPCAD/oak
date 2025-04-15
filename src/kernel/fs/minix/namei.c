@@ -249,6 +249,7 @@ void abspath(char *pwd, const char *pathname) {
         strcpy(cur, pathname);
         cur += strlen(pathname);
         *cur = '/';
+        *(cur + 1) = '\0';
         return;
     }
     if (cur - 1 != pwd) {
