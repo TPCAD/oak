@@ -547,6 +547,7 @@ void task_free_fd(task_t *task, fd_t fd) {
 char *task_getcwd(char *buf, size_t size) {
     task_t *curr_task = task_current_running();
     strncpy(buf, curr_task->pwd, size);
+    buf[strlen(curr_task->pwd)] = '\0';
     return buf;
 }
 
