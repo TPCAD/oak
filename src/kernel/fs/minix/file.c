@@ -1,6 +1,8 @@
+#include "oak/syscall.h"
 #include "oak/vdevice.h"
 #include <oak/debug/kassert.h>
 #include <oak/fs/minix.h>
+#include <oak/stdio.h>
 #include <oak/task.h>
 #include <oak/types.h>
 
@@ -204,6 +206,37 @@ int file_lseek(fd_t fd, i32 offset, whence_t whence) {
  */
 int file_readdir(fd_t fd, dentry_t *dir, u32 count) {
     return file_read(fd, (char *)dir, sizeof(dentry_t));
+}
+
+void devfile_init() {
+    mkdir("/dev", 0755);
+
+    vdevice_t *device = NULL;
+
+    device = vdevice_search(VDEV_CONSOLE, 0);
+    mknod("/dev/console", IFCHR | 0200, device->dev);
+
+    device = vdevice_search(VDEV_KEYBOARD, 0);
+    mknod("/dev/keyboard", IFCHR | 0400, device->dev);
+
+    char name[32];
+
+    for (size_t i = 0; true; i++) {
+        device = vdevice_search(VDEV_IDE_DISK, i);
+        if (!device)
+            break;
+        sprintf(name, "/dev/%s", device->name);
+        mknod(name, IFBLK | 0600, device->dev);
+    }
+
+    for (size_t i = 0; true; i++) {
+        device = vdevice_search(VDEV_IDE_PART, i);
+        if (!device) {
+            break;
+        }
+        sprintf(name, "/dev/%s", device->name);
+        mknod(name, IFBLK | 0600, device->dev);
+    }
 }
 
 void file_init() {

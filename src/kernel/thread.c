@@ -33,6 +33,7 @@ void user_init_thread() {
 }
 
 extern void switch_to_user_mode(target_t target);
+extern void devfile_init();
 void init_thread() {
     // cpu_set_intr_state(true);
 
@@ -40,6 +41,7 @@ void init_thread() {
      * 些局部变量，需要留出足够的空间。
      * */
     char temp[100];
+    devfile_init();
     switch_to_user_mode(user_init_thread);
 }
 
