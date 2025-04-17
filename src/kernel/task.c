@@ -131,8 +131,7 @@ static task_t *search_state_task(task_state_t state) {
         if (ptr == curr_task) {
             continue;
         }
-        if (task == NULL || task->ticks < ptr->ticks ||
-            ptr->jiffies < task->jiffies) {
+        if (task == NULL || ptr->jiffies < task->jiffies) {
             task = ptr;
         }
     }
@@ -616,8 +615,8 @@ void task_init() {
     idle_task = build_basic_task(idle_thread, "idle", 1, KERNEL_USER);
     build_basic_task(init_thread, "init", 5, NORMAL_USER);
     build_basic_task(test_thread, "testA", 5, NORMAL_USER);
-    // build_basic_task(test_thread, "testB", 5, KERNEL_USER);
-    // build_basic_task(test_thread, "testC", 5, KERNEL_USER);
+    build_basic_task(test_thread, "testB", 15, NORMAL_USER);
+    build_basic_task(test_thread, "testC", 25, NORMAL_USER);
     // build_basic_task(thread_b, "testB", 5, NORMAL_USER);
     // build_basic_task(thread_c, "testC", 5, NORMAL_USER);
 }
