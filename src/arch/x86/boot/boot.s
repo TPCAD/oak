@@ -64,5 +64,7 @@ DAPACK:
     .long 0x2
     .long 0
 
+# 剩余字节填充为 0
 .fill 510-(.-_start), 1, 0
+# 签名字节
 .word 0xaa55
