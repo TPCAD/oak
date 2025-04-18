@@ -106,11 +106,7 @@ void pmm_init(u32 mem_upper_lim) {
     max_kpg = START_PAGE;
     recent_alloc_kpage = START_KPAGE;
 
-    // 物理内存数组占用的内存页数
-    u32 occupied_pages =
-        (max_pg % PAGE_SIZE) ? (max_pg / PAGE_SIZE) + 1 : (max_pg / PAGE_SIZE);
-
-    memset(pm_map, 1, occupied_pages * PAGE_SIZE);
+    memset(pm_map, 0x01010101, 0x3ffff);
 }
 
 /**
