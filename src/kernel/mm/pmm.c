@@ -106,7 +106,11 @@ void pmm_init(u32 mem_upper_lim) {
     max_kpg = START_PAGE;
     recent_alloc_kpage = START_KPAGE;
 
-    memset(pm_map, 0x01010101, 0x3ffff);
+    u32 count = 0x3ffff;
+    while (count-- > 0) {
+        u32 *ptr = (u32 *)pm_map;
+        *ptr++ = (u32)0x01010101;
+    }
 }
 
 /**
