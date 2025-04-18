@@ -7,12 +7,16 @@ mem_info_t mem_info = {0, NULL, 0, 0};
 
 void parse_ards(u32 magic, u32 ards_count_addr) {
     if (magic == OAK_MAGIC) {
+        // 获取 ards 数组长度
         mem_info.ards_count = *(u32 *)ards_count_addr;
+        // 获取 ards 数组起始位置
         ards_t *ptr = (ards_t *)(ards_count_addr + 4);
         mem_info.ards_arr = ptr;
+        // 读取 ards 数组
         for (size_t i = 0; i < mem_info.ards_count; i++, ptr++) {
             // kprintf("base: %p, size: %p, type: %d\n", (u32)ptr->base,
             //         (u32)ptr->size, (u32)ptr->type);
+            // 当前内存区域可用且大小较大
             if (ptr->type == VALID_MEM_ZONE &&
                 ptr->size > mem_info.max_zone_size) {
                 mem_info.max_zone_base = ptr->base;
