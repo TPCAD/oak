@@ -5,7 +5,7 @@
 
 mem_info_t mem_info = {0, NULL, 0, 0};
 
-void memory_info(u32 magic, u32 ards_count_addr) {
+void parse_ards(u32 magic, u32 ards_count_addr) {
     if (magic == OAK_MAGIC) {
         mem_info.ards_count = *(u32 *)ards_count_addr;
         ards_t *ptr = (ards_t *)(ards_count_addr + 4);

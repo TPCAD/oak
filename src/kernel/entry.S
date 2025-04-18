@@ -57,7 +57,7 @@ _start:
 _after:
     xchgw %bx, %bx
 
-    call memory_info
+    call parse_ards
     addl $8, %esp
 
     xchgw %bx, %bx
