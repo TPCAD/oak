@@ -115,7 +115,41 @@ void builtin_logo() {
     printf((char *)oak_logo);
 }
 
-void builtin_test(int argc, char *argv[]) { test(); }
+void builtin_test(int argc, char *argv[]) {
+    test();
+
+    // memory paging test
+    // char big0[8192];
+    // if (big0[0] > 0){
+    //     big0[0]=0;
+    // }
+    // char big1[4096];
+    // if (big1[0] > 0){
+    //     big1[0]=0;
+    // }
+
+    // processs switch test
+    // if (fork()) {
+    //     while (true) {
+    //         printf("Nr %d processs, parent processs %d\n", getpid(),
+    //         getppid()); sleep(1000);
+    //     }
+    // } else {
+    //     if (fork()) {
+    //         while (true) {
+    //             printf("Nr %d processs, parent processs %d\n", getpid(),
+    //                    getppid());
+    //             sleep(1000);
+    //         }
+    //     } else {
+    //         while (true) {
+    //             printf("Nr %d processs, parent processs %d\n", getpid(),
+    //                    getppid());
+    //             sleep(1000);
+    //         }
+    //     }
+    // }
+}
 
 void builtin_pwd() {
     getcwd(cwd, MAX_PATH_LEN);

@@ -20,6 +20,7 @@ void idle_thread() {
 
 extern int ash_main();
 void user_init_thread() {
+    clear();
     while (true) {
         i32 status = 0;
         pid_t pid = fork();
@@ -29,6 +30,7 @@ void user_init_thread() {
         } else {
             ash_main();
         }
+        sleep(1000);
     }
 }
 
@@ -47,14 +49,13 @@ void init_thread() {
 
 u32 test_thread() {
     cpu_set_intr_state(true);
-    // kprintf("test started of task %d\n", getpid());
-    // test();
-    // kprintf("test finished of task %d\n", getpid());
 
     u32 count = 0;
     while (true) {
-        BMB;
-        // kprintf("test task %d\n", count++);
+        // kprintf("%d", task_current_running()->pid);
+        // u32 count = 100000000;
+        // while (count--) {
+        // }
         sleep(1000);
     }
 }
