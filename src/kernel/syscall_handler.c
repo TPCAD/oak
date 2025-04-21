@@ -29,11 +29,11 @@ static void default_syscall() {
 static u32 test_syscall() {
     // KDEBUG("syscall test...\n");
     char *chunk0 = kmalloc(sizeof(char));
-    kprintf("chunk0: %p\n", chunk0);
+    kprintf("chunk0: 0x%p\n", chunk0);
     char *chunk1 = kmalloc(sizeof(char));
-    kprintf("chunk1: %p\n", chunk1);
+    kprintf("chunk1: 0x%p\n", chunk1);
     char *chunk2 = kmalloc(sizeof(char));
-    kprintf("chunk2: %p\n", chunk2);
+    kprintf("chunk2: 0x%p\n", chunk2);
 
     *chunk0 = 0xaa;
     *chunk1 = 0x55;

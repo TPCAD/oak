@@ -116,7 +116,7 @@ void builtin_logo() {
 }
 
 void builtin_test(int argc, char *argv[]) {
-    test();
+    // test();
 
     // memory paging test
     // char big0[8192];
@@ -129,26 +129,34 @@ void builtin_test(int argc, char *argv[]) {
     // }
 
     // processs switch test
-    // if (fork()) {
-    //     while (true) {
-    //         printf("Nr %d processs, parent processs %d\n", getpid(),
-    //         getppid()); sleep(1000);
-    //     }
-    // } else {
-    //     if (fork()) {
-    //         while (true) {
-    //             printf("Nr %d processs, parent processs %d\n", getpid(),
-    //                    getppid());
-    //             sleep(1000);
-    //         }
-    //     } else {
-    //         while (true) {
-    //             printf("Nr %d processs, parent processs %d\n", getpid(),
-    //                    getppid());
-    //             sleep(1000);
-    //         }
-    //     }
-    // }
+    if (fork()) {
+        while (true) {
+            printf("Nr %d process, parent process %d\n", getpid(), getppid());
+            sleep(1000);
+        }
+    } else {
+        if (fork()) {
+            while (true) {
+                printf("Nr %d process, parent process %d\n", getpid(),
+                       getppid());
+                sleep(1000);
+                printf("Nr %d process exited\n");
+                exit(0);
+            }
+        } else {
+            int count = 0;
+            while (true) {
+                printf("Nr %d process, parent process %d\n", getpid(),
+                       getppid());
+                sleep(1000);
+                count++;
+                if (count == 5) {
+                    printf("Nr %d process exited\n");
+                    exit(0);
+                }
+            }
+        }
+    }
 }
 
 void builtin_pwd() {
@@ -260,7 +268,7 @@ void builtin_umount(int argc, char *argv[]) {
 
 static void execute(int argc, char *argv[]) {
     char *line = argv[0];
-    if (!strcmp(line, "test")) {
+    if (!strcmp(line, "testproc")) {
         return builtin_test(argc, argv);
     }
     if (!strcmp(line, "logo")) {
