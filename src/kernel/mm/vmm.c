@@ -129,12 +129,16 @@ void *vmm_map_page(void *vaddr) {
  *
  *  分配一页虚拟内存需要先找到当前所使用的页目录，
  */
-void *vmm_alloc_page(u32 count) {
+void *vmm_alloc_page(u32 count, u32 offset) {
     kassert(count > 0);
+    if (offset == 0) {
+        offset = KERNEL_MEM_END;
+    }
+    kassert(offset >= USER_EXEC_ADDR);
 
     u32 found_pages_count = 0;
 
-    u32 page_dir_idx = KERNEL_MEM_END / PAGE_SIZE / 1024;
+    u32 page_dir_idx = offset / PAGE_SIZE / 1024;
     u32 page_tbl_idx = 0;
     page_entry_t *page_dir_vaddr = (page_entry_t *)PD_BASE_VADDR;
     page_entry_t *page_tbl_vaddr = (page_entry_t *)PT_VADDR(page_dir_idx);
@@ -201,21 +205,21 @@ void *vmm_alloc_page(u32 count) {
 void vmm_free_page(void *vaddr) { vmm_unmap_page(vaddr); }
 
 void vmm_alloc_test() {
-    void *vaddr = vmm_alloc_page(1);
+    void *vaddr = vmm_alloc_page(1, 0);
     kassert((u32)vaddr == KERNEL_MEM_END);
     vmm_free_page(vaddr);
-    vaddr = vmm_alloc_page(1);
+    vaddr = vmm_alloc_page(1, 0);
     kassert((u32)vaddr == KERNEL_MEM_END);
     vmm_free_page(vaddr);
 
-    vaddr = vmm_alloc_page(3);
+    vaddr = vmm_alloc_page(3, 0);
     for (int i = 0; i < 3; i++) {
         vmm_free_page(vaddr + i * PAGE_SIZE);
     }
 }
 
 void vmm_map_test() {
-    void *vaddr = vmm_alloc_page(1);
+    void *vaddr = vmm_alloc_page(1, 0);
     kassert((u32)vaddr == KERNEL_MEM_END);
     // 缺页异常
     // *(int *)vaddr = 1;
