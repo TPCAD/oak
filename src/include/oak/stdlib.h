@@ -9,6 +9,8 @@
 /* 将 v 向上取整至 k 的倍数，k 必须为 2 的幂 */
 #define ROUNDUP(v, k) (((v) + (k) - 1) & ~((k) - 1))
 
+#define DIV_ROUNDUP(n, d) (((n) + (d) - 1) / (d))
+
 void itoa(int input, char *buffer);
 int atoi(const char *str);
 
