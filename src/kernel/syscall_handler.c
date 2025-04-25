@@ -93,6 +93,8 @@ extern void *paging_mmap(void *addr, size_t length, int prot, int flags, int fd,
                          i32 offset);
 extern int paging_munmap(void *addr, size_t length);
 
+extern int elf_execve(char *filename, char *argv[], char *envp[]);
+
 void syscall_init() {
     for (size_t i = 0; i < SYSCALL_SIZE; i++) {
         syscall_table[i] = default_syscall;
@@ -131,4 +133,5 @@ void syscall_init() {
     syscall_table[SYS_NR_UMOUNT] = super_umount;
     syscall_table[SYS_NR_MMAP] = paging_mmap;
     syscall_table[SYS_NR_MUNMAP] = paging_munmap;
+    syscall_table[SYS_NR_EXECVE] = elf_execve;
 }

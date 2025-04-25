@@ -1,3 +1,4 @@
+#include "oak/types.h"
 #include <oak/assert.h>
 #include <oak/fs/minix.h>
 #include <oak/stdio.h>
@@ -287,6 +288,22 @@ void builtin_umount(int argc, char *argv[]) {
     umount(argv[1]);
 }
 
+void builtin_exec(int argc, char *aragv[]) {
+    if (argc < 2) {
+        return;
+    }
+
+    int status;
+    pid_t pid = fork();
+    if (pid) {
+        pid_t child = waitpid(pid, &status);
+        printf("wait pid %d status %d %d\n", child, status, time());
+    } else {
+        int i = execve(argv[1], NULL, NULL);
+        exit(i);
+    }
+}
+
 static void execute(int argc, char *argv[]) {
     char *line = argv[0];
     if (!strcmp(line, "test")) {
@@ -334,6 +351,9 @@ static void execute(int argc, char *argv[]) {
     }
     if (!strcmp(line, "umount")) {
         return builtin_umount(argc, argv);
+    }
+    if (!strcmp(line, "exec")) {
+        return builtin_exec(argc, argv);
     }
     printf("osh: command not found: %s\n", argv[0]);
 }
@@ -404,7 +424,7 @@ int ash_main() {
     memset(cmd, 0, sizeof(cmd));
     memset(cwd, 0, sizeof(cwd));
 
-    builtin_logo();
+    // builtin_logo();
 
     while (true) {
         print_prompt();             // 打印提示符

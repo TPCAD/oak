@@ -34,12 +34,16 @@ typedef struct task_t {
     pid_t pid;
     pid_t ppid;
     u32 pde;
+    u32 text; // 代码段地址
+    u32 data; // 数据段地址
+    u32 end;  // 程序结束地址
     heap_context_t user_heap;
     int status; // 进程特殊状态，退出状态码
     pid_t waitpid;
     char *pwd;                          // 进程当前目录
     struct inode_t *ipwd;               // 进程当前目录 inode program work dir
     struct inode_t *iroot;              // 进程根目录
+    struct inode_t *iexec;              // 程序文件 inode
     u16 umask;                          // 进程用户权限
     struct file_t *files[TASK_FILE_NR]; // 进程文件表
     u32 magic;                          // 魔数

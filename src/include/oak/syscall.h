@@ -103,4 +103,6 @@ int mknod(char *filename, int mode, int dev);
 int mount(char *devname, char *dirname, int flags);
 int umount(char *target);
 
+int execve(char *filename, char *argv[], char *envp[]);
+
 #endif // !OAK_SYSCALL_H

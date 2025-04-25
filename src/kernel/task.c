@@ -73,12 +73,19 @@ static task_t *build_basic_task(target_t target, const char *name, u32 priority,
     task->gid = 0;
     task->pde = KERNEL_PAGE_DIR_ADDR;
     // TODO: 用户堆内存管理
-    task->user_heap.start_addr = (void *)KERNEL_MEM_END;
-    task->user_heap.brk = (void *)KERNEL_MEM_END;
-    task->user_heap.max_addr = (void *)KERNEL_MEM_END;
+    task->user_heap.start_addr = (void *)USER_EXEC_ADDR;
+    task->user_heap.brk = (void *)USER_EXEC_ADDR;
+    task->user_heap.max_addr = (void *)USER_EXEC_ADDR;
+    task->text = USER_EXEC_ADDR;
+    task->data = USER_EXEC_ADDR;
+    task->end = USER_EXEC_ADDR;
+    task->iexec = NULL;
     task->iroot = inode_get_root_inode();
     task->ipwd = inode_get_root_inode();
     task->ipwd->count += 2;
+    if (task->iexec) {
+        task->iexec->count++;
+    }
     task->pwd = (void *)pmm_alloc_kpage();
     strcpy(task->pwd, "/");
     task->umask = 0022; // 对应 0755
@@ -430,6 +437,7 @@ void task_exit(int status) {
     pmm_free_kpage((void *)curr_task->pwd);
     inode_free(curr_task->ipwd);
     inode_free(curr_task->iroot);
+    inode_free(curr_task->iexec);
 
     // 关闭文件
     for (size_t i = 0; i < TASK_FILE_NR; i++) {

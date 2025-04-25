@@ -363,3 +363,12 @@ int mount(char *devname, char *dirname, int flags) {
  *  卸载设备
  */
 int umount(char *target) { return _syscall1(SYS_NR_UMOUNT, (u32)target); }
+
+/**
+ *  @brief  11 号系统调用
+ *
+ *  执行文件
+ */
+int execve(char *filename, char *argv[], char *envp[]) {
+    return _syscall3(SYS_NR_EXECVE, (u32)filename, (u32)argv, (u32)envp);
+}
