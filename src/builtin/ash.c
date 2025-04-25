@@ -116,47 +116,68 @@ void builtin_logo() {
 }
 
 void builtin_test(int argc, char *argv[]) {
+    u32 status;
+
+    int *counter = (int *)mmap(0, sizeof(int), PROT_WRITE, MAP_SHARED, EOF, 0);
+    // int counter = 0;
+    pid_t pid = fork();
+
+    if (pid) {
+        // pid_t child = waitpid(pid, &status);
+        // printf("wait pid %d status %d %d\n", child, status, time());
+        while (true) {
+            (*counter)++;
+            printf("parent counter %d\n", *counter);
+            sleep(300);
+        }
+    } else {
+        while (true) {
+            printf("counter %d\n", *counter);
+            sleep(100);
+        }
+    }
+
     // test();
 
     // memory paging test
     // char big0[8192];
-    // if (big0[0] > 0){
-    //     big0[0]=0;
+    // if (big0[0] >= 0) {
+    //     big0[0] = 0;
     // }
     // char big1[4096];
-    // if (big1[0] > 0){
-    //     big1[0]=0;
+    // if (big1[0] >= 0) {
+    //     big1[0] = 0;
     // }
 
     // processs switch test
-    if (fork()) {
-        while (true) {
-            printf("Nr %d process, parent process %d\n", getpid(), getppid());
-            sleep(1000);
-        }
-    } else {
-        if (fork()) {
-            while (true) {
-                printf("Nr %d process, parent process %d\n", getpid(),
-                       getppid());
-                sleep(1000);
-                printf("Nr %d process exited\n");
-                exit(0);
-            }
-        } else {
-            int count = 0;
-            while (true) {
-                printf("Nr %d process, parent process %d\n", getpid(),
-                       getppid());
-                sleep(1000);
-                count++;
-                if (count == 5) {
-                    printf("Nr %d process exited\n");
-                    exit(0);
-                }
-            }
-        }
-    }
+    // if (fork()) {
+    //     while (true) {
+    //         printf("Nr %d process, parent process %d\n", getpid(),
+    //         getppid()); sleep(1000);
+    //     }
+    // } else {
+    //     if (fork()) {
+    //         while (true) {
+    //             printf("Nr %d process, parent process %d\n", getpid(),
+    //                    getppid());
+    //             sleep(1000);
+    //             printf("Nr %d process exited\n");
+    //             exit(0);
+    //         }
+    //     } else {
+    //         int count = 0;
+    //         while (true) {
+    //             printf("Nr %d process, parent process %d\n", getpid(),
+    //                    getppid());
+    //             sleep(1000);
+    //             count++;
+    //             if (count == 5) {
+    //                 printf("Nr %d process exited\n");
+    //                 exit(0);
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 void builtin_pwd() {
@@ -268,7 +289,7 @@ void builtin_umount(int argc, char *argv[]) {
 
 static void execute(int argc, char *argv[]) {
     char *line = argv[0];
-    if (!strcmp(line, "testproc")) {
+    if (!strcmp(line, "test")) {
         return builtin_test(argc, argv);
     }
     if (!strcmp(line, "logo")) {

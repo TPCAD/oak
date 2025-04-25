@@ -46,10 +46,23 @@ typedef enum syscall_t {
     SYS_NR_MKFS = 201,
 } syscall_t;
 
+enum mmap_type_t {
+    PROT_NONE = 0,
+    PROT_READ = 1,
+    PROT_WRITE = 2,
+    PROT_EXEC = 4,
+
+    MAP_SHARED = 1,
+    MAP_PRIVATE = 2,
+    MAP_FIXED = 0x10,
+};
+
 u32 test();
 void yield();
 void sleep(u32 ms);
 i32 brk(void *addr);
+void *mmap(void *addr, size_t length, int prot, int flags, int fd, i32 offset);
+int munmap(void *addr, size_t length);
 
 pid_t getpid();
 pid_t getppid();

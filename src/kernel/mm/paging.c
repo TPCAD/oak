@@ -1,6 +1,9 @@
 #include "oak/cpu.h"
+#include "oak/fs/minix.h"
 #include "oak/mm/memory.h"
 #include "oak/mm/vmm.h"
+#include "oak/stdlib.h"
+#include "oak/syscall.h"
 #include "oak/task.h"
 #include <oak/debug/kassert.h>
 #include <oak/debug/kdebug.h>
@@ -44,6 +47,7 @@ static u32 paging_copy_page(void *page) {
     memcpy((void *)0, (void *)page, PAGE_SIZE);
 
     *page_tbl_addr &= ~PG_PRESENT;
+    // PG_UNSET_PRESENT(*page_tbl_addr);
     flush_tlb(0);
     return paddr;
 }
@@ -124,7 +128,11 @@ page_entry_t *paging_copy_pde() {
 
             kassert(pmm_page_ref_status(IDX(*page_tbl_entry)));
 
-            *page_tbl_entry &= ~0x2;
+            // 不是共享内存，置为只读
+            if (!PG_IS_SHARED(*page_tbl_entry)) {
+                // *page_tbl_entry &= ~0x2;
+                *page_tbl_entry = PG_UNSET_WRITE(*page_tbl_entry);
+            }
             pmm_inc_page_ref(IDX(*page_tbl_entry));
 
             kassert(pmm_page_ref_status(IDX(*page_tbl_entry)) < 255);
@@ -172,6 +180,66 @@ void paging_free_pde() {
     }
 }
 
+// TODO:
+void *paging_mmap(void *addr, size_t length, int prot, int flags, int fd,
+                  i32 offset) {
+    ASSERT_PAGE((u32)addr);
+
+    u32 pg_count = DIV_ROUNDUP(length, PAGE_SIZE);
+    u32 vaddr = (u32)addr;
+    task_t *curr_task = task_current_running();
+
+    // addr 为 0，分配虚拟内存
+    if (!vaddr) {
+        vaddr = (u32)vmm_alloc_page(pg_count, USER_MMAP_ADDR);
+    }
+
+    kassert(vaddr >= USER_MMAP_ADDR && vaddr < USER_STACK_TOP);
+
+    // 设置页表项属性
+    for (size_t i = 0; i < pg_count; i++) {
+        u32 page = vaddr + PAGE_SIZE * i;
+
+        vmm_map_page((void *)page);
+        page_entry_t *page_tbl_entry = (page_entry_t *)PT_VADDR(DIDX(page));
+        *page_tbl_entry = PG_SET_USER(*page_tbl_entry);
+        *page_tbl_entry = PG_UNSET_WRITE(*page_tbl_entry);
+        if (prot & PROT_WRITE) {
+            *page_tbl_entry = PG_SET_WRITE(*page_tbl_entry);
+        }
+        if (flags & MAP_SHARED) {
+            *page_tbl_entry = PG_SET_SHARED(*page_tbl_entry);
+        }
+        if (flags & MAP_PRIVATE) {
+            *page_tbl_entry = PG_SET_PRIVATE(*page_tbl_entry);
+        }
+        flush_tlb(vaddr);
+    }
+
+    if (fd != EOF) {
+        lseek(fd, offset, SEEK_SET);
+        read(fd, (char *)vaddr, length);
+    }
+
+    return (void *)vaddr;
+}
+
+int paging_munmap(void *addr, size_t length) {
+    task_t *curr_task = task_current_running();
+    u32 vaddr = (u32)addr;
+    kassert(vaddr >= USER_MMAP_ADDR && vaddr < USER_STACK_TOP);
+
+    ASSERT_PAGE(vaddr);
+    u32 pg_count = DIV_ROUNDUP(length, PAGE_SIZE);
+
+    for (size_t i = 0; i < pg_count; i++) {
+        u32 page = vaddr + PAGE_SIZE * i;
+        vmm_unmap_page((void *)page);
+    }
+
+    return 0;
+}
+
 #define PF_PRESENT(err) ((err) & 0x1)
 #define PF_WRITE(err) ((err) & 0x2)
 #define PF_USER(err) ((err) & 0x4)
@@ -198,6 +266,7 @@ void page_fault_handler(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
         page_entry_t *page_tbl_entry = &page_tbl_addr[TIDX(missed_vaddr)];
 
         kassert(PG_IS_PRESENT(*page_tbl_entry));
+        kassert(!PG_IS_SHARED(*page_tbl_entry));
         kassert(pmm_page_ref_status(IDX(*page_tbl_entry)));
 
         if (pmm_page_ref_status(IDX(*page_tbl_entry)) == 1) {
