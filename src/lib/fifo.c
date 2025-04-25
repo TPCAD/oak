@@ -7,7 +7,7 @@
  *  @param  pos  指定位置的索引
  *  @return  索引
  */
-static __inline u32 fifo_next(fifo_t *fifo, u32 pos) {
+static __inline inline u32 fifo_next(fifo_t *fifo, u32 pos) {
     return (pos + 1) % fifo->capacity;
 }
 

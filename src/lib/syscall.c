@@ -5,7 +5,7 @@
  *  @param  nr  系统调用号
  *  @return  系统调用返回值
  */
-static __inline u32 _syscall0(u32 nr) {
+static __inline inline u32 _syscall0(u32 nr) {
     u32 ret;
     asm volatile("int $0x80\n" : "=a"(ret) : "a"(nr));
     return ret;
@@ -17,7 +17,7 @@ static __inline u32 _syscall0(u32 nr) {
  *  @param  arg  系统调用参数
  *  @return  系统调用返回值
  */
-static __inline u32 _syscall1(u32 nr, u32 arg) {
+static __inline inline u32 _syscall1(u32 nr, u32 arg) {
     u32 ret;
     asm volatile("int $0x80\n" : "=a"(ret) : "a"(nr), "b"(arg));
     return ret;
@@ -29,7 +29,7 @@ static __inline u32 _syscall1(u32 nr, u32 arg) {
  *  @param  arg  系统调用参数
  *  @return  系统调用返回值
  */
-static __inline u32 _syscall2(u32 nr, u32 arg1, u32 arg2) {
+static __inline inline u32 _syscall2(u32 nr, u32 arg1, u32 arg2) {
     u32 ret;
     asm volatile("int $0x80\n" : "=a"(ret) : "a"(nr), "b"(arg1), "c"(arg2));
     return ret;
@@ -41,7 +41,7 @@ static __inline u32 _syscall2(u32 nr, u32 arg1, u32 arg2) {
  *  @param  arg  系统调用参数
  *  @return  系统调用返回值
  */
-static __inline u32 _syscall3(u32 nr, u32 arg1, u32 arg2, u32 arg3) {
+static __inline inline u32 _syscall3(u32 nr, u32 arg1, u32 arg2, u32 arg3) {
     u32 ret;
     asm volatile("int $0x80\n"
                  : "=a"(ret)
@@ -55,7 +55,8 @@ static __inline u32 _syscall3(u32 nr, u32 arg1, u32 arg2, u32 arg3) {
  *  @param  arg  系统调用参数
  *  @return  系统调用返回值
  */
-static __inline u32 _syscall4(u32 nr, u32 arg1, u32 arg2, u32 arg3, u32 arg4) {
+static __inline inline u32 _syscall4(u32 nr, u32 arg1, u32 arg2, u32 arg3,
+                                     u32 arg4) {
     u32 ret;
     asm volatile("int $0x80\n"
                  : "=a"(ret)
@@ -69,8 +70,8 @@ static __inline u32 _syscall4(u32 nr, u32 arg1, u32 arg2, u32 arg3, u32 arg4) {
  *  @param  arg  系统调用参数
  *  @return  系统调用返回值
  */
-static __inline u32 _syscall5(u32 nr, u32 arg1, u32 arg2, u32 arg3, u32 arg4,
-                              u32 arg5) {
+static __inline inline u32 _syscall5(u32 nr, u32 arg1, u32 arg2, u32 arg3,
+                                     u32 arg4, u32 arg5) {
     u32 ret;
     asm volatile("int $0x80\n"
                  : "=a"(ret)
@@ -85,8 +86,8 @@ static __inline u32 _syscall5(u32 nr, u32 arg1, u32 arg2, u32 arg3, u32 arg4,
  *  @param  arg  系统调用参数
  *  @return  系统调用返回值
  */
-static __inline u32 _syscall6(u32 nr, u32 arg1, u32 arg2, u32 arg3, u32 arg4,
-                              u32 arg5, u32 arg6) {
+static __inline inline u32 _syscall6(u32 nr, u32 arg1, u32 arg2, u32 arg3,
+                                     u32 arg4, u32 arg5, u32 arg6) {
     u32 ret;
     asm volatile("pushl %%ebp\n"
                  "movl %7, %%ebp\n"
