@@ -112,6 +112,10 @@ void *vmm_map_page(void *vaddr) {
         memset((void *)PT_VADDR(page_dir_idx), 0, PAGE_SIZE);
     }
 
+    if (PG_IS_PRESENT(page_tbl_vaddr[page_tbl_idx])) {
+        return vaddr;
+    }
+
     void *paddr = pmm_alloc_page();
     if (!paddr) {
         return NULL;
