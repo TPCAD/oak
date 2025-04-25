@@ -116,10 +116,10 @@ void dmm_place_chunk(u8 *ptr, size_t size) {
 i32 dmm_brk(void *addr) {
     u32 brk = (u32)addr;
     ASSERT_PAGE(brk);
-    kassert(brk > KERNEL_MEM_END && brk < USER_STACK_TOP);
 
     task_t *curr_task = task_current_running();
     kassert(curr_task->uid != KERNEL_USER);
+    kassert(curr_task->end <= brk && brk <= USER_MMAP_ADDR);
 
     u32 old_brk = (u32)curr_task->user_heap.brk;
 
@@ -129,7 +129,7 @@ i32 dmm_brk(void *addr) {
         }
     }
 
-    curr_task->user_heap.brk = addr;
+    curr_task->user_heap.brk = (void*)brk;
     return 0;
 }
 
