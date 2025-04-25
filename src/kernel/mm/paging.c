@@ -204,7 +204,9 @@ void *paging_mmap(void *addr, size_t length, int prot, int flags, int fd,
         page_entry_t *page_tbl_entry = (page_entry_t *)PT_VADDR(DIDX(page));
         *page_tbl_entry = PG_SET_USER(*page_tbl_entry);
         *page_tbl_entry = PG_UNSET_WRITE(*page_tbl_entry);
+        *page_tbl_entry = PG_SET_RDONLY(*page_tbl_entry);
         if (prot & PROT_WRITE) {
+            *page_tbl_entry = PG_UNSET_RDONLY(*page_tbl_entry);
             *page_tbl_entry = PG_SET_WRITE(*page_tbl_entry);
         }
         if (flags & MAP_SHARED) {
@@ -267,6 +269,7 @@ void page_fault_handler(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
 
         kassert(PG_IS_PRESENT(*page_tbl_entry));
         kassert(!PG_IS_SHARED(*page_tbl_entry));
+        kassert(!PG_IS_RDONLY(*page_tbl_entry));
         kassert(pmm_page_ref_status(IDX(*page_tbl_entry)));
 
         if (pmm_page_ref_status(IDX(*page_tbl_entry)) == 1) {

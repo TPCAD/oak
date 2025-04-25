@@ -63,10 +63,11 @@
 #define PG_DIRTY (0x1 << 6)
 #define PG_PDE_4MB (0x1 << 7)
 #define PG_GLOBAL (0x1 << 8)
-/* 9～11 位是还未使用的，这里将第 9 位用作共享位，第 10 位用作私有位。 */
+/* 9～11 位是还未使用的，这里将第 9 位用作共享位，第 10 位用作私有位，
+ * 第 11 位用作只读位。 */
 #define PG_SHARED (0x1 << 9)
 #define PG_PRIVATE (0x1 << 10)
-#define PG_AVAIL (0x1 << 11)
+#define PG_RDONLY (0x1 << 11)
 
 // 判断是否设置页表项属性
 #define PG_IS_PRESENT(entry) (PG_PRESENT & (u32)(entry))
@@ -80,7 +81,7 @@
 #define PG_IS_GLOBAL(entry) (PG_GLOBAL & (u32)(entry))
 #define PG_IS_SHARED(entry) (PG_SHARED & (u32)(entry))
 #define PG_IS_PRIVATE(entry) (PG_PRIVATE & (u32)(entry))
-#define PG_IS_AVAIL(entry) (PG_AVAIL & (u32)(entry))
+#define PG_IS_RDONLY(entry) (PG_RDONLY & (u32)(entry))
 
 // 设置页表项属性
 #define PG_SET_PRESENT(entry) (PG_PRESENT | (u32)(entry))
@@ -94,7 +95,7 @@
 #define PG_SET_GLOBAL(entry) (PG_GLOBAL | (u32)(entry))
 #define PG_SET_SHARED(entry) (PG_SHARED | (u32)(entry))
 #define PG_SET_PRIVATE(entry) (PG_PRIVATE | (u32)(entry))
-#define PG_SET_AVAIL(entry) (PG_AVAIL | (u32)(entry))
+#define PG_SET_RDONLY(entry) (PG_RDONLY | (u32)(entry))
 
 // 删除页表项属性
 #define PG_UNSET_PRESENT(entry) (~PG_PRESENT & (u32)(entry))
@@ -108,7 +109,7 @@
 #define PG_UNSET_GLOBAL(entry) (~PG_GLOBAL & (u32)(entry))
 #define PG_UNSET_SHARED(entry) (~PG_SHARED & (u32)(entry))
 #define PG_UNSET_PRIVATE(entry) (~PG_PRIVATE & (u32)(entry))
-#define PG_UNSET_AVAIL(entry) (~PG_AVAIL & (u32)(entry))
+#define PG_UNSET_RDONLY(entry) (~PG_RDONLY & (u32)(entry))
 
 #define PG_ATTR_P (PG_PRESENT)
 #define PG_ATTR_PW (PG_PRESENT | PG_WRITE)
