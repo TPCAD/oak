@@ -148,7 +148,7 @@ static buffer_t *add_entry(inode_t *dir, const char *name, dentry_t **result) {
 #define P_READ IROTH
 #define P_WRITE IWOTH
 
-static bool permission(inode_t *inode, u16 mask) {
+bool permission(inode_t *inode, u16 mask) {
     u16 mode = inode->inode->mode;
     // 硬链接为 0，文件已被删除
     if (!inode->inode->nlinks)

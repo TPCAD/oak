@@ -30,6 +30,10 @@
 #define IS_SEPARATOR(c)                                                        \
     ((c) == SEPARATOR1 || (c) == SEPARATOR2) // 字符是否位目录分隔符
 
+#define P_EXEC IXOTH
+#define P_READ IROTH
+#define P_WRITE IWOTH
+
 typedef struct inode_desc_t {
     u16 mode;    // 文件类型和属性（rwx）
     u16 uid;     // 用户 id（文件拥有者标识符）
@@ -134,5 +138,7 @@ inode_t *inode_open(char *pathname, int flag, int mode);
 
 void file_free_table(file_t *file);
 file_t *file_search_table();
+
+bool permission(inode_t *inode, u16 mask);
 
 #endif // !OAK_MINIX_H
