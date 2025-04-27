@@ -252,7 +252,7 @@ void page_fault_handler(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
                         u32 eflags) {
     kassert(vector == 0xe);
     u32 missed_vaddr = cpu_get_cr2();
-    // KDEBUG("Fault address 0x%p\n", missed_vaddr);
+    KDEBUG("Fault address 0x%p\n", missed_vaddr);
     kassert(missed_vaddr >= KERNEL_MEM_END && missed_vaddr < USER_STACK_BOTTOM);
     task_t *curr_task = task_current_running();
 
@@ -287,8 +287,8 @@ void page_fault_handler(u32 vector, u32 edi, u32 esi, u32 ebp, u32 esp, u32 ebx,
 
     // 堆栈因为页面不存在造成缺页异常
     if (!PF_PRESENT(err_code) &&
-            (missed_vaddr < (u32)curr_task->user_heap.brk) ||
-        (missed_vaddr >= USER_STACK_TOP)) {
+        ((missed_vaddr < (u32)curr_task->user_heap.brk) ||
+         (missed_vaddr >= USER_STACK_TOP))) {
         vmm_map_page((void *)missed_vaddr);
         return;
     }
