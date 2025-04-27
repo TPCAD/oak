@@ -3,6 +3,11 @@
 
 #define __packed __attribute__((packed))
 #define __inline __attribute__((always_inline))
+// 标记弱符号
+#define weak __attribute__((__weak__))
+
+// 标记不会返回的函数
+#define noreturn __attribute__((__noreturn__))
 
 #define EOF -1
 #define EOS '\0'
