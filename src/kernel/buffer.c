@@ -42,7 +42,7 @@ static list_t hash_table[HASH_COUNT];
  *  @param  block  块号
  *  @return  哈希值
  */
-static u32 hash(u32 dev, u32 block) { return (dev ^ block) & HASH_COUNT; }
+static u32 hash(u32 dev, u32 block) { return (dev ^ block) % HASH_COUNT; }
 
 /**
  *  @brief  在哈希表中搜索 buffer
