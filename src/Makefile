@@ -15,6 +15,7 @@ BUILD:=../build
 BUILD_BOOT:=$(BUILD)/boot
 BUILD_KERNEL:=$(BUILD)/kernel
 BUILD_BUILTIN:=$(BUILD)/builtin
+BUILD_LIB:=$(BUILD)/lib
 
 # compile/link arguments
 LDFLAGS:= -m elf_i386 \
@@ -31,8 +32,8 @@ CFLAGS+= -fno-stack-protector
 CFLAGS+= -I$(SRC)/include
 CFLAGS+= -I$(SRC)/arch/$(ARCH)/include
 CFLAGS+= -O0
-# CFLAGS+= -DOAK
-# CFLAGS:=$(strip ${CFLAGS})
+CFLAGS+= -DOAK
+CFLAGS:=$(strip ${CFLAGS})
 
 include makefiles/compile.mk
 

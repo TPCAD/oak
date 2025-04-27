@@ -11,6 +11,7 @@ $(BUILD_BOOT)/loader.bin: $(BUILD_BOOT)/loader.o
 # ==================== compile ====================
 KERNEL_SRC:=$(shell find $(KERNEL_DIR) $(ARCH_DIR) $(LIB_DIR) -name "*.[cS]")
 OBJ:=$(patsubst ./%, $(BUILD)/%.o, $(KERNEL_SRC))
+OBJ:=$(filter-out $(BUILD_LIB)/crt.S.o $(BUILD_LIB)/crt1.c.o, $(OBJ))
 
 $(BUILD)/%.c.o: %.c
 	@mkdir -p $(@D)
@@ -20,7 +21,17 @@ $(BUILD)/%.S.o: %.S
 	@mkdir -p $(@D)
 	$(AS) --32 -g $< -o $@
 
-$(BUILD_BUILTIN)/%.o.out: $(BUILD_BUILTIN)/%.o
+$(BUILD_LIB)/libc.o: $(BUILD_LIB)/crt.S.o \
+	$(BUILD_LIB)/crt1.c.o \
+	$(BUILD_LIB)/string.c.o \
+	$(BUILD_LIB)/vsprintf.c.o \
+	$(BUILD_LIB)/stdlib.c.o \
+	$(BUILD_LIB)/syscall.c.o \
+	$(BUILD_LIB)/printf.c.o \
+	$(BUILD_LIB)/assert.c.o
+	ld -m elf_i386 -r $^ -o $@
+
+$(BUILD_BUILTIN)/%.o.out: $(BUILD_BUILTIN)/%.o $(BUILD_LIB)/libc.o
 	ld -m elf_i386 -static $^ -o $@ -Ttext 0x1001000
 
 # ==================== kernel ====================

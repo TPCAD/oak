@@ -10,7 +10,7 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	$(BUILD_BOOT)/loader.bin \
 	$(BUILD_KERNEL)/system.bin \
 	$(BUILD_KERNEL)/system.map \
-	$(BUILD_BUILTIN)/hello.S.o.out \
+	$(BUILD_BUILTIN)/env.c.o.out \
 	$(UTILS_DIR)/master.sfdisk
 	qemu-img create $@ 16M
 	dd bs=512 count=1 conv=notrunc if=$(BUILD_BOOT)/boot.bin of=$@
@@ -34,7 +34,7 @@ $(BUILD)/master.img: $(BUILD_BOOT)/boot.bin \
 	mkdir -p /mnt/d1/d2/d3
 	echo "hello oak from root directory!" > /mnt/hello.txt
 	echo "hello oak from home directory!" > /mnt/home/hello.txt
-	cp $(BUILD_BUILTIN)/hello.S.o.out /mnt/hello.out
+	cp $(BUILD_BUILTIN)/env.c.o.out /mnt/bin/env
 	# 卸载镜像文件
 	sudo umount /mnt
 	sudo losetup -d /dev/loop0

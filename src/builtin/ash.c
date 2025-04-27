@@ -14,8 +14,13 @@
 
 static char cwd[MAX_PATH_LEN];
 static char cmd[MAX_CMD_LEN];
-static char *argv[MAX_ARG_NR];
+static char *args[MAX_ARG_NR];
 static char buf[BUFLEN];
+static char *envp[] = {
+    "HOME=/",
+    "PATH=/bin",
+    NULL,
+};
 
 static char oak_logo[][52] = {
     "                                  ____        __  \n\t",
@@ -269,18 +274,16 @@ void builtin_umount(int argc, char *argv[]) {
     umount(argv[1]);
 }
 
-void builtin_exec(int argc, char *aragv[]) {
-    if (argc < 2) {
-        return;
-    }
-
+void builtin_exec(char *filename, int argc, char *argv[]) {
     int status;
     pid_t pid = fork();
     if (pid) {
         pid_t child = waitpid(pid, &status);
-        printf("wait pid %d status %d %d\n", child, status, time());
+        // printf("wait pid %d status %d %d\n", child, status, time());
+        return;
     } else {
-        int i = execve(argv[1], NULL, NULL);
+        int i = execve(filename, argv, envp);
+        // int i = execve("/bin/env", NULL, NULL);
         exit(i);
     }
 }
@@ -333,10 +336,13 @@ static void execute(int argc, char *argv[]) {
     if (!strcmp(line, "umount")) {
         return builtin_umount(argc, argv);
     }
-    if (!strcmp(line, "exec")) {
-        return builtin_exec(argc, argv);
+    stat_t statbuf;
+    sprintf(buf, "/bin/%s", argv[0]);
+    if (stat(buf, &statbuf) == EOF) {
+        printf("osh: command not found: %s\n", argv[0]);
+        return;
     }
-    printf("osh: command not found: %s\n", argv[0]);
+    return builtin_exec(buf, argc - 1, &argv[1]);
 }
 
 void readline(char *buf, u32 count) {
@@ -413,11 +419,11 @@ int ash_main() {
         if (cmd[0] == 0) {
             continue;
         }
-        int argc = cmd_parse(cmd, argv, ' '); // 解析命令
+        int argc = cmd_parse(cmd, args, ' '); // 解析命令
         if (argc < 0 || argc >= MAX_ARG_NR) {
             continue;
         }
-        execute(argc, argv); // 执行命令
+        execute(argc, args); // 执行命令
     }
     return 0;
 }
