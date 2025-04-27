@@ -11,7 +11,7 @@ $(BUILD_BOOT)/loader.bin: $(BUILD_BOOT)/loader.o
 # ==================== compile ====================
 KERNEL_SRC:=$(shell find $(KERNEL_DIR) $(ARCH_DIR) $(LIB_DIR) -name "*.[cS]")
 OBJ:=$(patsubst ./%, $(BUILD)/%.o, $(KERNEL_SRC))
-OBJ:=$(filter-out $(BUILD_LIB)/crt.S.o $(BUILD_LIB)/crt1.c.o, $(OBJ))
+OBJ:=$(filter-out $(BUILD_LIB)/crt.S.o $(BUILD_LIB)/crt1.c.o $(BUILD_LIB)/time.c.o, $(OBJ))
 
 $(BUILD)/%.c.o: %.c
 	@mkdir -p $(@D)
@@ -28,7 +28,8 @@ $(BUILD_LIB)/libc.o: $(BUILD_LIB)/crt.S.o \
 	$(BUILD_LIB)/stdlib.c.o \
 	$(BUILD_LIB)/syscall.c.o \
 	$(BUILD_LIB)/printf.c.o \
-	$(BUILD_LIB)/assert.c.o
+	$(BUILD_LIB)/assert.c.o \
+	$(BUILD_LIB)/time.c.o
 	ld -m elf_i386 -r $^ -o $@
 
 $(BUILD_BUILTIN)/%.o.out: $(BUILD_BUILTIN)/%.o $(BUILD_LIB)/libc.o

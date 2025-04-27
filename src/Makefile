@@ -35,6 +35,12 @@ CFLAGS+= -O0
 CFLAGS+= -DOAK
 CFLAGS:=$(strip ${CFLAGS})
 
+BUILTIN_APPS := \
+	$(BUILD_BUILTIN)/env.c.o.out \
+	$(BUILD_BUILTIN)/echo.c.o.out \
+	$(BUILD_BUILTIN)/cat.c.o.out \
+	$(BUILD_BUILTIN)/ls.c.o.out \
+
 include makefiles/compile.mk
 
 include makefiles/images.mk
