@@ -118,9 +118,6 @@ void builtin_logo() {
 
 void builtin_test(int argc, char *argv[]) {
     printf("ash test start...\n");
-    while (true) {
-        test();
-    }
 
     // test();
 
@@ -405,7 +402,6 @@ static int cmd_parse(char *cmd, char *argv[], char token) {
 }
 
 int ash_main() {
-    builtin_test(0, NULL);
     memset(cmd, 0, sizeof(cmd));
     memset(cwd, 0, sizeof(cwd));
 

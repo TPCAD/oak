@@ -5,9 +5,9 @@ QEMU+= -machine pcspk-audiodev=hda
 QEMU+= -drive file=$(BUILD)/master.img,if=ide,index=0,media=disk,format=raw
 QEMU+= -drive file=$(BUILD)/slave.img,if=ide,index=1,media=disk,format=raw
 QEMU+= -chardev stdio,mux=on,id=com1
-QEMU+= -chardev vc,mux=on,id=com2
+# QEMU+= -chardev vc,mux=on,id=com2
 QEMU+= -serial chardev:com1
-QEMU+= -serial chardev:com2
+# QEMU+= -serial chardev:com2
 
 QEMU_DISK:= -boot c
 

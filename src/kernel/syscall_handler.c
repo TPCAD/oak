@@ -28,23 +28,23 @@ static void default_syscall() {
 
 static u32 test_syscall() {
     // KDEBUG("syscall test...\n");
-    char ch;
-    vdevice_t *device;
-
-    vdevice_t *serial = vdevice_search(VDEV_SERIAL, 0);
-    kassert(serial);
-
-    vdevice_t *keyboard = vdevice_search(VDEV_KEYBOARD, 0);
-    kassert(keyboard);
-
-    vdevice_t *console = vdevice_search(VDEV_CONSOLE, 0);
-    kassert(console);
-
-    vdevice_read(serial->dev, &ch, 1, 0, 0);
-    // device_read(keyboard->dev, &ch, 1, 0, 0);
-
-    vdevice_write(serial->dev, &ch, 1, 0, 0);
-    vdevice_write(console->dev, &ch, 1, 0, 0);
+    // serial test
+    // char ch;
+    // vdevice_t *device;
+    //
+    // vdevice_t *serial = vdevice_search(VDEV_SERIAL, 0);
+    // kassert(serial);
+    //
+    // vdevice_t *keyboard = vdevice_search(VDEV_KEYBOARD, 0);
+    // kassert(keyboard);
+    //
+    // vdevice_t *console = vdevice_search(VDEV_CONSOLE, 0);
+    // kassert(console);
+    //
+    // vdevice_read(serial->dev, &ch, 1, 0, 0);
+    //
+    // vdevice_write(serial->dev, &ch, 1, 0, 0);
+    // vdevice_write(console->dev, &ch, 1, 0, 0);
 
     // dmm test
     // char *chunk0 = kmalloc(sizeof(char));
