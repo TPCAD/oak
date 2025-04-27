@@ -11,6 +11,7 @@ extern void pic_init();
 extern void clock_init();
 extern void time_init();
 extern void kbd_init();
+extern void serial_init();
 extern void task_init();
 extern void paging_init();
 extern void syscall_init();
@@ -53,6 +54,7 @@ void kernel_init() {
     pic_init();
     clock_init();
     time_init();
+    serial_init();
     kbd_init();
     ide_init();
     buffer_init();

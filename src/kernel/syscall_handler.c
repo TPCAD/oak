@@ -28,25 +28,44 @@ static void default_syscall() {
 
 static u32 test_syscall() {
     // KDEBUG("syscall test...\n");
-    char *chunk0 = kmalloc(sizeof(char));
-    kprintf("chunk0: 0x%p\n", chunk0);
-    char *chunk1 = kmalloc(sizeof(char));
-    kprintf("chunk1: 0x%p\n", chunk1);
-    char *chunk2 = kmalloc(sizeof(char));
-    kprintf("chunk2: 0x%p\n", chunk2);
+    char ch;
+    vdevice_t *device;
 
-    *chunk0 = 0xaa;
-    *chunk1 = 0x55;
-    *chunk2 = 0x5a;
-    kassert(*chunk0 == (char)0xaa);
-    kassert(*chunk1 == (char)0x55);
-    kassert(*chunk2 == (char)0x5a);
-    kprintf("memory content assert success\n");
+    vdevice_t *serial = vdevice_search(VDEV_SERIAL, 0);
+    kassert(serial);
 
-    kfree(chunk0);
-    kfree(chunk1);
-    kfree(chunk2);
-    kprintf("free memory success\n");
+    vdevice_t *keyboard = vdevice_search(VDEV_KEYBOARD, 0);
+    kassert(keyboard);
+
+    vdevice_t *console = vdevice_search(VDEV_CONSOLE, 0);
+    kassert(console);
+
+    vdevice_read(serial->dev, &ch, 1, 0, 0);
+    // device_read(keyboard->dev, &ch, 1, 0, 0);
+
+    vdevice_write(serial->dev, &ch, 1, 0, 0);
+    vdevice_write(console->dev, &ch, 1, 0, 0);
+
+    // dmm test
+    // char *chunk0 = kmalloc(sizeof(char));
+    // kprintf("chunk0: 0x%p\n", chunk0);
+    // char *chunk1 = kmalloc(sizeof(char));
+    // kprintf("chunk1: 0x%p\n", chunk1);
+    // char *chunk2 = kmalloc(sizeof(char));
+    // kprintf("chunk2: 0x%p\n", chunk2);
+    //
+    // *chunk0 = 0xaa;
+    // *chunk1 = 0x55;
+    // *chunk2 = 0x5a;
+    // kassert(*chunk0 == (char)0xaa);
+    // kassert(*chunk1 == (char)0x55);
+    // kassert(*chunk2 == (char)0x5a);
+    // kprintf("memory content assert success\n");
+    //
+    // kfree(chunk0);
+    // kfree(chunk1);
+    // kfree(chunk2);
+    // kprintf("free memory success\n");
 
     return 255;
 }

@@ -31,6 +31,7 @@ enum vdevice_type_t {
 enum vdevice_subtype_t {
     VDEV_CONSOLE = 1, // 控制台
     VDEV_KEYBOARD,    // 键盘
+    VDEV_SERIAL,      // 串口
     VDEV_IDE_DISK,    // IDE 磁盘
     VDEV_IDE_PART,    // IDE 分区
 };
