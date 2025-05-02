@@ -21,21 +21,24 @@ extern tss_t tss;
 extern void interrupt_exit();
 extern file_t file_table[];
 
-/* 记录系统运行中的任务，最多存在 64 个任务 */
+/* 记录系统运行中的任务页地址，最多存在 64 个任务 */
 #define NR_TASKS 64
 static task_t *task_table[NR_TASKS];
 
 static list_t block_list; // 阻塞链表
 static list_t sleep_list; // 睡眠链表
 
-// 空闲任务
+// 空闲任务。当系统没有可运行的任务时运行空闲任务，防止系统崩溃。
 static task_t *idle_task = NULL;
 
 /**
- *  @brief  从 `task_table` 中找到一个空位
- *  @return  新的 `task_t` 地址
+ *  @brief  从内核页中分配一页任务页
+ *  @return  任务页地址
+ *
+ *  若 task_table 有空闲元素，从内核页中分配一页。页地址存入 task_table，对应的
+ *  索引即位任务的 pid。若无空闲元素，内核 panic。
  */
-static task_t *find_free_task() {
+static task_t *internal_alloc_task_page() {
     for (size_t i = 0; i < NR_TASKS; i++) {
         if (task_table[i] == NULL) {
             task_t *task = (task_t *)pmm_alloc_kpage();
@@ -49,10 +52,20 @@ static task_t *find_free_task() {
     return NULL; // no need
 }
 
-static task_t *build_basic_task(target_t target, const char *name, u32 priority,
-                                u32 uid) {
-    task_t *task = find_free_task();
+/**
+ *  @brief  构建内核态任务
+ *  @param  target  任务返回地址
+ *  @param  name  任务名
+ *  @param  priority  任务优先级
+ *  @param  uid  用户 ID
+ *  @return  任务页地址
+ */
+static task_t *internal_build_kernel_task(target_t target, const char *name,
+                                          u32 priority, u32 uid) {
+    task_t *task = internal_alloc_task_page();
 
+    // 构建内核栈
+    // 任务页的高地址作为内核栈栈底
     u32 stack = (u32)task + PAGE_SIZE - sizeof(task_frame_t);
 
     task_frame_t *frame = (task_frame_t *)stack;
@@ -66,7 +79,7 @@ static task_t *build_basic_task(target_t target, const char *name, u32 priority,
 
     task->statck_addr = (u32 *)stack;
     task->priority = priority;
-    task->ticks = task->priority;
+    task->ticks = task->priority; // 优先级越大，初始时间片越多
     task->jiffies = 0;
     task->state = TASK_READY;
     task->uid = uid;
@@ -76,32 +89,42 @@ static task_t *build_basic_task(target_t target, const char *name, u32 priority,
     task->user_heap.start_addr = (void *)USER_EXEC_ADDR;
     task->user_heap.brk = (void *)USER_EXEC_ADDR;
     task->user_heap.max_addr = (void *)USER_EXEC_ADDR;
+    // 用户程序段地址
     task->text = USER_EXEC_ADDR;
     task->data = USER_EXEC_ADDR;
     task->end = USER_EXEC_ADDR;
+    // 任务关联 inode
     task->iexec = NULL;
     task->iroot = inode_get_root_inode();
     task->ipwd = inode_get_root_inode();
-    task->ipwd->count += 2;
+    task->iroot->count++;
+    task->ipwd->count++;
     if (task->iexec) {
         task->iexec->count++;
     }
+    // 任务工作目录字符串
+    // TODO: 分配一页有些浪费，使用内核堆内存
     task->pwd = (void *)pmm_alloc_kpage();
     strcpy(task->pwd, "/");
     task->umask = 0022; // 对应 0755
-    // 标准输入输出
+    // 任务初始文件，标准输入输出
     task->files[STDIN_FILENO] = &file_table[STDIN_FILENO];
     task->files[STDOUT_FILENO] = &file_table[STDOUT_FILENO];
     task->files[STDERR_FILENO] = &file_table[STDERR_FILENO];
     task->files[STDIN_FILENO]->count++;
     task->files[STDOUT_FILENO]->count++;
     task->files[STDERR_FILENO]->count++;
+    // 内核魔数，防止内核栈溢出
     task->magic = OAK_MAGIC;
 
     return task;
 }
 
-static void task_activate(task_t *task) {
+/**
+ *  @brief  切换任务前修改 PDE 及保存内核栈地址
+ *  @param  task  要切换到的任务页地址
+ */
+static void internal_pre_switch(task_t *task) {
     kassert(task->magic == OAK_MAGIC);
     // 切换 PDE
     if (task->pde != cpu_get_cr3()) {
@@ -109,6 +132,7 @@ static void task_activate(task_t *task) {
     }
     // 内核态切换至用户态时保存任务的内核栈到 TSS
     if (task->uid != KERNEL_USER) {
+        // 每次切换都会清空内核栈
         tss.esp0 = (u32)task + PAGE_SIZE;
     }
 }
@@ -116,11 +140,12 @@ static void task_activate(task_t *task) {
 /**
  *  @brief  搜索指定状态的任务
  *  @param  state  任务状态
- *  @return  任务指针
+ *  @return  任务页地址
  *
- *  从任务数组中搜索指定状态的运行时间最短或剩余时间片最少的任务，不包括当前任务
+ *  从 task_table 中搜索指定状态的运行时间最短或剩余时间片最少的任务，
+ *  不包括当前任务
  */
-static task_t *search_state_task(task_state_t state) {
+static task_t *internal_find_stated_task(task_state_t state) {
     kassert(!cpu_get_intr_state());
 
     task_t *task = NULL;
@@ -151,27 +176,19 @@ static task_t *search_state_task(task_state_t state) {
 }
 
 /**
- *  @brief  构建临时内核任务
+ *  @brief  进入用户态
+ *  @param  target  返回地址
  *
- *  内核被 bootloader 放在 0x10000 的位置，内核的栈底地址也是 0x10000。根据
- *  `task_t` 的结构，内核的 `task_t` 起始位置是 0xf000。为了在时钟中断到来时可以
- *  正确切换到其他任务，构建一个临时的 `task_t` 结构，这个结构只有 `magic` 和
- *  `ticks` 字段有值。
- *
- *  内核任务在切换到其他任务后就不会再被执行，因为 `task_table` 没有记录内核任务
+ *  将内核态任务切换至用户态任务
  */
-static void build_temp_kernel_task() {
-    task_t *temp_kernel_task = task_current_running();
-    temp_kernel_task->magic = OAK_MAGIC;
-    temp_kernel_task->ticks = 1;
-}
-
-void switch_to_user_mode(target_t target) {
+void internal_enter_user_mode(target_t target) {
     task_t *curr_task = task_current_running();
 
+    // 拷贝并修改 PDE
     curr_task->pde = (u32)paging_copy_pde();
     cpu_set_cr3(curr_task->pde);
 
+    // 在内核栈中构建中断上下文（带特权级转换）
     u32 kstack_addr = (u32)curr_task + PAGE_SIZE - sizeof(intr_context_t);
     intr_context_t *intr_context = (intr_context_t *)kstack_addr;
 
@@ -204,12 +221,24 @@ void switch_to_user_mode(target_t target) {
 }
 
 /**
+ *  @brief  获取当前运行的任务
+ *  @return  当前运行的任务页地址
+ *
+ *  执行该函数时必定是内核态，且 ESP 必定是当前任务页地址，因此只要获取 ESP 即可
+ *  获得当前任务的 task_t 结构。
+ */
+task_t *task_current_running() {
+    asm volatile("movl %esp, %eax\n"
+                 "andl $0xfffff000, %eax\n");
+}
+
+/**
  *  @brief  任务调度
  */
 void task_schedule() {
     kassert(!cpu_get_intr_state());
     task_t *curr_task = task_current_running();
-    task_t *found_task = search_state_task(TASK_READY);
+    task_t *found_task = internal_find_stated_task(TASK_READY);
 
     kassert(found_task != NULL);
     kassert(found_task->magic == OAK_MAGIC);
@@ -223,7 +252,7 @@ void task_schedule() {
         return;
     }
 
-    task_activate(found_task);
+    internal_pre_switch(found_task);
     task_switch(found_task);
 }
 
@@ -329,18 +358,6 @@ void task_wakeup() {
 }
 
 /**
- *  @brief  获取当前运行的任务
- *  @return  当前运行的任务的地址
- *
- *  当前任务的栈和任务的 task_t 结构体位于同一页，且 task_t 结构体位于页起始
- *  地址，取当前 esp 值即可得到当前任务的 task_t 结构体地址。
- */
-task_t *task_current_running() {
-    asm volatile("movl %esp, %eax\n"
-                 "andl $0xfffff000, %eax\n");
-}
-
-/**
  *  @brief  获取任务 ID
  *  @return  任务 ID
  */
@@ -369,7 +386,7 @@ pid_t task_fork() {
     kassert(curr_task->node.next == NULL && curr_task->node.prev == NULL &&
             curr_task->state == TASK_RUNNING);
 
-    task_t *child_task = find_free_task();
+    task_t *child_task = internal_alloc_task_page();
     pid_t child_pid = child_task->pid;
 
     // 拷贝当前任务到新任务
@@ -447,6 +464,7 @@ void task_exit(int status) {
         }
     }
 
+    // 将子进程交给父进程
     for (size_t i = 2; i < NR_TASKS; i++) {
         task_t *child_task = task_table[i];
         if (!child_task) {
@@ -521,11 +539,11 @@ rollback:
 }
 
 /**
- *  @brief  寻找进程的空闲文件号
- *  @param  task
- *  @return  空闲文件号
+ *  @brief  分配可用文件描述符
+ *  @param  task 任务页地址
+ *  @return  文件描述符
  */
-fd_t task_find_fd(task_t *task) {
+fd_t task_alloc_fd(task_t *task) {
     fd_t i;
     for (i = 3; i < TASK_FILE_NR; i++) {
         if (!task->files[i])
@@ -537,8 +555,8 @@ fd_t task_find_fd(task_t *task) {
     return i;
 }
 /**
- *  @brief  释放进程打开的文件
- *  @param  fd  文件号
+ *  @brief  释放进程文件描述符
+ *  @param  fd  文件描述符
  */
 void task_free_fd(task_t *task, fd_t fd) {
     if (fd < 3)
@@ -548,8 +566,7 @@ void task_free_fd(task_t *task, fd_t fd) {
 }
 
 /**
- *  @brief  获取进程当前工作目录
- *  @return  return
+ *  @brief  获取进程当前工作目录字符串
  */
 char *task_getcwd(char *buf, size_t size) {
     task_t *curr_task = task_current_running();
@@ -614,17 +631,30 @@ extern u32 test_thread();
  *  @brief  初始化阻塞队列、任务表，构建临时内核任务，创建主要进程
  */
 void task_init() {
+
+    /**
+     * bootloader 将内核加载到 0x10000，并把 esp 设为 0x10000。此时并没有真正意
+     * 义上的任务。为了能正确切换到其他任务，需要构建一个临时的内核任务。因为当
+     * 前栈栈底地址是 0x10000，所以将 0xf000 作为临时任务页。临时任务只有两个有
+     * 效字段 task_t.ticks 和 task_t.magic。前者设为 1，适配时钟中断处理函数。
+     * 后者是内核魔数，用于防止内核栈溢出。
+     *
+     * 因为 task_table 没有记录临时任务，所以在切换到其他任务后就不会再被执行
+     */
+    task_t *temp_kernel_task = task_current_running();
+    temp_kernel_task->magic = OAK_MAGIC;
+    temp_kernel_task->ticks = 1;
+
     list_init(&block_list);
     list_init(&sleep_list);
 
-    build_temp_kernel_task();
     memset(task_table, 0, sizeof(task_table));
 
-    idle_task = build_basic_task(idle_thread, "idle", 1, KERNEL_USER);
-    build_basic_task(init_thread, "init", 5, NORMAL_USER);
-    build_basic_task(test_thread, "testA", 5, NORMAL_USER);
-    build_basic_task(test_thread, "testB", 15, NORMAL_USER);
-    build_basic_task(test_thread, "testC", 25, NORMAL_USER);
+    idle_task = internal_build_kernel_task(idle_thread, "idle", 1, KERNEL_USER);
+    internal_build_kernel_task(init_thread, "init", 5, NORMAL_USER);
+    internal_build_kernel_task(test_thread, "testA", 5, NORMAL_USER);
+    internal_build_kernel_task(test_thread, "testB", 15, NORMAL_USER);
+    internal_build_kernel_task(test_thread, "testC", 25, NORMAL_USER);
     // build_basic_task(thread_b, "testB", 5, NORMAL_USER);
     // build_basic_task(thread_c, "testC", 5, NORMAL_USER);
 }

@@ -52,7 +52,7 @@ fd_t file_open(char *filename, int flags, int mode) {
         return EOF;
 
     task_t *curr_task = task_current_running();
-    fd_t fd = task_find_fd(curr_task);
+    fd_t fd = task_alloc_fd(curr_task);
     file_t *file = file_search_table();
     kassert(curr_task->files[fd] == NULL);
     curr_task->files[fd] = file;

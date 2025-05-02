@@ -111,7 +111,7 @@ void task_exit(int status);
 
 pid_t task_waitpid(pid_t pid, i32 *status);
 
-fd_t task_find_fd(task_t *task);
+fd_t task_alloc_fd(task_t *task);
 void task_free_fd(task_t *task, fd_t fd);
 
 #endif // !OAK_TASK_H
