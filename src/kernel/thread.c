@@ -26,7 +26,7 @@ void user_init_thread() {
         pid_t pid = fork();
         if (pid) {
             pid_t child = waitpid(pid, &status);
-            printf("wait pid %d status %d %d\n", child, status, time());
+            // printf("wait pid %d status %d %d\n", child, status, time());
         } else {
             ash_main();
         }

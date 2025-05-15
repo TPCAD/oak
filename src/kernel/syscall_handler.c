@@ -47,25 +47,25 @@ static u32 test_syscall() {
     // vdevice_write(console->dev, &ch, 1, 0, 0);
 
     // dmm test
-    // char *chunk0 = kmalloc(sizeof(char));
-    // kprintf("chunk0: 0x%p\n", chunk0);
-    // char *chunk1 = kmalloc(sizeof(char));
-    // kprintf("chunk1: 0x%p\n", chunk1);
-    // char *chunk2 = kmalloc(sizeof(char));
-    // kprintf("chunk2: 0x%p\n", chunk2);
-    //
-    // *chunk0 = 0xaa;
-    // *chunk1 = 0x55;
-    // *chunk2 = 0x5a;
-    // kassert(*chunk0 == (char)0xaa);
-    // kassert(*chunk1 == (char)0x55);
-    // kassert(*chunk2 == (char)0x5a);
-    // kprintf("memory content assert success\n");
-    //
-    // kfree(chunk0);
-    // kfree(chunk1);
-    // kfree(chunk2);
-    // kprintf("free memory success\n");
+    char *chunk0 = kmalloc(sizeof(char));
+    kprintf("chunk0: 0x%p\n", chunk0);
+    char *chunk1 = kmalloc(sizeof(char));
+    kprintf("chunk1: 0x%p\n", chunk1);
+    char *chunk2 = kmalloc(sizeof(char));
+    kprintf("chunk2: 0x%p\n", chunk2);
+
+    *chunk0 = 0xaa;
+    *chunk1 = 0x55;
+    *chunk2 = 0x5a;
+    kassert(*chunk0 == (char)0xaa);
+    kassert(*chunk1 == (char)0x55);
+    kassert(*chunk2 == (char)0x5a);
+    kprintf("memory content assert success\n");
+
+    kfree(chunk0);
+    kfree(chunk1);
+    kfree(chunk2);
+    kprintf("free memory success\n");
 
     return 255;
 }

@@ -72,9 +72,61 @@ void builtin_logo() {
 }
 
 void builtin_test(int argc, char *argv[]) {
-    printf("ash test start...\n");
+    if (argc == 1) {
+        printf("Too few arguments.\n");
+        printf("Try 'test help' for more info\n");
+        return;
+    }
 
-    // test();
+    // processs switch test
+    if (strcmp(argv[1], "proc_switch") == 0) {
+        if (fork()) {
+            int count = 0;
+            while (true) {
+                if (count == 10) {
+                    printf("Nr %d process exited\n");
+                    exit(0);
+                }
+                printf("Nr %d process, parent process %d\n", getpid(),
+                       getppid());
+                count++;
+                sleep(1000);
+            }
+        } else {
+            if (fork()) {
+                while (true) {
+                    printf("Nr %d process, parent process %d\n", getpid(),
+                           getppid());
+                    sleep(1000);
+                    printf("Nr %d process exited\n");
+                    exit(0);
+                }
+            } else {
+                int count = 0;
+                while (true) {
+                    printf("Nr %d process, parent process %d\n", getpid(),
+                           getppid());
+                    sleep(1000);
+                    count++;
+                    if (count == 5) {
+                        printf("Nr %d process exited\n");
+                        exit(0);
+                    }
+                }
+            }
+        }
+    }
+
+    if (!strcmp(argv[1], "dmm")) {
+        test();
+    }
+
+    if (!strcmp(argv[1], "help")) {
+        printf("Usage: test [OPTION]\n");
+        printf("OPTION:\n");
+        printf("  proc_switch    process switch test\n");
+        printf("  dmm            dynamic memory management test\n");
+    }
 
     // memory paging test
     // char big0[8192];
@@ -84,36 +136,6 @@ void builtin_test(int argc, char *argv[]) {
     // char big1[4096];
     // if (big1[0] >= 0) {
     //     big1[0] = 0;
-    // }
-
-    // processs switch test
-    // if (fork()) {
-    //     while (true) {
-    //         printf("Nr %d process, parent process %d\n", getpid(),
-    //         getppid()); sleep(1000);
-    //     }
-    // } else {
-    //     if (fork()) {
-    //         while (true) {
-    //             printf("Nr %d process, parent process %d\n", getpid(),
-    //                    getppid());
-    //             sleep(1000);
-    //             printf("Nr %d process exited\n");
-    //             exit(0);
-    //         }
-    //     } else {
-    //         int count = 0;
-    //         while (true) {
-    //             printf("Nr %d process, parent process %d\n", getpid(),
-    //                    getppid());
-    //             sleep(1000);
-    //             count++;
-    //             if (count == 5) {
-    //                 printf("Nr %d process exited\n");
-    //                 exit(0);
-    //             }
-    //         }
-    //     }
     // }
 }
 
@@ -180,8 +202,32 @@ void builtin_exec(char *filename, int argc, char *argv[]) {
     }
 }
 
+void builtin_help(int argc, char *argv[]) {
+    printf("Oak supports following commands:\n");
+    printf("help    Print this help message\n");
+    printf("test    Run system test\n");
+    printf("logo    Print logo\n");
+    printf("pwd     Print current working directory\n");
+    printf("clear   Clear screen\n");
+    printf("exit    Exit\n");
+    printf("cd      Change directory\n");
+    printf("mkdir   Make directory\n");
+    printf("rmdir   Remove empty directory\n");
+    printf("rm      Remove file\n");
+    printf("date    Print current date\n");
+    printf("mount   Mount device\n");
+    printf("umount  Unmount device\n");
+    printf("ls      List files and directories\n");
+    printf("echo    Print string to screen\n");
+    printf("cat     Print file content to screen\n");
+    printf("env     Print environment variables to screen\n");
+}
+
 static void execute(int argc, char *argv[]) {
     char *line = argv[0];
+    if (!strcmp(line, "help")) {
+        return builtin_help(argc, argv);
+    }
     if (!strcmp(line, "test")) {
         return builtin_test(argc, argv);
     }
@@ -297,7 +343,7 @@ int ash_main() {
     memset(cmd, 0, sizeof(cmd));
     memset(cwd, 0, sizeof(cwd));
 
-    // builtin_logo();
+    builtin_logo();
 
     while (true) {
         print_prompt();             // 打印提示符
