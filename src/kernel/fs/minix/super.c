@@ -7,12 +7,17 @@
 #include <oak/fs/minix.h>
 #include <oak/string.h>
 
+/* super_table 记录了系统当前挂载的所有文件系统超级块。
+ * 规定第 0 个是系统的根文件系统。 */
 #define SUPER_NR 16
-
 static super_block_t super_table[SUPER_NR]; // 超级块表
 static super_block_t *root;                 // 根文件系统
 
-static super_block_t *search_free_super_block() {
+/**
+ *  @brief  分配一个可用的 super_table 元素
+ *  @return  super_block_t*
+ */
+static super_block_t *internal_alloc_super_block() {
     for (size_t i = 0; i < SUPER_NR; i++) {
         super_block_t *sb = &super_table[i];
         if (sb->dev == -1) {
@@ -26,9 +31,9 @@ static super_block_t *search_free_super_block() {
 /**
  *  @brief  从超级块表中搜索指定设备的超级块
  *  @param  dev  设备号
- *  @return  超级块信息
+ *  @return  超级块
  */
-super_block_t *search_super_block(u32 dev) {
+super_block_t *super_search_by_devnum(u32 dev) {
     for (size_t i = 0; i < SUPER_NR; i++) {
         super_block_t *sb = &super_table[i];
         if (sb->dev == dev) {
@@ -68,13 +73,13 @@ void put_super(super_block_t *sb) {
  *  @return  超级块信息
  */
 super_block_t *parse_super_block(u32 dev) {
-    super_block_t *sb = search_super_block(dev);
+    super_block_t *sb = super_search_by_devnum(dev);
     if (sb) {
         sb->count++;
         return sb;
     }
 
-    sb = search_free_super_block();
+    sb = internal_alloc_super_block();
 
     buffer_t *buf = buffer_read(dev, 1);
     sb->buf = buf;

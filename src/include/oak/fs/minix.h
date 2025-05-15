@@ -112,7 +112,7 @@ typedef enum whence_t {
     SEEK_END      // 结束位置偏移
 } whence_t;
 
-super_block_t *search_super_block(u32 dev);
+super_block_t *super_search_by_devnum(u32 dev);
 
 u32 inode_alloc_bit(u32 dev);
 void inode_free_bit(u32 dev, u32 idx);

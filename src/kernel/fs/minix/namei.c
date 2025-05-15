@@ -62,7 +62,7 @@ static buffer_t *find_entry(inode_t **dir, const char *name, char **next,
     kassert(ISDIR((*dir)->inode->mode));
 
     if (match_name(name, "..", next) && (*dir)->idx == 1) {
-        super_block_t *sb = search_super_block((*dir)->dev);
+        super_block_t *sb = super_search_by_devnum((*dir)->dev);
         inode_t *inode = *dir;
         (*dir) = sb->imount;
         (*dir)->count++;

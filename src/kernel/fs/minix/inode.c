@@ -56,7 +56,7 @@ static inline u32 calc_inode_block(super_block_t *sb, u32 nr) {
  *  @return  inode 指针
  */
 static inode_t *search_inode(u32 dev, u32 nr) {
-    super_block_t *sb = search_super_block(dev);
+    super_block_t *sb = super_search_by_devnum(dev);
     kassert(sb);
     list_t *list = &sb->inode_list;
 
@@ -79,7 +79,7 @@ static inode_t *fit_inode(inode_t *inode) {
     if (!inode->mount)
         return inode;
 
-    super_block_t *sb = search_super_block(inode->mount);
+    super_block_t *sb = super_search_by_devnum(inode->mount);
     kassert(sb);
     inode_free(inode);
     inode = sb->iroot;
@@ -120,7 +120,7 @@ inode_t *inode_search(u32 dev, u32 nr) {
         return fit_inode(inode);
     }
 
-    super_block_t *sb = search_super_block(dev);
+    super_block_t *sb = super_search_by_devnum(dev);
     kassert(sb);
 
     kassert(nr <= sb->sblk->inodes);
@@ -415,7 +415,7 @@ void inode_truncate(inode_t *inode) {
  *  @return  磁盘块索引
  */
 u32 block_alloc_bit(u32 dev) {
-    super_block_t *sb = search_super_block(dev);
+    super_block_t *sb = super_search_by_devnum(dev);
     kassert(sb);
 
     buffer_t *buf = NULL;
@@ -445,7 +445,7 @@ u32 block_alloc_bit(u32 dev) {
  *  @param  idx  磁盘索引
  */
 void block_free_bit(u32 dev, u32 idx) {
-    super_block_t *sb = search_super_block(dev);
+    super_block_t *sb = super_search_by_devnum(dev);
     kassert(sb);
     kassert(idx >= sb->sblk->firstdatazone);
     idx -= sb->sblk->firstdatazone - 1;
@@ -479,7 +479,7 @@ void block_free_bit(u32 dev, u32 idx) {
  *  @return  位图索引
  */
 u32 inode_alloc_bit(u32 dev) {
-    super_block_t *sb = search_super_block(dev);
+    super_block_t *sb = super_search_by_devnum(dev);
     kassert(sb);
 
     buffer_t *buf = NULL;
@@ -509,7 +509,7 @@ u32 inode_alloc_bit(u32 dev) {
  *  @param  idx  位图索引
  */
 void inode_free_bit(u32 dev, u32 idx) {
-    super_block_t *sb = search_super_block(dev);
+    super_block_t *sb = super_search_by_devnum(dev);
     kassert(sb);
     kassert(idx < sb->sblk->inodes);
 
