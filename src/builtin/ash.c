@@ -204,23 +204,23 @@ void builtin_exec(char *filename, int argc, char *argv[]) {
 
 void builtin_help(int argc, char *argv[]) {
     printf("Oak supports following commands:\n");
-    printf("help    Print this help message\n");
-    printf("test    Run system test\n");
-    printf("logo    Print logo\n");
-    printf("pwd     Print current working directory\n");
-    printf("clear   Clear screen\n");
-    printf("exit    Exit\n");
-    printf("cd      Change directory\n");
-    printf("mkdir   Make directory\n");
-    printf("rmdir   Remove empty directory\n");
-    printf("rm      Remove file\n");
-    printf("date    Print current date\n");
-    printf("mount   Mount device\n");
-    printf("umount  Unmount device\n");
-    printf("ls      List files and directories\n");
-    printf("echo    Print string to screen\n");
-    printf("cat     Print file content to screen\n");
-    printf("env     Print environment variables to screen\n");
+    printf("  help    Print this help message\n");
+    printf("  test    Run system test\n");
+    printf("  logo    Print logo\n");
+    printf("  pwd     Print current working directory\n");
+    printf("  clear   Clear screen\n");
+    printf("  exit    Exit\n");
+    printf("  cd      Change directory\n");
+    printf("  mkdir   Make directory\n");
+    printf("  rmdir   Remove empty directory\n");
+    printf("  rm      Remove file\n");
+    printf("  date    Print current date\n");
+    printf("  mount   Mount device\n");
+    printf("  umount  Unmount device\n");
+    printf("  ls      List files and directories\n");
+    printf("  echo    Print string to screen\n");
+    printf("  cat     Print file content to screen\n");
+    printf("  env     Print environment variables to screen\n");
 }
 
 static void execute(int argc, char *argv[]) {
@@ -343,7 +343,7 @@ int ash_main() {
     memset(cmd, 0, sizeof(cmd));
     memset(cwd, 0, sizeof(cwd));
 
-    builtin_logo();
+    // builtin_logo();
 
     while (true) {
         print_prompt();             // 打印提示符
