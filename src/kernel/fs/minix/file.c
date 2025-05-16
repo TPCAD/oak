@@ -229,6 +229,31 @@ int file_readdir(fd_t fd, dentry_t *dir, u32 count) {
     return file_read(fd, (char *)dir, sizeof(dentry_t));
 }
 
+static int dupfd(fd_t fd, fd_t arg) {
+    task_t *curr_task = task_current_running();
+    if (fd >= TASK_FILE_NR || !curr_task->files[fd])
+        return EOF;
+
+    for (; arg < TASK_FILE_NR; arg++) {
+        if (!curr_task->files[arg])
+            break;
+    }
+
+    if (arg >= TASK_FILE_NR)
+        return EOF;
+
+    curr_task->files[arg] = curr_task->files[fd];
+    curr_task->files[arg]->count++;
+    return arg;
+}
+
+fd_t file_dup(fd_t oldfd) { return dupfd(oldfd, 0); }
+
+fd_t file_dup2(fd_t oldfd, fd_t newfd) {
+    close(newfd);
+    return dupfd(oldfd, newfd);
+}
+
 void devfile_init() {
     mkdir("/dev", 0755);
 

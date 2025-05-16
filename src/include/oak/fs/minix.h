@@ -85,6 +85,8 @@ typedef struct dentry_t {
     char name[NAME_LEN]; // 文件名
 } dentry_t;
 
+#define ACC_MODE(x) ("\004\002\006\377"[(x) & O_ACCMODE])
+
 enum file_flag {
     O_RDONLY = 00,      // 只读方式
     O_WRONLY = 01,      // 只写方式

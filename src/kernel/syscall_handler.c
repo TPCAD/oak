@@ -47,11 +47,14 @@ static u32 test_syscall() {
     // vdevice_write(console->dev, &ch, 1, 0, 0);
 
     // dmm test
+    kprintf("size of char: 0x%x\n", sizeof(char));
     char *chunk0 = kmalloc(sizeof(char));
     kprintf("chunk0: 0x%p\n", chunk0);
-    char *chunk1 = kmalloc(sizeof(char));
+    char *chunk1 = kmalloc(sizeof(long long));
+    kprintf("size of long long: 0x%x\n", sizeof(long long));
     kprintf("chunk1: 0x%p\n", chunk1);
-    char *chunk2 = kmalloc(sizeof(char));
+    char *chunk2 = kmalloc(sizeof(i32));
+    kprintf("size of i32: 0x%x\n", sizeof(i32));
     kprintf("chunk2: 0x%p\n", chunk2);
 
     *chunk0 = 0xaa;
@@ -114,6 +117,9 @@ extern int paging_munmap(void *addr, size_t length);
 
 extern int elf_execve(char *filename, char *argv[], char *envp[]);
 
+fd_t file_dup(fd_t oldfd);
+fd_t file_dup2(fd_t oldfd, fd_t newfd);
+
 void syscall_init() {
     for (size_t i = 0; i < SYSCALL_SIZE; i++) {
         syscall_table[i] = default_syscall;
@@ -153,4 +159,6 @@ void syscall_init() {
     syscall_table[SYS_NR_MMAP] = paging_mmap;
     syscall_table[SYS_NR_MUNMAP] = paging_munmap;
     syscall_table[SYS_NR_EXECVE] = elf_execve;
+    syscall_table[SYS_NR_DUP] = file_dup;
+    syscall_table[SYS_NR_DUP2] = file_dup2;
 }

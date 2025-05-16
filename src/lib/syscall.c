@@ -372,3 +372,17 @@ int umount(char *target) { return _syscall1(SYS_NR_UMOUNT, (u32)target); }
 int execve(char *filename, char *argv[], char *envp[]) {
     return _syscall3(SYS_NR_EXECVE, (u32)filename, (u32)argv, (u32)envp);
 }
+
+/**
+ *  @brief  41 号系统调用
+ *
+ */
+fd_t dup(fd_t oldfd) { return _syscall1(SYS_NR_DUP, oldfd); }
+
+/**
+ *  @brief  63 号系统调用
+ *
+ */
+fd_t dup2(fd_t oldfd, fd_t newfd) {
+    return _syscall2(SYS_NR_DUP2, oldfd, newfd);
+}

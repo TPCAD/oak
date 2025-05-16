@@ -559,8 +559,6 @@ fd_t task_alloc_fd(task_t *task) {
  *  @param  fd  文件描述符
  */
 void task_free_fd(task_t *task, fd_t fd) {
-    if (fd < 3)
-        return;
     kassert(fd < TASK_FILE_NR);
     task->files[fd] = NULL;
 }

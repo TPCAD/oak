@@ -105,4 +105,7 @@ int umount(char *target);
 
 int execve(char *filename, char *argv[], char *envp[]);
 
+fd_t dup(fd_t oldfd);
+fd_t dup2(fd_t oldfd, fd_t newfd);
+
 #endif // !OAK_SYSCALL_H
