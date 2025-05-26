@@ -305,6 +305,7 @@ pid_t builtin_command(char *filename, char *argv[], fd_t infd, fd_t outfd,
 }
 
 void builtin_exec(int argc, char *argv[]) {
+    // 检查命令是否存在
     stat_t statbuf;
     sprintf(buf, "/bin/%s", argv[0]);
     if (stat(buf, &statbuf) == EOF) {
@@ -312,10 +313,11 @@ void builtin_exec(int argc, char *argv[]) {
         return;
     }
 
-    int status;
+    // 重定向
     fd_t dupfd[3];
     dupfile(argc, argv, dupfd);
     pid_t pid = builtin_command(buf, &argv[1], dupfd[0], dupfd[1], dupfd[2]);
+    int status;
     waitpid(pid, &status);
 }
 
