@@ -30,7 +30,7 @@ void panic(const char *fmt, ...) {
     int i = vsprintf(buf, fmt, args);
     va_end(args);
 
-    printf("panic!\n--> %s\n", buf);
+    printf("[kernel] panic!\n--> %s\n", buf);
     spin("panic()");
 
     // error if execute this

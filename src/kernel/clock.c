@@ -1,83 +1,52 @@
-#include <oak/assert.h>
-#include <oak/debug.h>
-#include <oak/interrupt.h>
-#include <oak/io.h>
-#include <oak/oak.h>
-#include <oak/task.h>
-#include <oak/types.h>
-#define PIT_CHAN0_REG 0x40
-#define PIT_CHAN2_REG 0x42
-#define PIT_CTRL_REG 0x43
+#include "oak/oak.h"
+#include "oak/task.h"
+#include <oak/clock.h>
+#include <oak/debug/kassert.h>
+#include <oak/debug/kdebug.h>
+#include <oak/interrupt/idt.h>
+#include <oak/interrupt/pic.h>
+#include <oak/interrupt/pit.h>
 
-#define HZ 100 // 时钟频率，10 ms
-#define OSCILLATOR 1193182
-#define CLOCK_COUNTER (OSCILLATOR / HZ)
-#define JIFFY (1000 / HZ) // 时间片的长度，10 ms
-
-#define SPEAKER_REG 0x61
-#define BEEP_HZ 440
-#define BEEP_COUNTER (OSCILLATOR / BEEP_HZ)
-
-extern void schedule();
-extern void task_wakeup();
-extern u32 startup_time;
-
+// 全局时间片，每次时钟中断会加 1
 u32 volatile jiffies = 0;
+
+// 时间片长度，单位为 ms，改变量只是为了方便其他文件使用，这样不必引入多余头文件
 u32 jiffy = JIFFY;
 
-u32 volatile beeping = 0;
+extern u32 startup_time;
 
-void start_beep() {
-    if (!beeping) {
-        outb(SPEAKER_REG, inb(SPEAKER_REG) | 0b11);
-    }
-    beeping = jiffies + 5;
-}
+time_t syscall_time() { return startup_time + (jiffies * JIFFY) / 1000; }
 
-void stop_beep() {
-    if (beeping && jiffies > beeping) {
-        outb(SPEAKER_REG, inb(SPEAKER_REG) & 0xfc);
-        beeping = 0;
-    }
-}
+extern void task_wakeup();
 
-void clock_handler(int vector) {
-    assert(vector == 0x20);
-    send_eoi(vector);
+void clock_handler(u32 vector) {
+    kassert(vector == IRQ_MASTER_NR + IRQ_CLOCK);
+    pic_send_eoi(vector);
 
-    // stop pc speaker after five clock
-    stop_beep();
-
+    // 每个时间片都唤醒合适的任务
     task_wakeup();
 
     jiffies++;
+    // KDEBUG("clock interrupt, jiffies: %d\n", jiffies);
 
-    task_t *task = running_task();
-    assert(task->magic == OAK_MAGIC);
+    task_t *curr_task = task_current_running();
+    kassert(curr_task->magic == OAK_MAGIC);
 
-    task->jiffies = jiffies;
-    task->ticks--;
-    if (!task->ticks) {
-        schedule();
+    curr_task->jiffies = jiffies;
+    curr_task->ticks--;
+    if (!curr_task->ticks) {
+        curr_task->ticks = curr_task->priority;
+        task_schedule();
     }
 }
 
-time_t sys_time() { return startup_time + (jiffies * JIFFY) / 1000; }
-
-void pit_init() {
-    // init PIT
-    outb(PIT_CTRL_REG, 0b00110100);
-    outb(PIT_CHAN0_REG, CLOCK_COUNTER & 0xff);
-    outb(PIT_CHAN0_REG, (CLOCK_COUNTER >> 8) & 0xff);
-
-    // init pc speaker
-    outb(PIT_CTRL_REG, 0b10110110);
-    outb(PIT_CHAN2_REG, (u8)BEEP_COUNTER);
-    outb(PIT_CHAN2_REG, (u8)(BEEP_COUNTER >> 8));
-}
-
+/**
+ *  @brief  初始化时钟中断
+ *
+ *  初始化 PIT，注册中断函数，开启时钟中断
+ */
 void clock_init() {
     pit_init();
-    set_interrupt_handler(IRQ_CLOCK, clock_handler); // 设置时钟中断处理函数
-    set_interrupt_mask(IRQ_CLOCK, true);             // 开启时钟中断
+    idt_set_intr_handler(IRQ_CLOCK, clock_handler);
+    pic_set_intr_mask(IRQ_CLOCK, true);
 }

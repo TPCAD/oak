@@ -1,45 +1,7 @@
 #include <oak/string.h>
-#include <oak/types.h>
-
-char *strcpy(char *dest, const char *src) {
-    char *ptr = dest;
-    while (true) {
-        *ptr++ = *src;
-        if (*src++ == EOS) {
-            return dest;
-        }
-    }
-}
-
-char *strncpy(char *dest, const char *src, size_t count) {
-    char *ptr = dest;
-    size_t nr = 0;
-    for (; nr < count; nr++) {
-        *ptr++ = *src;
-        if (*src++ == EOS) {
-            return dest;
-        }
-    }
-    dest[count - 1] = EOS;
-    return dest;
-}
-
-char *strcat(char *dest, const char *src) {
-    char *ptr = dest;
-    while (*ptr != EOS) {
-        ptr++;
-    }
-
-    while (true) {
-        *ptr++ = *src;
-        if (*src++ == EOS) {
-            return dest;
-        }
-    }
-}
 
 size_t strlen(const char *str) {
-    char *ptr = (char *)str;
+    const char *ptr = str;
     while (*ptr != EOS) {
         ptr++;
     }
@@ -51,100 +13,180 @@ int strcmp(const char *lhs, const char *rhs) {
         lhs++;
         rhs++;
     }
-    return *lhs < *rhs ? -1 : *lhs > *rhs;
+    return (unsigned char)*lhs - (unsigned char)*rhs;
 }
 
 char *strchr(const char *str, int ch) {
-    char *ptr = (char *)str;
-    while (true) {
-        if (*ptr == ch) {
-            return ptr;
+    do {
+        if (*str == (char)ch) {
+            return (char *)str;
         }
-        if (*ptr++ == EOS) {
-            return NULL;
-        }
-    }
+    } while (*str++);
+    return NULL;
 }
 
 char *strrchr(const char *str, int ch) {
-    char *ptr = (char *)str;
-    char *last = NULL;
-    while (true) {
-        if (*ptr == ch) {
-            last = ptr;
+    char *ptr = NULL;
+    do {
+        if (*str == (char)ch) {
+            ptr = (char *)str;
         }
-        if (*ptr++ == EOS) {
-            return last;
-        }
-    }
+    } while (*str++);
+    return ptr;
 }
 
-int memcmp(const void *lhs, const void *rhs, size_t count) {
-    char *lptr = (char *)lhs;
-    char *rptr = (char *)rhs;
-    while ((count > 0) && *lptr == *rptr) {
-        lptr++;
-        rptr++;
-        count--;
-    }
-    if (count == 0) {
-        return 0;
-    }
-    return *lptr < *rptr ? -1 : *lptr > *rptr;
-}
-
-void *memset(void *dest, int ch, size_t count) {
-    char *ptr = dest;
-    while (count--) {
-        *ptr++ = ch;
+char *strcpy(char *dest, const char *src) {
+    size_t len = strlen(src);
+    if (dest < src) {
+        const unsigned char *firsts = (const unsigned char *)src;
+        unsigned char *firstd = (unsigned char *)dest;
+        while (len--) {
+            *firstd++ = *firsts++;
+        }
+    } else {
+        const unsigned char *lasts = (const unsigned char *)src + (len - 1);
+        unsigned char *lastd = (unsigned char *)dest + (len - 1);
+        while (len--) {
+            *lastd-- = *lasts--;
+        }
     }
     return dest;
 }
-void *memcpy(void *dest, const void *src, size_t count) {
-    char *ptr = dest;
-    while (count--) {
-        *ptr++ = *((char *)(src++));
+
+char *strncpy(char *dest, const char *src, size_t count) {
+    size_t len = strlen(src);
+    if (dest < src) {
+        const unsigned char *firsts = (const unsigned char *)src;
+        unsigned char *firstd = (unsigned char *)dest;
+        while (len-- && firstd < (unsigned char *)(dest + count)) {
+            *firstd++ = *firsts++;
+        }
+    } else {
+        const unsigned char *lasts = (const unsigned char *)src + (len - 1);
+        unsigned char *lastd = (unsigned char *)dest + (len - 1);
+        // FIX: not implemented yet
+        while (len--) {
+            *lastd-- = *lasts--;
+        }
     }
     return dest;
 }
-void *memchr(const void *str, int ch, size_t count) {
-    char *ptr = (char *)str;
-    while (count--) {
-        if (*ptr == ch) {
-            return (void *)ptr;
-        }
+
+char *strcat(char *dest, const char *src) {
+    char *ptr = dest;
+    while (*ptr != EOS) {
         ptr++;
     }
+
+    while (*src != EOS) {
+        *ptr = *src;
+        ptr++;
+        src++;
+    }
+    *ptr = EOS;
+
+    return dest;
 }
 
-#define SEPARATOR1 '/'  // 目录分隔符 1
-#define SEPARATOR2 '\\' // 目录分隔符 2
-#define IS_SEPARATOR(c)                                                        \
-    (c == SEPARATOR1 || c == SEPARATOR2) // 字符是否位目录分隔符
+/**
+ *  @brief  在 `ptr` 所指向对象的起始 `count` 个字节（均转译成 unsigned char）
+ *          中寻找首次出现的 `(unsigned char)ch`。
+ *
+ *  @param  ptr  指向要检验对象的指针
+ *  @param  ch  要检索的字节
+ *  @param  count  要检验的最大字节数
+ *
+ *  @return  返回值为指向字节位置的指针，或若找不到该字节则为空指针。
+ */
+void *memchr(const void *ptr, int ch, size_t count) {
+    const unsigned char *src = (const unsigned char *)ptr;
 
-// 获取第一个分隔符
-char *strsep(const char *str) {
-    char *ptr = (char *)str;
-    while (true) {
-        if (IS_SEPARATOR(*ptr)) {
-            return ptr;
+    while (count-- > 0) {
+        if (*src == ch) {
+            return (void *)src;
         }
-        if (*ptr++ == EOS) {
-            return NULL;
+        src++;
+    }
+    return NULL;
+}
+
+/**
+ *  @brief  比较 `lhs` 和 `rhs` 所指向的对象的开头 `count` 字节。按字典序比较。
+ *
+ *  @param  lhs, rhs  指向要比较的对象的指针
+ *  @param  count  要检验的最大字节数
+ *
+ *  @return  若 lhs 按字典序先于 rhs 出现，则为 -1。
+ *           若 lhs 与 rhs 比较相等，或 count 为零则为 0。
+ *           若 lhs 按字典序晚于 rhs 出现，则为 1。
+ */
+int memcmp(const void *lhs, const void *rhs, size_t count) {
+    const unsigned char *s1 = (const unsigned char *)lhs;
+    const unsigned char *s2 = (const unsigned char *)rhs;
+
+    while (count-- > 0) {
+        if (*s1 != *s2) {
+            return (int)(*s1 < *s2 ? -1 : 1);
+        }
+        s1++;
+        s2++;
+    }
+    return 0;
+}
+
+/**
+ *  @brief  将值 `(unsigned char)ch` 复制到 `dest` 所指向对象的最前面 `count`
+ *          个字节中。
+ *
+ *  @param  dest  指向要填充的对象的指针
+ *  @param  ch  填充字节
+ *  @param  count  要填充的字节数
+ *
+ *  @return  dest
+ */
+void *memset(void *dest, int ch, size_t count) {
+    unsigned char *ptr = (unsigned char *)dest;
+
+    while (count-- > 0) {
+        *ptr++ = (unsigned char)ch;
+    }
+    return dest;
+}
+
+/**
+ *  @brief  从 `src` 所指向的对象复制 `count` 个字符到 `dest` 所指向的对象
+ *
+ *  @param  dest  指向复制目标对象的指针
+ *  @param  src  指向复制来源对象的指针
+ *  @param  count  复制的字节数
+ *
+ *  @return  dest
+ */
+void *memcpy(void *dest, const void *src, size_t count) {
+    if (dest < src) {
+        const unsigned char *firsts = (const unsigned char *)src;
+        unsigned char *firstd = (unsigned char *)dest;
+        while (count--) {
+            *firstd++ = *firsts++;
+        }
+    } else {
+        const unsigned char *lasts = (const unsigned char *)src + (count - 1);
+        unsigned char *lastd = (unsigned char *)dest + (count - 1);
+        while (count--) {
+            *lastd-- = *lasts--;
         }
     }
+    return dest;
 }
 
-// 获取最后一个分隔符
-char *strrsep(const char *str) {
-    char *last = NULL;
-    char *ptr = (char *)str;
-    while (true) {
-        if (IS_SEPARATOR(*ptr)) {
-            last = ptr;
-        }
-        if (*ptr++ == EOS) {
-            return last;
-        }
+/**
+ *  @brief  就地反转字符串
+ *  @param  s  要反转的字符串
+ */
+void reverse(char *s) {
+    for (int i = 0, j = strlen(s) - 1; i < j; i++, j--) {
+        char c = s[i];
+        s[i] = s[j];
+        s[j] = c;
     }
 }

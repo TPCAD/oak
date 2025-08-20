@@ -22,4 +22,5 @@ void mutex_unlock(mutex_t *mutex);
 void lock_init(lock_t *lock);
 void lock_acquire(lock_t *lock);
 void lock_release(lock_t *lock);
+
 #endif // !OAK_MUTEX_H

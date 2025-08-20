@@ -1,8 +1,8 @@
-#include <oak/debug.h>
-#include <oak/io.h>
-#include <oak/rtc.h>
+#include <oak/debug/kdebug.h>
+#include <oak/interrupt/rtc.h>
 #include <oak/stdlib.h>
 #include <oak/time.h>
+#include <oak/types.h>
 
 #define CMOS_ADDR 0x70 // CMOS address register
 #define CMOS_DATA 0x71 // CMOS data register
@@ -167,8 +167,8 @@ void time_init() {
     tm time;
     time_read(&time);
     startup_time = mktime(&time);
-    DEBUGK("startup time: %d%d-%02d-%02d %02d:%02d:%02d\n", century,
+    KDEBUG("startup time: %d%d-%02d-%02d %02d:%02d:%02d\n", century,
            time.tm_year, time.tm_mon + 1, time.tm_mday, time.tm_hour,
            time.tm_min, time.tm_sec);
-    DEBUGK("%ld\n", startup_time);
+    KDEBUG("%ld\n", startup_time);
 }

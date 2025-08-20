@@ -1,15 +1,16 @@
 [
   {
     "arguments": [
-      "/home/tpcad/opt/cross/bin/i686-elf-gcc",
+      "/usr/bin/cc",
       "-m32",
       "-fno-builtin",
       "-nostdinc",
       "-fno-pic",
       "-fno-pie",
       "-fno-stack-protector",
-      "-g",
       "-I./include",
+      "-I./arch/x86/include",
+      "-g",
       "-c",
       "-o",
       "../build/kernel/main.o",

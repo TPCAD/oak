@@ -1,86 +1,110 @@
-#include <oak/assert.h>
-#include <oak/interrupt.h>
-#include <oak/list.h>
+#include "oak/debug/kassert.h"
+#include "oak/list.h"
+#include "oak/oak.h"
+#include "oak/task.h"
+#include <oak/cpu.h>
 #include <oak/mutex.h>
-#include <oak/oak.h>
-#include <oak/task.h>
-#include <oak/types.h>
 
+/**
+ *  @brief  初始化互斥量
+ *  @param  mutex  互斥量
+ */
 void mutex_init(mutex_t *mutex) {
-    mutex->value = false; // nobody held when init
+    mutex->value = false;
     list_init(&mutex->waiters);
 }
 
+/**
+ *  @brief  尝试持有互斥量
+ *  @param  mutex  互斥量
+ *
+ *  尝试失败会进入阻塞状态，直至互斥量被释放
+ */
 void mutex_lock(mutex_t *mutex) {
-    bool intr = interrupt_diable();
+    bool intr = cpu_diable_intr();
+    task_t *curr_task = task_current_running();
 
-    task_t *current = running_task();
+    // 尝试持有互斥量，若互斥量已被持有则进入阻塞状态
     while (mutex->value == true) {
-        task_block(current, &mutex->waiters, TASK_BLOCKED);
+        task_block(curr_task, &mutex->waiters, TASK_BLOCKED);
     }
 
-    // nobody held
-    assert(mutex->value == false);
+    kassert(mutex->value == false);
 
-    // held it
+    // 持有互斥量
     mutex->value++;
-    assert(mutex->value == true);
+    kassert(mutex->value == true);
 
-    set_interrupt_state(intr);
+    // 恢复中断状态
+    cpu_set_intr_state(intr);
 }
 
+/**
+ *  @brief  释放互斥量
+ *  @param  mutex  互斥量
+ */
 void mutex_unlock(mutex_t *mutex) {
+    bool intr = cpu_diable_intr();
 
-    bool intr = interrupt_diable();
+    kassert(mutex->value == true);
 
-    // already held
-    assert(mutex->value == true);
-
-    // release
     mutex->value--;
-    assert(mutex->value == false);
+    kassert(mutex->value == false);
 
-    if (!list_empty(&mutex->waiters)) {
+    // 唤醒正在等待互斥量的任务
+    if (!list_is_empty(&mutex->waiters)) {
         task_t *task = element_entry(task_t, node, mutex->waiters.tail.prev);
-        assert(task->magic == OAK_MAGIC);
+        kassert(task->magic == OAK_MAGIC);
         task_unblock(task);
 
+        // 主动让出 CPU，防止其他任务饿死
         task_yield();
     }
 
-    set_interrupt_state(intr);
+    cpu_set_intr_state(intr);
 }
 
+/**
+ *  @brief  初始化互斥锁
+ *  @param  lock  互斥锁指针
+ */
 void lock_init(lock_t *lock) {
     lock->holder = NULL;
     lock->repeat = 0;
     mutex_init(&lock->mutex);
 }
 
+/**
+ *  @brief  对互斥锁上锁
+ *  @param  lock  互斥锁指针
+ */
 void lock_acquire(lock_t *lock) {
-    task_t *current = running_task();
+    task_t *curr_task = task_current_running();
 
-    if (lock->holder != current) {
+    if (lock->holder != curr_task) {
         mutex_lock(&lock->mutex);
-        lock->holder = current;
-        assert(lock->repeat == 0);
+        lock->holder = curr_task;
+        kassert(lock->repeat == 0);
         lock->repeat = 1;
     } else {
         lock->repeat++;
     }
 }
 
+/**
+ *  @brief  释放互斥锁
+ *  @param  lock  互斥锁指针
+ */
 void lock_release(lock_t *lock) {
-    task_t *current = running_task();
-    assert(lock->holder == current);
+    task_t *curr_task = task_current_running();
+    kassert(lock->holder == curr_task);
 
     if (lock->repeat > 1) {
         lock->repeat--;
         return;
     }
 
-    assert(lock->repeat == 1);
-
+    kassert(lock->repeat == 1);
     lock->holder = NULL;
     lock->repeat = 0;
     mutex_unlock(&lock->mutex);

@@ -4,19 +4,19 @@
 #include <oak/types.h>
 
 typedef struct tm {
-    int tm_sec;   // second [0, 59]
-    int tm_min;   // minute [0, 59]
-    int tm_hour;  // hours since midnight [0, 23]
-    int tm_mday;  // day of the month [1, 31]
-    int tm_mon;   // months since January [0, 11]
-    int tm_year;  // years since 1900
-    int tm_wday;  // days since Sunday [0, 6], 0 for sunday
-    int tm_yday;  // days since January 1 [0, 365]
-    int tm_isdst; // daylight saving time flag
+    u32 tm_sec;   // 秒数 [0，59]
+    u32 tm_min;   // 分钟数 [0，59]
+    u32 tm_hour;  // 小时数 [0，59]
+    u32 tm_mday;  // 1 个月的天数 [0，31]
+    u32 tm_mon;   // 1 年中月份 [0，11]
+    u32 tm_year;  // 从 1900 年开始的年数
+    u32 tm_wday;  // 1 星期中的某天 [0，6] (星期天 =0)
+    u32 tm_yday;  // 1 年中的某天 [0，365]
+    u32 tm_isdst; // 夏令时标志
 } tm;
 
 void time_read_bcd(tm *time);
 void time_read(tm *time);
-time_t mktime(tm *time); // timestamp start from 1970-01-01 00:00:00
+time_t mktime(tm *time);
 void localtime(time_t stamp, tm *time);
-#endif // !OAK_TIME_H
+#endif

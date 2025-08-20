@@ -1,18 +1,29 @@
-#include <oak/assert.h>
+#include <oak/debug/kassert.h>
 #include <oak/stdarg.h>
 #include <oak/stdio.h>
 #include <oak/string.h>
+#include <oak/types.h>
 
-#define ZEROPAD 1  // 0x00000001 padding with 0
-#define SIGN 2     // 0x00000010 display sign
-#define PLUS 4     // 0x00000100 force display plus sign
-#define SPACE 8    // 0x00010000 padding space
-#define LEFT 16    // 0x00100000 left alignment
-#define SPECIAL 32 // 0x01000000 display 0x
-#define SMALL 64   // 0x10000000 lowercase
+// 以比特位记录 flags
+#define ZEROPAD 1  // 0x00000001 以 0 填充
+#define SIGN 2     // 0x00000010 展示符号
+#define PLUS 4     // 0x00000100 强制显示 `+`
+#define SPACE 8    // 0x00010000 以 ` ` 替代符号（不显示符号时）
+#define LEFT 16    // 0x00100000 左对齐，默认右对齐
+#define SPECIAL 32 // 0x01000000 十六进制数显示 `0x`
+#define SMALL 64   // 0x10000000 小写
 
+/**
+ *  @brief  检查一个字符是否是数字
+ *  @param  c  要检查的字符
+ */
 #define is_digit(c) ((c) >= '0' && (c) <= '9')
 
+/**
+ *  @brief  转换字符数字为数字
+ *  @param  s  指向包含数字的字符串的指针
+ *  @return  转换后的数字
+ */
 static int skip_atoi(const char **s) {
     int i = 0;
 
@@ -22,304 +33,299 @@ static int skip_atoi(const char **s) {
     return i;
 }
 
-// str: the output string
-// num: variadic parameters in printk
-// base: base number
-// size: width
-// precision: precision
-// flags: flags
-static char *number(char *str, unsigned long num, int base, int size,
-                    int precision, int flags) {
-    // padding: ` ` or `0` for padding
-    // sign: `-` or `+` for signed number
-    // tmp: temporary buffer
-    char padding, sign, tmp[36];
-    const char *digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    int i;
-    int index;
-    char *ptr = str;
+/**
+ *  @brief  将数字转换为字符串
+ *  @param  str  buffer
+ *  @param  num  要转换的数字
+ *  @param  base  进制
+ *  @param  field_width  字段宽度
+ *  @param  precision  精度
+ *  @param  flags  标志
+ *  @return 新的 `str`
+ */
+static char *format_digit(char *str, unsigned long num, int base,
+                          int field_width, int precision, int flags) {
+    const char *digits = "0123456789ABCDEFX";
 
     if (flags & SMALL) {
-        digits = "0123456789abcdefghijklmnopqrstuvwxyz";
+        digits = "0123456789abcdefx";
     }
 
-    // can't pad number with 0 if left alignment
+    // 数字左对齐不允许用 0 填充
     if (flags & LEFT) {
         flags &= ~ZEROPAD;
     }
 
+    // TODO: assert base
     if (base < 2 || base > 36) {
         return 0;
     }
 
-    padding = (flags & ZEROPAD) ? '0' : ' ';
+    /*  先计算转换结果的长度。因为当被转换值和精度都为 0 时，转换结果无字符。
+     *  这种情况下，字段宽度全部用空格字符填充，符号，替用形式都不起作用。*/
 
+    // 转换数字为字符串，结果暂存与 `tmp`，`str_len` 记录结果字符串长度
+    int str_len = 0;
+    char tmp[36];
+    if (num == 0) {
+        tmp[str_len++] = '0';
+    } else {
+        while (num != 0) {
+            int idx = num % base;
+            num /= base;
+            tmp[str_len++] = digits[idx];
+        }
+    }
+
+    // 负整数精度不起作用
+    precision = (precision < 0) ? 1 : precision;
+
+    // 被转换值和精度都为 0，则转换结果无字符
+    if (precision == 0 && str_len == 1 && tmp[0] == '0') {
+        str_len = 0;
+    }
+
+    // 精度指定出现数字的最小个数，若小于字符串长度或为零则忽略
+    field_width -= (precision > str_len ? precision : str_len);
+
+    // 填充字符
+    char padding_char = (flags & ZEROPAD) ? '0' : ' ';
+
+    // 符号字符，`+`，`-`，` ` 或无
+    char sign_char = EOS;
     if (flags & SIGN && num < 0) {
-        sign = '-';
+        sign_char = '-';
         num = -num;
     } else {
-        sign = (flags & PLUS) ? '+' : ((flags & SPACE) ? ' ' : 0);
+        sign_char = (flags & PLUS) ? '+' : ((flags & SPACE) ? ' ' : 0);
+    }
+    if (sign_char && str_len != 0 && (base != 8 || base != 16)) {
+        field_width--;
     }
 
-    if (sign) {
-        size--;
-    }
-
-    if (flags & SPECIAL) {
+    // 替用形式，八进制数前缀 `0`，十六进制数前缀 `0x` 或 `0X`
+    if ((flags & SPECIAL) && str_len > 0) {
         if (base == 16) {
-            size -= 2;
+            field_width -= 2;
         } else if (base == 8) {
-            size--;
+            field_width--;
         }
     }
 
-    // i: the length of string after conversion
-    i = 0;
-    if (num == 0) {
-        tmp[i++] = '0';
-    } else {
-        // the conversion result is reversed
-        // i.e. 33 is 0x21 in hexadecimal, the result is 12
-        while (num != 0) {
-            index = num % base;
-            num /= base;
-            tmp[i++] = digits[index];
-        }
-    }
-
-    // for integers, precision specifies its minimum number of digits to appear
-    if (i > precision) {
-        precision = i;
-    }
-    // substract precision, remaining size is to be padding
-    size -= precision;
-
-    // non 0 padding, non left alignment, pad with space
-    if (!(flags & (ZEROPAD + LEFT))) {
-        while (size-- > 0) {
+    // 右对齐，非 0 填充，使用 ` ` 填充
+    // 0 填充，但指定了精度，则忽略 0 标志，使用 ` ` 填充
+    if (!(flags & (ZEROPAD + LEFT)) || ((flags & ZEROPAD) && precision > 1)) {
+        while (field_width-- > 0) {
             *str++ = ' ';
         }
     }
 
-    // write sign
-    if (sign) {
-        *str++ = sign;
+    // 写入符号
+    if (sign_char && str_len > 0 && (base != 8 || base != 16)) {
+        *str++ = sign_char;
     }
 
-    // write special sign of base
-    if (flags & SPECIAL) {
+    // 写入替用形式
+    if ((flags & SPECIAL) && str_len > 0) {
         if (base == 8) {
             *str++ = '0';
         } else if (base == 16) {
             *str++ = '0';
-            *str++ = digits[33];
+            *str++ = digits[16];
         }
     }
 
-    // non left alignment
+    // 右对齐，写入填充字符
     if (!(flags & LEFT)) {
-        while (size-- > 0) {
-            *str++ = padding;
+        while (field_width-- > 0) {
+            *str++ = padding_char;
         }
     }
 
-    // precision padding
-    while (i < precision--) {
+    // 写入精度填充字符
+    while (str_len < precision--) {
         *str++ = '0';
     }
 
-    // write  strings after conversion reversely
-    while (i-- > 0) {
-        *str++ = tmp[i];
+    // 写入数字
+    while (str_len-- > 0) {
+        *str++ = tmp[str_len];
     }
 
-    // left alignment, pad with space
-    while ((size-- > 0)) {
+    // 左对齐，写入填充字符
+    while (field_width-- > 0) {
         *str++ = ' ';
     }
+
     return str;
 }
 
-// %[flags][width][.precision][length]specifier
-int vsprintf(char *buf, const char *fmt, va_list args) {
+/**
+ *  @brief  格式化字符串并将结果写入目标字符串
+ *  @param  buf  指向要写入的字符串的指针
+ *  @param  fmt  指向格式字符串的指针
+ *  @param  vlist  包含要打印数据的变量参数列表
+ *  @return  写入到 buf 的字符数，不包括空终止符
+ *
+ *  格式化字符串以 `%` 开头，以指示符结尾。
+ *
+ *  ```language
+ *  %[flags][width][.precision][length]specifier
+ *  ```
+ */
+int vsprintf(char *buf, const char *fmt, va_list vlist) {
+    char *str = NULL;
+    int flags = 0;
+    int field_width = 0;
+    int precision = 0;
+    int qualifier = 0;
 
-    // handle %s
-    int len;
-    char *str;
-    char *s;
-
-    int *ip;
-
-    int flags = 0; // flags
-
-    int field_width; // width
-    int precision;   // precision
-    int qualifier;   // length, h, l, L for intergers
-
-    // traverse strings in fmt
-    for (str = buf; *fmt; ++fmt) {
-        // write non-formatted characters to `str`
+    char *s = NULL;
+    int str_len = 0;
+    int *ip = NULL; // 指向存储以写入的字符数的内存（见 %n）
+    for (str = buf; *fmt; fmt++) {
+        // 处理普通字符
         if (*fmt != '%') {
             *str++ = *fmt;
             continue;
         }
 
-        // handle flags
-        // including `-`, `+`, ` `, `#`, `0`
+        // 处理 flags
         flags = 0;
     repeat:
-        ++fmt; // skip %
+        ++fmt; // 下一个 flags
         switch (*fmt) {
-            // left alignment
         case '-':
             flags |= LEFT;
             goto repeat;
-            // force display sign
         case '+':
             flags |= PLUS;
             goto repeat;
-            // space padding
         case ' ':
             flags |= SPACE;
             goto repeat;
-            // special conversion
         case '#':
             flags |= SPECIAL;
             goto repeat;
-            // zero padding
         case '0':
             flags |= ZEROPAD;
             goto repeat;
         }
 
-        // handle width
-        // including `*`, interger
+        // 处理字段宽度，整数或 `*`
         field_width = -1;
 
-        if (is_digit(*fmt)) {
+        if (is_digit(*fmt)) { // 整数
             field_width = skip_atoi(&fmt);
-        } else if (*fmt == '*') {
+        } else if (*fmt == '*') { // `*`
             ++fmt;
-            field_width = va_arg(args, int);
+            field_width = va_arg(vlist, int);
 
-            // it means that the parameter contains a flag `-` if field_width
-            // less than 0
+            // 负数实参导致 `-` 标志和正字段宽度
             if (field_width < 0) {
                 field_width = -field_width;
                 flags |= LEFT;
             }
         }
 
-        // handle precision
-        // precison starts with `.`
+        // 处理精度，整数或 `*`
         precision = -1;
 
         if (*fmt == '.') {
             ++fmt;
-            if (is_digit(*fmt)) {
+            if (is_digit(*fmt)) { // 整数
                 precision = skip_atoi(&fmt);
-            } else if (*fmt == '*') {
-                precision = va_arg(args, int);
+            } else if (*fmt == '*') { // `*`
+                precision = va_arg(vlist, int);
+            } else {
+                precision = 0;
             }
 
-            // ignore `-`
-            precision = precision < 0 ? -precision : precision;
-            // if (precision < 0) {
-            //     precision = -precision;
-            // }
+            // 负整数导致精度失效，处理转换格式指示符时会识别并处理负整数精度
         }
 
-        // handle length
-        // including `h`, `l`, `L`
+        // 处理长度。只支持以下三种：
+        // h: short, l: long, L: long long
         qualifier = -1;
-
         if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L') {
             qualifier = *fmt;
             ++fmt;
         }
 
-        // handle specifier
         switch (*fmt) {
-            // character
-        case 'c':
-            // right alignment
+        case 'c': // 字符，flags, precision 对 c 无效
+            // 右对齐
             if (!(flags & LEFT)) {
                 while (--field_width > 0) {
                     *str++ = ' ';
                 }
             }
-            *str++ = (unsigned char)va_arg(args, int);
+            *str++ = (unsigned char)va_arg(vlist, int);
 
-            // left alignment
+            // 左对齐
             while (--field_width > 0) {
                 *str++ = ' ';
             }
             break;
-            // string
-        case 's':
-            s = va_arg(args, char *);
-            len = strlen(s);
+        case 's': // 字符串，flags 不起作用（除了 `-`）
+            s = va_arg(vlist, char *);
+            str_len = strlen(s);
 
-            // ignore substract sign
+            // 精度决定写入的长度
             if (precision < 0) {
-                precision = len;
-                // for string, precision specifies the maximum number to appear
-            } else if (len > precision) {
-                len = precision;
+                precision = str_len;
+            } else if (str_len > precision) {
+                str_len = precision;
             }
 
-            // right alignment, pad space
+            // 右对齐
             if (!(flags & LEFT)) {
-                while (len < field_width--) {
+                while (str_len < field_width--) {
                     *str++ = ' ';
                 }
             }
 
-            // write string to output string
-            for (int i = 0; i < len; i++) {
+            // 写入字符
+            for (int i = 0; i < str_len; i++) {
                 *str++ = *s++;
             }
 
-            // left alignment
-            while (--field_width > len) {
+            // 左对齐
+            while (--field_width > str_len) {
                 *str++ = ' ';
             }
             break;
-            // octal integer
         case 'o':
-            str = number(str, va_arg(args, unsigned long), 8, field_width,
-                         precision, flags);
+            str = format_digit(str, va_arg(vlist, unsigned long), 8,
+                               field_width, precision, flags);
             break;
-            // pointer
         case 'p':
             if (field_width == -1) {
                 field_width = 8;
                 flags |= ZEROPAD;
             }
-            str = number(str, (unsigned long)va_arg(args, void *), 16,
-                         field_width, precision, flags);
+            str = format_digit(str, (unsigned long)va_arg(vlist, void *), 16,
+                               field_width, precision, flags);
             break;
-            // hexadecimal
         case 'x':
             flags |= SMALL;
         case 'X':
-            str = number(str, va_arg(args, unsigned long), 16, field_width,
-                         precision, flags);
+            str = format_digit(str, va_arg(vlist, unsigned long), 16,
+                               field_width, precision, flags);
             break;
-            // decimal
-        case 'd':
         case 'i':
+        case 'd':
             flags |= SIGN;
         case 'u':
-            str = number(str, va_arg(args, unsigned long), 10, field_width,
-                         precision, flags);
+            str = format_digit(str, va_arg(vlist, unsigned long), 10,
+                               field_width, precision, flags);
             break;
         case 'n':
-            ip = va_arg(args, int *);
+            ip = va_arg(vlist, int *);
             *ip = (str - buf);
             break;
         default:
-            if (*fmt != '%') {
+            if (*fmt == '%') {
                 *str++ = '%';
             }
             if (*fmt) {
@@ -333,14 +339,22 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
     *str = '\0';
 
     int tmp = str - buf;
-    assert(tmp < 1024);
+    // TODO: assert tmp
+    // kassert(tmp < 1024);
     return tmp;
 }
 
+/**
+ *  @brief  格式化字符串并将结果写入目标字符串
+ *  @param  buf  指向要写入的字符串的指针
+ *  @param  fmt  指向格式字符串的指针
+ *  @param  ...  格式化参数
+ *  @return  写入到 buf 的字符数，不包括空终止符
+ */
 int sprintf(char *buf, const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    int i = vsprintf(buf, fmt, args);
-    va_end(args);
+    va_list vlist = NULL;
+    va_start(vlist, fmt);
+    int i = vsprintf(buf, fmt, vlist);
+    va_end(vlist);
     return i;
 }

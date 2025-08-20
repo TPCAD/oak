@@ -1,4 +1,4 @@
-#include <oak/fs.h>
+#include <oak/fs/minix.h>
 #include <oak/stdio.h>
 #include <oak/string.h>
 #include <oak/syscall.h>

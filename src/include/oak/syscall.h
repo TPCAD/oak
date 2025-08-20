@@ -1,7 +1,7 @@
 #ifndef OAK_SYSCALL_H
 #define OAK_SYSCALL_H
 
-#include <oak/stat.h>
+#include <oak/fs/stat.h>
 #include <oak/types.h>
 
 typedef enum syscall_t {
@@ -58,44 +58,54 @@ enum mmap_type_t {
 };
 
 u32 test();
+void yield();
+void sleep(u32 ms);
+i32 brk(void *addr);
+void *mmap(void *addr, size_t length, int prot, int flags, int fd, i32 offset);
+int munmap(void *addr, size_t length);
+
+pid_t getpid();
+pid_t getppid();
+
 pid_t fork();
 void exit(int status);
-pid_t waitpid(pid_t pid, int32 *status);
-void yield();
-int execve(char *filename, char *argv[], char *envp[]);
-void sleep(u32 ms);
-pid_t get_pid();
-pid_t get_ppid();
-int brk(void *addr);
-void *mmap(void *addr, size_t length, int prot, int flags, int fd,
-           off_t offset);
-int munmap(void *addr, size_t length);
+pid_t waitpid(pid_t pid, i32 *status);
+
+time_t time();
+
+mode_t umask(mode_t mask);
+
+int mkdir(char *pathname, int mode);
+int rmdir(char *pathname);
+
+int link(char *oldname, char *newname);
+int unlink(char *filename);
+
 fd_t open(char *filename, int flags, int mode);
 fd_t creat(char *filename, int mode);
 void close(fd_t fd);
-fd_t dup(fd_t oldfd);
-fd_t dup2(fd_t oldfd, fd_t newfd);
-int pipe(fd_t pipefd[2]);
 int read(fd_t fd, char *buf, int len);
 int write(fd_t fd, char *buf, int len);
-int lseek(fd_t fd, off_t offset, int whence);
-int readdir(fd_t fd, void *dir, int count);
+int lseek(fd_t fd, i32 offset, int whence);
+
 char *getcwd(char *buf, size_t size);
 int chdir(char *pathname);
 int chroot(char *pathname);
-int mkdir(char *pathname, int mode);
-int rmdir(char *pathname);
-int link(char *oldname, char *newname);
-int unlink(char *filename);
-int mount(char *devname, char *dirname, int flags);
-int umount(char *target);
-int mknod(char *filename, int mode, int dev);
-time_t time();
-mode_t umask(mode_t mask);
+
+int readdir(fd_t fd, void *dir, int count);
+
 void clear();
 int stat(char *filename, stat_t *statbuf);
 int fstat(fd_t fd, stat_t *statbuf);
 
-int mkfs(char *devname, int icount);
+int mknod(char *filename, int mode, int dev);
 
-#endif // OAK_SYSCALL_H
+int mount(char *devname, char *dirname, int flags);
+int umount(char *target);
+
+int execve(char *filename, char *argv[], char *envp[]);
+
+fd_t dup(fd_t oldfd);
+fd_t dup2(fd_t oldfd, fd_t newfd);
+
+#endif // !OAK_SYSCALL_H

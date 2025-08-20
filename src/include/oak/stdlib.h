@@ -6,13 +6,15 @@
 #define MAX(a, b) (a < b ? b : a)
 #define MIN(a, b) (a < b ? a : b)
 
-void delay(u32 count);
-void hang();
+/* 将 v 向上取整至 k 的倍数，k 必须为 2 的幂 */
+#define ROUNDUP(v, k) (((v) + (k) - 1) & ~((k) - 1))
+
+#define DIV_ROUNDUP(n, d) (((n) + (d) - 1) / (d))
+
+void itoa(int input, char *buffer);
+int atoi(const char *str);
 
 u8 bcd_to_bin(u8 value);
 u8 bin_to_bcd(u8 value);
 
-u32 div_round_up(u32 num, u32 size);
-
-int atoi(const char *str);
 #endif // !OAK_STDLIB_H

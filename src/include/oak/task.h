@@ -1,7 +1,7 @@
 #ifndef OAK_TASK_H
 #define OAK_TASK_H
 
-#include <oak/fs.h>
+#include "oak/mm/dmm.h"
 #include <oak/list.h>
 #include <oak/types.h>
 
@@ -9,9 +9,7 @@
 #define NORMAL_USER 1000
 
 #define TASK_NAME_LEN 16
-#define TASK_FILE_NR 16 // most file amount of process
-
-typedef void target_t();
+#define TASK_FILE_NR 16 // 进程最大打开文件数
 
 typedef enum task_state_t {
     TASK_INIT,
@@ -24,53 +22,50 @@ typedef enum task_state_t {
 } task_state_t;
 
 typedef struct task_t {
-    u32 *stack;                         // kernel stack
-    list_node_t node;                   // task blocked node
-    task_state_t state;                 // task status
-    u32 priority;                       // priority
-    int ticks;                          // left jiffies
-    u32 jiffies;                        // jiffies last ran
-    char name[TASK_NAME_LEN];           // task name
-    u32 uid;                            // user id
-    u32 gid;                            // gid
-    u32 pid;                            // task id
-    u32 ppid;                           // task father id
-    u32 pde;                            // pde
-    struct bitmap_t *vmap;              // virtual memory map
-    u32 text;                           // code section address
-    u32 data;                           // data section address
-    u32 end;                            // program end address
-    u32 brk;                            // the highest address of heap memory
-    int status;                         // process special status
-    pid_t waitpid;                      // wait pid
-    char *pwd;                          // current dir of process
-    struct inode_t *ipwd;               //
-    struct inode_t *iroot;              //
-    struct inode_t *iexec;              // program file inode
-    u16 umask;                          // process user privilege
+    u32 *statck_addr;   // 进程栈地址
+    list_node_t node;   // 链表结点
+    task_state_t state; // 进程状态
+    u32 priority;
+    u32 ticks;
+    u32 jiffies;
+    char name[TASK_NAME_LEN];
+    u32 uid;
+    u32 gid;
+    pid_t pid;
+    pid_t ppid;
+    u32 pde;
+    u32 text; // 代码段地址
+    u32 data; // 数据段地址
+    u32 end;  // 程序结束地址
+    heap_context_t user_heap;
+    int status; // 进程特殊状态，退出状态码
+    pid_t waitpid;
+    char *pwd;                          // 进程当前目录
+    struct inode_t *ipwd;               // 进程当前目录 inode program work dir
+    struct inode_t *iroot;              // 进程根目录
+    struct inode_t *iexec;              // 程序文件 inode
+    u16 umask;                          // 进程用户权限
     struct file_t *files[TASK_FILE_NR]; // 进程文件表
-    u32 magic;                          // magic number
+    u32 magic;                          // 魔数
 } task_t;
 
-// ABI
 typedef struct task_frame_t {
     u32 edi;
     u32 esi;
     u32 ebx;
     u32 ebp;
-    void (*eip)(void);
+    void (*eip)(void); // 函数指针
 } task_frame_t;
 
-typedef struct intr_frame_t {
+// 特权级改变时的中断上下文
+typedef struct intr_context_t {
     u32 vector;
 
+    // pusha 入栈的寄存器
     u32 edi;
     u32 esi;
     u32 ebp;
-    // esp changes constantly, therefore, it will be ignored by popad, although
-    // pushad push it
-    u32 esp_dummy;
-
+    u32 esp_dummy; // 因为 esp 会不断变化，所以 popa 会忽略压入的 esp
     u32 ebx;
     u32 edx;
     u32 ecx;
@@ -82,31 +77,41 @@ typedef struct intr_frame_t {
     u32 ds;
 
     u32 vector0;
-
     u32 error;
 
+    // 中断入栈的寄存器
     u32 eip;
     u32 cs;
     u32 eflags;
+
+    // 特权级改变时入栈 ss 和 esp
     u32 esp;
     u32 ss;
-} intr_frame_t;
+} intr_context_t;
 
-task_t *running_task();
-void schedule();
-pid_t task_fork();
-void task_exit(int status);
-pid_t task_waitpid(pid_t pid, int32 *status);
+typedef void *target_t;
+
+void task_schedule();
+task_t *task_current_running();
+
 void task_yield();
+
 void task_block(task_t *task, list_t *blist, task_state_t state);
 void task_unblock(task_t *task);
+
 void task_sleep(u32 ms);
 void task_wakeup();
-void task_to_user_mode();
-pid_t sys_getpid();
-pid_t sys_getppid();
 
-fd_t task_get_fd(task_t *task);
-void task_put_fd(task_t *task, fd_t fd);
+pid_t task_getpid();
+pid_t task_getppid();
+
+pid_t task_fork();
+
+void task_exit(int status);
+
+pid_t task_waitpid(pid_t pid, i32 *status);
+
+fd_t task_alloc_fd(task_t *task);
+void task_free_fd(task_t *task, fd_t fd);
 
 #endif // !OAK_TASK_H

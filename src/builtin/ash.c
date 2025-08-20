@@ -1,12 +1,11 @@
+#include "oak/types.h"
 #include <oak/assert.h>
-#include <oak/fs.h>
-#include <oak/stat.h>
+#include <oak/fs/minix.h>
 #include <oak/stdio.h>
 #include <oak/stdlib.h>
 #include <oak/string.h>
 #include <oak/syscall.h>
 #include <oak/time.h>
-#include <oak/types.h>
 
 #define MAX_CMD_LEN 256
 #define MAX_ARG_NR 16
@@ -17,7 +16,6 @@ static char cwd[MAX_PATH_LEN];
 static char cmd[MAX_CMD_LEN];
 static char *args[MAX_ARG_NR];
 static char buf[BUFLEN];
-
 static char *envp[] = {
     "HOME=/",
     "PATH=/bin",
@@ -35,39 +33,6 @@ static char oak_logo[][52] = {
 extern char *strsep(const char *str);
 extern char *strrsep(const char *str);
 
-char *basename(char *name) {
-    char *ptr = strrsep(name);
-    if (!ptr[1]) {
-        return ptr;
-    }
-    ptr++;
-    return ptr;
-}
-
-void print_prompt() {
-    getcwd(cwd, MAX_PATH_LEN);
-    char *ptr = strrsep(cwd);
-    if (ptr != cwd) {
-        *ptr = 0;
-    }
-    char *base = basename(cwd);
-    printf("[root %s]# ", base);
-}
-
-void builtin_logo() {
-    clear();
-    printf((char *)oak_logo);
-}
-
-void builtin_test(int argc, char *argv[]) { printf("test start\n"); }
-
-void builtin_pwd() {
-    getcwd(cwd, MAX_PATH_LEN);
-    printf("%s\n", cwd);
-}
-
-void builtin_clear() { clear(); }
-
 static void strftime(time_t stamp, char *buf) {
     tm time;
     localtime(stamp, &time);
@@ -75,56 +40,7 @@ static void strftime(time_t stamp, char *buf) {
             time.tm_mon, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
 }
 
-void builtin_cd(int argc, char *argv[]) { chdir(argv[1]); }
-
-void builtin_mkdir(int argc, char *argv[]) {
-    if (argc < 2) {
-        return;
-    }
-    mkdir(argv[1], 0755);
-}
-
-void builtin_rmdir(int argc, char *argv[]) {
-    if (argc < 2) {
-        return;
-    }
-    rmdir(argv[1]);
-}
-
-void builtin_rm(int argc, char *argv[]) {
-    if (argc < 2) {
-        return;
-    }
-    unlink(argv[1]);
-}
-
-void builtin_date(int argc, char *argv[]) {
-    strftime(time(), buf);
-    printf("%s\n", buf);
-}
-
-void builtin_mount(int argc, char *argv[]) {
-    if (argc < 3) {
-        return;
-    }
-    mount(argv[1], argv[2], 0);
-}
-
-void builtin_umount(int argc, char *argv[]) {
-    if (argc < 2) {
-        return;
-    }
-    umount(argv[1]);
-}
-
-void builtin_mkfs(int argc, char *argv[]) {
-    if (argc < 2) {
-        return;
-    }
-    mkfs(argv[1], 0);
-}
-
-static int dupfile(int argc, char **argv, fd_t dupfd[3]) {
+static void dupfile(int argc, char **argv, fd_t dupfd[3]) {
     for (size_t i = 0; i < 3; i++) {
         dupfd[i] = EOF;
     }
@@ -195,7 +111,7 @@ static int dupfile(int argc, char **argv, fd_t dupfd[3]) {
         }
         dupfd[2] = fd;
     }
-    return 0;
+    return;
 
 rollback:
     for (size_t i = 0; i < 3; i++) {
@@ -203,15 +119,161 @@ rollback:
             close(dupfd[i]);
         }
     }
-    return EOF;
+}
+
+/**
+ *  @brief  获取路径文件名
+ *  @param  name  文件路径
+ */
+char *basename(char *name) {
+    char *ptr = strrsep(name);
+    if (!ptr[1]) {
+        return ptr;
+    }
+    ptr++;
+    return ptr;
+}
+
+/**
+ *  @brief  打印提示符
+ */
+void print_prompt() {
+    getcwd(cwd, MAX_PATH_LEN);
+    char *ptr = strrsep(cwd);
+    if (ptr != cwd) {
+        *ptr = 0;
+    }
+    char *base = basename(cwd);
+    printf("[root %s]# ", base);
+}
+
+void builtin_logo() {
+    clear();
+    printf((char *)oak_logo);
+}
+
+void builtin_test(int argc, char *argv[]) {
+    if (argc == 1) {
+        printf("Too few arguments.\n");
+        printf("Try 'test help' for more info\n");
+        return;
+    }
+
+    // processs switch test
+    if (strcmp(argv[1], "proc_switch") == 0) {
+        if (fork()) {
+            int count = 0;
+            while (true) {
+                if (count == 10) {
+                    printf("Nr %d process exited\n");
+                    exit(0);
+                }
+                printf("Nr %d process, parent process %d\n", getpid(),
+                       getppid());
+                count++;
+                sleep(1000);
+            }
+        } else {
+            if (fork()) {
+                while (true) {
+                    printf("Nr %d process, parent process %d\n", getpid(),
+                           getppid());
+                    sleep(1000);
+                    printf("Nr %d process exited\n");
+                    exit(0);
+                }
+            } else {
+                int count = 0;
+                while (true) {
+                    printf("Nr %d process, parent process %d\n", getpid(),
+                           getppid());
+                    sleep(1000);
+                    count++;
+                    if (count == 5) {
+                        printf("Nr %d process exited\n");
+                        exit(0);
+                    }
+                }
+            }
+        }
+    }
+
+    if (!strcmp(argv[1], "dmm")) {
+        test();
+    }
+
+    if (!strcmp(argv[1], "help")) {
+        printf("Usage: test [OPTION]\n");
+        printf("OPTION:\n");
+        printf("  proc_switch    process switch test\n");
+        printf("  dmm            dynamic memory management test\n");
+    }
+
+    // memory paging test
+    // char big0[8192];
+    // if (big0[0] >= 0) {
+    //     big0[0] = 0;
+    // }
+    // char big1[4096];
+    // if (big1[0] >= 0) {
+    //     big1[0] = 0;
+    // }
+}
+
+void builtin_pwd() {
+    getcwd(cwd, MAX_PATH_LEN);
+    printf("%s\n", cwd);
+}
+
+void builtin_clear() { clear(); }
+
+void builtin_date(int argc, char *argv[]) {
+    strftime(time(), buf);
+    printf("%s\n", buf);
+}
+
+void builtin_cd(int argc, char *argv[]) { chdir(argv[1]); }
+
+void builtin_mkdir(int argc, char *argv[]) {
+    if (argc < 2) {
+        return;
+    }
+    mkdir(argv[1], 0755);
+}
+
+void builtin_rmdir(int argc, char *argv[]) {
+    if (argc < 2) {
+        return;
+    }
+    rmdir(argv[1]);
+}
+
+void builtin_rm(int argc, char *argv[]) {
+    if (argc < 2) {
+        return;
+    }
+    unlink(argv[1]);
+}
+
+void builtin_mount(int argc, char *argv[]) {
+    if (argc < 3) {
+        return;
+    }
+    mount(argv[1], argv[2], 0);
+}
+
+void builtin_umount(int argc, char *argv[]) {
+    if (argc < 2) {
+        return;
+    }
+    umount(argv[1]);
 }
 
 pid_t builtin_command(char *filename, char *argv[], fd_t infd, fd_t outfd,
                       fd_t errfd) {
     int status;
     pid_t pid = fork();
-
-    // father process
+    // 父进程
     if (pid) {
         if (infd != EOF) {
             close(infd);
@@ -243,58 +305,48 @@ pid_t builtin_command(char *filename, char *argv[], fd_t infd, fd_t outfd,
 }
 
 void builtin_exec(int argc, char *argv[]) {
-    bool p = true;
-    int status;
-
-    char **bargv = NULL;
-    char *name = buf;
-
-    fd_t dupfd[3];
-    if (dupfile(argc, argv, dupfd) == EOF)
+    // 检查命令是否存在
+    stat_t statbuf;
+    sprintf(buf, "/bin/%s", argv[0]);
+    if (stat(buf, &statbuf) == EOF) {
+        printf("command not found: %s\n", argv[0]);
         return;
-
-    fd_t infd = dupfd[0];
-    fd_t pipefd[2];
-    int count = 0;
-
-    for (int i = 0; i < argc; i++) {
-        if (!argv[i]) {
-            continue;
-        }
-        if (!p && !strcmp(argv[i], "|")) {
-            argv[i] = NULL;
-            int ret = pipe(pipefd);
-            builtin_command(name, bargv, infd, pipefd[1], EOF);
-            count++;
-            infd = pipefd[0];
-            int len = strlen(name) + 1;
-            name += len;
-            p = true;
-            continue;
-        }
-        if (!p) {
-            continue;
-        }
-
-        stat_t statbuf;
-        sprintf(name, "/bin/%s.out", argv[i]);
-        if (stat(name, &statbuf) == EOF) {
-            printf("ash: command not found: %s\n", argv[i]);
-            return;
-        }
-        bargv = &argv[i + 1];
-        p = false;
     }
 
-    int pid = builtin_command(name, bargv, infd, dupfd[1], dupfd[2]);
-    for (size_t i = 0; i <= count; i++) {
-        pid_t child = waitpid(-1, &status);
-        // printf("child %d exit\n", child);
-    }
+    // 重定向
+    fd_t dupfd[3];
+    dupfile(argc, argv, dupfd);
+    pid_t pid = builtin_command(buf, &argv[1], dupfd[0], dupfd[1], dupfd[2]);
+    int status;
+    waitpid(pid, &status);
+}
+
+void builtin_help(int argc, char *argv[]) {
+    printf("Oak supports following commands:\n");
+    printf("  help    Print this help message\n");
+    printf("  test    Run system test\n");
+    printf("  logo    Print logo\n");
+    printf("  pwd     Print current working directory\n");
+    printf("  clear   Clear screen\n");
+    printf("  exit    Exit\n");
+    printf("  cd      Change directory\n");
+    printf("  mkdir   Make directory\n");
+    printf("  rmdir   Remove empty directory\n");
+    printf("  rm      Remove file\n");
+    printf("  date    Print current date\n");
+    printf("  mount   Mount device\n");
+    printf("  umount  Unmount device\n");
+    printf("  ls      List files and directories\n");
+    printf("  echo    Print string to screen\n");
+    printf("  cat     Print file content to screen\n");
+    printf("  env     Print environment variables to screen\n");
 }
 
 static void execute(int argc, char *argv[]) {
     char *line = argv[0];
+    if (!strcmp(line, "help")) {
+        return builtin_help(argc, argv);
+    }
     if (!strcmp(line, "test")) {
         return builtin_test(argc, argv);
     }
@@ -335,10 +387,6 @@ static void execute(int argc, char *argv[]) {
     if (!strcmp(line, "umount")) {
         return builtin_umount(argc, argv);
     }
-    if (!strcmp(line, "mkfs")) {
-        return builtin_mkfs(argc, argv);
-    }
-
     return builtin_exec(argc, argv);
 }
 
@@ -379,33 +427,20 @@ void readline(char *buf, u32 count) {
     buf[idx] = '\0';
 }
 
-static int cmd_parse(char *cmd, char *argv[]) {
+static int cmd_parse(char *cmd, char *argv[], char token) {
     assert(cmd != NULL);
 
     char *next = cmd;
     int argc = 0;
-    int quot = false;
     while (*next && argc < MAX_ARG_NR) {
-        while (*next == ' ' || (quot && *next != '"')) {
+        while (*next == token) {
             next++;
         }
         if (*next == 0) {
             break;
         }
-        if (*next == '"') {
-            quot = !quot;
-
-            if (quot) {
-                next++;
-                argv[argc++] = next;
-            } else {
-                *next = 0;
-                next++;
-            }
-            continue;
-        }
         argv[argc++] = next;
-        while (*next && *next != ' ') {
+        while (*next && *next != token) {
             next++;
         }
         if (*next) {
@@ -417,23 +452,23 @@ static int cmd_parse(char *cmd, char *argv[]) {
     return argc;
 }
 
-int main() {
+int ash_main() {
     memset(cmd, 0, sizeof(cmd));
     memset(cwd, 0, sizeof(cwd));
 
-    builtin_logo();
+    // builtin_logo();
 
     while (true) {
-        print_prompt();
-        readline(cmd, sizeof(cmd));
+        print_prompt();             // 打印提示符
+        readline(cmd, sizeof(cmd)); // 读取用户输入
         if (cmd[0] == 0) {
             continue;
         }
-        int argc = cmd_parse(cmd, args);
+        int argc = cmd_parse(cmd, args, ' '); // 解析命令
         if (argc < 0 || argc >= MAX_ARG_NR) {
             continue;
         }
-        execute(argc, args);
+        execute(argc, args); // 执行命令
     }
     return 0;
 }

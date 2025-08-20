@@ -1,55 +1,61 @@
-#include <oak/arena.h>
-#include <oak/debug.h>
-#include <oak/interrupt.h>
-#include <oak/printk.h>
+#include "oak/debug/kdebug.h"
+#include <oak/cpu.h>
+#include <oak/kprintf.h>
 #include <oak/stdio.h>
-#include <oak/stdlib.h>
 #include <oak/string.h>
 #include <oak/syscall.h>
 #include <oak/task.h>
 #include <oak/types.h>
 
-extern u32 keyboard_read(char *buf, u32 count);
-extern void dev_init();
-
 void idle_thread() {
-    set_interrupt_state(true);
-    u32 counter = 0;
-
+    cpu_set_intr_state(true);
+    u32 count = 0;
     while (true) {
-        // DEBUGK("idle task...%d\n", counter++);
+        // KDEBUG("idle task %d\n", count++);
         asm volatile("sti\n"
                      "hlt\n");
         yield();
     }
 }
 
-void init_thread() {
-    char tmp[100];
-    dev_init();
-    task_to_user_mode();
-}
-
-void test_thread() {
-    set_interrupt_state(true);
-
-    // test();
-    // mkdir("/world.txt", 0755);
-    // rmdir("empty");
-    // link("/hello.txt", "/world.txt");
-    // unlink("/hello.txt");
+extern int ash_main();
+void user_init_thread() {
+    clear();
     while (true) {
-        // printk("A");
-        // test();
-        sleep(10);
+        i32 status = 0;
+        pid_t pid = fork();
+        if (pid) {
+            pid_t child = waitpid(pid, &status);
+            // printf("wait pid %d status %d %d\n", child, status, time());
+        } else {
+            ash_main();
+        }
+        sleep(1000);
     }
 }
 
-void foo_thread() {
-    set_interrupt_state(true);
+extern void internal_enter_user_mode(target_t target);
+extern void devfile_init();
+void init_thread() {
+    // cpu_set_intr_state(true);
+
+    /* `switch_to_user_mode()` 有许多局部变量在栈内，为了防止其在执行过程修改这
+     * 些局部变量，需要留出足够的空间。
+     * */
+    char temp[100];
+    devfile_init();
+    internal_enter_user_mode(user_init_thread);
+}
+
+u32 test_thread() {
+    cpu_set_intr_state(true);
+
+    u32 count = 0;
     while (true) {
-        printk("B");
-        // test();
-        // sleep(10);
+        // kprintf("%d", task_current_running()->pid);
+        // u32 count = 100000000;
+        // while (count--) {
+        // }
+        sleep(1000);
     }
 }
