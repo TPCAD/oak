@@ -73,6 +73,8 @@ call _add
 
 上面的顺序也是通用寄存器的入栈顺序。
 
+在 16 位模式下，`si` 的默认段寄存器是 `ds`，`di` 则是 `es`。
+
 #### 段寄存器（Segment Register）
 
 - `ss`：Stack Segment，存放栈的起始地址
@@ -88,9 +90,7 @@ TODO:
 
 ### 常用指令
 
-以下指令将省略后缀。
-
-#### lods
+#### lods*
 
 Load String，从内存地址 `ds:si` 中加载一个单位的数据到合适的寄存器（al、ax）。
 
@@ -107,6 +107,25 @@ print_char:
     jmp print_char
 done:
     hlt
+```
+
+#### movs*
+
+Move String，从 `ds:si` 拷贝一个单位数据到 `es:di`。
+
+拷贝完成后 `si` 和 `di` 会根据 EFLAGS 的 DF 位加 1 或减 1。如果 DF 为 0 则加 1，为 1 则减 1。DF 位可以使用 `cld` 置为 0，使用 `std` 置为 1。
+
+```assembly
+.code16
+    movw $0x07c0, %ax         # 将 ds 寄存器设为 0x07c0，用作源地址
+    movw %ax, %ds
+    movw $0x9000, %ax         # 将 es 寄存器设为 0x9000，用作目的地址
+    movw %ax, %es
+    movw $256, %cx            # 将 cx 寄存器设为 256，用作循环计数
+    subw %si, %si             # 清空 si，di 寄存器
+    subw %di, %di
+    cld                       # 清空 Directive Flag，表示字符串操作时地址自增
+    rep movsw                 # 每次从 ds:si 拷贝两字节到 es:si，重复 cx 次
 ```
 
 ### 汇编器指令
