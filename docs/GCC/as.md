@@ -90,6 +90,22 @@ TODO:
 
 ### 常用指令
 
+#### jmp
+
+```asm
+jmp loc
+```
+
+Jump，无条件跳转执行指定地址的代码，其实质是修改 `ip` 寄存器。
+
+#### ljmp
+
+```asm
+ljmp seg, loc
+```
+
+Long Jump，无条件跳转执行指定地址的代码，同时修改 `cs` 和 `ip` 寄存器。
+
 #### lods*
 
 Load String，从内存地址 `ds:si` 中加载一个单位的数据到合适的寄存器（al、ax）。
