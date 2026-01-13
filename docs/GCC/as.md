@@ -1,14 +1,18 @@
-# GNU Assembly
++++
+title = 'GNU Assembly'
+date = 2025-08-27T09:52:44+08:00
+tags = ['OSDev', 'Assembly', 'GNU', 'GAS', 'AT&T']
++++
 
 ## AT&T 汇编语法
 
 ### 格式
 
-```language
+```txt
 mnemonic source, destination
 ```
 
-```assembly
+```asm
 movb $0x12, %al
 ```
 
@@ -16,7 +20,12 @@ movb $0x12, %al
 
 ### 前缀
 
-寄存器必须加上前缀 `%`，如 `%al`，`%ax`，`%si`。数字常量必须加上前缀 `$`，如 `$0x12`，`$12`。
+寄存器必须加上前缀 `%`，如 `%al`，`%ax`，`%si`。数字常量必须加上前缀 `$`，如 `$0x12`，`$12`，但也不是所有数字都需要加上前缀。
+
+```asm
+# 只需在操作数整体前加上前缀即可
+movb $0x12 + 0x22 - 10, %al
+```
 
 ### 后缀
 
@@ -35,7 +44,7 @@ movb $0x12, %al
 
 标签的作用相当于 C 中的函数名或变量名。
 
-```assembly
+```asm
 # 定义一个名为 `message` 的变量
 message:
     .asciz "Hello World!"
@@ -52,9 +61,9 @@ call _add
 
 标签的本质是地址。`call _add` 其实就是跳转到 `_add` 所代表的地址。
 
-如果想获得标签的地址，可以使用 `$`。如 `movl $_add, %eax` 表示将 `_add` 所代表的地址加载到 `%eax`。这类似 C 中的「取地址」操作，`&_add`。
+~如果想获得标签的地址，可以使用 `$`。如 `movl $_add, %eax` 表示将 `_add` 所代表的地址加载到 `%eax`。这类似 C 中的「取地址」操作，`&_add`。~
 
-某些情况下 `$label` 和 `label` 的作用是一样的，如 `.long _add` 和 `.long $_add` 都表示将 `_add` 代表的地址存储在当前内存位置。
+不同汇编指令对待标签的方式也不相同，比如 `jmp _add` 将 `_add` 当成地址，而 `inc _add` 可能会将 `_add` 解引用，使它所指向的值自增。
 
 ### 常用寄存器
 
@@ -87,6 +96,19 @@ call _add
 #### EFLAGS 寄存器
 
 TODO:
+
+### 地址操作数
+
+```txt
+# AT&T
+segment:displacement(base register, index register, scale factor)
+# Intel
+segment:[base register + displacement + index register * scale factor]
+```
+
+AT&T 的地址操作数标志是 `()`，当指令遇到地址操作数时会自动解引用。
+
+`displacement`，`base register` 和 `index register` 均可省略（至少有一个），且当省略 `index register` 时，`scale factor` 也必须被省略。省略 `segment` 时，默认使用 `ds`，当 `base register` 是 `bp` 或 `sp` 时默认使用 `ss`。
 
 ### 常用指令
 
